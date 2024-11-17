@@ -37,13 +37,4 @@ Branch off from main and merge into both main and develop.
 Naming convention: hotfix/<issue-name>.
 
 
-
-
-main  -------> (Production-ready code)
-    \
-     develop -------> (Ongoing development)
-         \
-          feature/<name> -------> (Individual tasks)
-          bugfix/<name> ---------> (Bug fixes)
-          release/<version> ------> (Pre-release testing)
-          hotfix/<issue> ---------> (Critical production fixes)
+<img width="476" alt="image" src="https://github.com/user-attachments/assets/8c2fc757-e4dc-4b71-a1ce-3195cf1bc944">
