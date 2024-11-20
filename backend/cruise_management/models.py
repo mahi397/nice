@@ -7,7 +7,6 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
-
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
 
@@ -207,7 +206,7 @@ class MmsPassenger(models.Model):
     dateofbirth = models.DateTimeField(db_comment="Hold's the passenger's birth date")
     gender = models.CharField(max_length=1, db_comment='Captures the gender of the passenger')
     contactnumber = models.CharField(max_length=10, db_comment='A primary phone number to reach the passenger for notifications, emergencies, or updates related to their trip.')
-    emailaddress = models.CharField(max_length=100, db_comment='Stores the passengerÆs email address for electronic communication, including booking confirmations and promotional materials.')
+    emailaddress = models.CharField(max_length=100, db_comment='Stores the passengerΓÇÖs email address for electronic communication, including booking confirmations and promotional materials.')
     streetaddr = models.CharField(max_length=50)
     city = models.CharField(max_length=50, db_comment="Represents the passenger's residential address. This could be useful for billing, mailing tickets, or other physical correspondence.")
     state = models.CharField(max_length=50, db_comment="Represents the passenger's residential address. This could be useful for billing, mailing tickets, or other physical correspondence.")
@@ -352,3 +351,26 @@ class MmsTrip(models.Model):
     class Meta:
         managed = False
         db_table = 'mms_trip'
+
+
+class TokenBlacklistBlacklistedtoken(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    blacklisted_at = models.DateTimeField()
+    token = models.OneToOneField('TokenBlacklistOutstandingtoken', models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'token_blacklist_blacklistedtoken'
+
+
+class TokenBlacklistOutstandingtoken(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    token = models.TextField()
+    created_at = models.DateTimeField(blank=True, null=True)
+    expires_at = models.DateTimeField()
+    user = models.ForeignKey(AuthUser, models.DO_NOTHING, blank=True, null=True)
+    jti = models.CharField(unique=True, max_length=255)
+
+    class Meta:
+        managed = False
+        db_table = 'token_blacklist_outstandingtoken'

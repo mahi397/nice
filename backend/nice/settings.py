@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Load the environment variables from the .env file
 load_dotenv()
@@ -34,7 +35,7 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['nice.com', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -47,8 +48,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework.authtoken',
-    'cruise_management'
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
+    'cruise_management',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'nice.urls'
@@ -98,12 +102,45 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
 }
+
+SIMPLE_JWT = {
+    # Token Lifetimes
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # Short lifespan for security
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Long lifespan for persistent sessions
+    "ROTATE_REFRESH_TOKENS": True,  # Enhance security by rotating refresh tokens
+    "BLACKLIST_AFTER_ROTATION": True,  # Blacklist old tokens after rotation
+
+    # Security
+    "ALGORITHM": "HS256",  # Symmetric signing algorithm
+    "SIGNING_KEY": SECRET_KEY,  # Use Django's SECRET_KEY for signing tokens
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Standard prefix for Authorization header
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",  # Standard header name
+    "USER_ID_FIELD": "id",  # Default is user ID
+    "USER_ID_CLAIM": "user_id",  # Store user ID in token payload
+    "USER_CLAIM": "username",  # Custom claim for username
+    "EMAIL_CLAIM": "email",  # Custom claim for email
+
+    # Optional Customization
+    "UPDATE_LAST_LOGIN": True,  # Keep track of user activity (useful for auditing)
+
+    # Token Classes and Claims
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+
+    # Sliding Tokens (not recommended for most cases)
+    # These can be removed unless you specifically want sliding tokens.
+
+    # Serializer Customization (optional)
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -144,3 +181,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWS_CREDENTIALS = True
