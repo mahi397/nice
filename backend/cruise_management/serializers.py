@@ -1,7 +1,9 @@
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import re
 from rest_framework import serializers
 from django.contrib.auth.models import User
-import re
+from .models import MmsTrip, MmsPortStop, MmsPort
+from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, min_length=8, style={'input_type': 'password'})
@@ -88,4 +90,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['email'] = user.email
         
         return data
+    
+class MmsTripSerializer(serializers.ModelSerializer):
+    # Nested serializer for related start port (via MmsPortStop and MmsPort)
+    start_port = serializers.CharField(source='mmsportstop_set.filter(isstartport="Y").first().portid.portname', read_only=True)
+
+    class Meta:
+        model = MmsTrip
+        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'start_port']
+
+
     

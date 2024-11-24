@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'django_filters',
     'cruise_management',
 ]
 
@@ -96,7 +97,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': 'localhost',  # Use 'localhost' if the database is on your local machine
-        'PORT': '3307',  # Default MySQL port
+        'PORT': '3306',  # Default MySQL port
     }
 }
 
@@ -159,7 +160,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
