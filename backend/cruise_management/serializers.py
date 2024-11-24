@@ -1,7 +1,7 @@
 import re
-from rest_framework import serializers
+from rest_framework import serializers 
 from django.contrib.auth.models import User
-from .models import MmsTrip, MmsPortStop, MmsPort, MmsRestaurant, MmsTripActivity, MmsTripRestaurant, MmsActivity
+from .models import MmsTrip, MmsPort, MmsRestaurant, MmsActivity
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -46,6 +46,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if not re.search(r"\d", value):
             raise serializers.ValidationError("Password must contain at least one digit.")
         
+        # The line `if not re.search(r"[A-Z]", value):` is checking if the provided `value` (in this
+        # case, a password) contains at least one uppercase letter (character from A to Z).
         if not re.search(r"[A-Z]", value):
             raise serializers.ValidationError("Password must contain at least one uppercase letter.")
         
@@ -210,9 +212,151 @@ class MmsTripDetailSerializer(MmsTripListSerializer):
                 "activity_type":activity.activityid.activitytype if activity.activitytype else None,
                 "capacity":activity.activityid.capacity if activity.capacity else None
             }
-            for acitivty in activities
+            for activity in activities
         ]
     
+class MmsPortAddUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MmsPort
+        fields = ['portid', 'portname', 'address', 'portcity', 'portstate', 'portcountry', 'nearestairport', 'parkingspots']
+        
+    def validate_portname(self, value):
+        """
+        Validate that the port name is unique.
+        """
+        if MmsPort.objects.filter(portname__iexact=value).exists():
+            raise serializers.ValidationError("A port with this name already exists.")
+        return value
 
+    def validate(self, attrs):
+        """
+        Custom validation logic for the port.
+        """
+        if (
+            not attrs.get('portname') 
+            or not attrs.get('portid') 
+            or not attrs.get('portcity') 
+            or not attrs.get('portcountry')
+            or not attrs.get('address')
+            or not attrs.get('portstate')
+            or not attrs.get('nearestairport')
+            or not attrs.get('parkingspots')
+        ):
+            raise serializers.ValidationError("All port details are required.")
+        return attrs
 
+    def create(self, validated_data):
+        """
+        Create a new port using the validated data.
+        """
+        return MmsPort.objects.create(**validated_data)
     
+    def update(self, instance, validated_data):
+        
+        instance.portname = validated_data.get('portname', instance.portname)
+        instance.portcity = validated_data.get('portcity', instance.portcity)
+        instance.portcountry = validated_data.get('portcountry', instance.portcountry)
+        instance.address = validated_data.get('address', instance.address)
+        instance.portstate = validated_data.get('portstate', instance.portstate)
+        instance.nearestairport = validated_data.get('nearestairport', instance.nearestairport)
+        instance.parkingspots = validated_data.get('parkingspots', instance.parkingspots)
+        
+        instance.save()
+        return instance
+    
+class MmsRestaurantAddUpdateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = MmsRestaurant
+        fields = ['restaurantid', 'restaurantname', 'floornumber', 'openingtime', 'closingtime', 'servesbreakfast',
+                  'serveslunch', 'servesdinner', 'servesalcohol']
+        
+    def validate_floornumber(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Floor number cannot be negative.")
+        return value
+
+    def validate(self, data):
+        openingtime = data.get('openingtime')
+        closingtime = data.get('closingtime')
+
+        # Validate openingtime exists
+        if not openingtime:
+            raise serializers.ValidationError("Opening time is required.")
+        
+        # Handle optional closingtime
+        if closingtime:
+            if openingtime >= closingtime:
+                raise serializers.ValidationError(
+                    "Opening time must be earlier than closing time unless the restaurant operates 24 hours."
+                )
+        
+        # Check at least one meal service
+        if not any([data.get('servesbreakfast'), data.get('serveslunch'), data.get('servesdinner')]):
+            raise serializers.ValidationError("At least one meal service (breakfast, lunch, or dinner) must be provided.")
+        
+        return data
+
+    def create(self, validated_data):
+        return MmsRestaurant.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        
+        instance.restaurantname = validated_data.get('restaurantname', instance.restaurantname)
+        instance.floornumber = validated_data.get('floornumber', instance.floornumber)
+        instance.openingtime = validated_data.get('openingtime', instance.openingtime)
+        instance.closingtime = validated_data.get('closingtime', instance.closingtime)
+        instance.servesbreakfast = validated_data.get('servesbreakfast', instance.servesbreakfast)
+        instance.serveslunch = validated_data.get('serveslunch', instance.serveslunch)
+        instance.servesdinner = validated_data.get('servesdinner', instance.servesdinner)
+        instance.servesalcohol = validated_data.get('servesalcohol', instance.servesalcohol)
+        
+        instance.save()
+           
+class MmsActivityAddUpdateSerializer(serializers.ModelSerializer):
+   
+    class Meta:
+        model = MmsActivity
+        fields = ['activityid', 'activitytype', 'activityname', 'floor', 'capacity']
+        
+    def validate_activitytype(self, value):
+        valid_types = ['sports', 'entertainment', 'educational']
+        if value not in valid_types:
+            raise serializers.ValidationError("Invalid activity type.")
+        return value
+
+    def validate_activityname(self, value):
+        if len(value) > 100:
+            raise serializers.ValidationError("Activity name is too long.")
+        return value
+
+    def validate_floor(self, value):
+        if value < 0 or value > 20:
+            raise serializers.ValidationError("Floor must be between 0 and 10.")
+        return value
+
+    def validate_capacity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Capacity must be a positive number.")
+        if value > 1000:
+            raise serializers.ValidationError("Capacity cannot exceed 1000.")
+        return value
+
+    def validate(self, data):
+        if data['activitytype'] == 'sports' and data['capacity'] > 500:
+            raise serializers.ValidationError("Sports activities cannot have a capacity greater than 500.")
+        return data
+
+    def create(self, validated_data):
+        return MmsActivity.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        
+        instance.activityname = validated_data.get('activityname', instance.activityname)
+        instance.activitytype = validated_data.get('activitytype', instance.activitytype)
+        instance.floor = validated_data.get('floor', instance.floor)
+        instance.capacity = validated_data.get('capacity', instance.capacity)
+        instance.save()
+        
+        return instance
+          

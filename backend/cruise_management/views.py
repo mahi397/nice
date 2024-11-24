@@ -1,17 +1,13 @@
-from .models import MmsTrip
-from rest_framework import status
-from .filters import CruiseFilter
-from rest_framework import mixins
-from rest_framework import generics
 from django.core.mail import send_mail
+from . permissions import IsAdminOrStaff
 from rest_framework.views import APIView
+from . import models, filters, serializers
 from django.contrib.auth.models import User
 from rest_framework.response import Response
+from rest_framework import mixins, generics, status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer, MmsTripListSerializer, MmsTripDetailSerializer
-
 
 class UserRegistrationView(generics.CreateAPIView):
     """
@@ -21,7 +17,7 @@ class UserRegistrationView(generics.CreateAPIView):
     """
         
     queryset = User.objects.all()
-    serializer_class = UserRegistrationSerializer
+    serializer_class = serializers.UserRegistrationSerializer
     permission_classes = [AllowAny]
     
     def perform_create(self, serializer):
@@ -42,7 +38,7 @@ class LoginView(TokenObtainPairView):
     Custom Token Obtain View to handle login and issue JWT tokens.
     Uses the CustomTokenObtainPairSerializer to validate and generate tokens.
     """
-    serializer_class = CustomTokenObtainPairSerializer
+    serializer_class = serializers.CustomTokenObtainPairSerializer
     
 class LogoutView(APIView):    
     """
@@ -92,16 +88,16 @@ class LogoutView(APIView):
 '''
 
 class MmsTripListView(generics.GenericAPIView, mixins.ListModelMixin):
-    queryset = MmsTrip.objects.all()
-    serializer_class = MmsTripListSerializer
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripListSerializer
     permission_classes = [AllowAny]
-    filter_class = CruiseFilter
+    filter_class = filters.CruiseFilter
 
     def get_queryset(self):
         user = self.request.user
         if user.is_staff or user.is_superuser:
-            return MmsTrip.objects.all()
-        return MmsTrip.objects.filter(tripstatus__iexact='upcoming')
+            return models.MmsTrip.objects.all()
+        return models.MmsTrip.objects.filter(tripstatus__iexact='upcoming')
 
     def get(self, request, *args, **kwargs):
         # Apply filters dynamically
@@ -110,10 +106,43 @@ class MmsTripListView(generics.GenericAPIView, mixins.ListModelMixin):
         return self.list(request, *args, **kwargs)
     
 class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
-    queryset = MmsTrip.objects.all()
-    serializer_class = MmsTripDetailSerializer
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripDetailSerializer
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+class MmsPortCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    queryset = models.MmsPort.objects.all()
+    serializer_class = serializers.MmsPortAddUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    
+    def post(self, request, *args, **kwargs):
+        return self.create(request=request, *args, **kwargs)
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
+    
+class MmsRestaurantCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    queryset = models.MmsRestaurant.objects.all()
+    serializer_class = serializers.MmsRestaurantAddUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    
+    def post(self, request, *args, **kwargs):
+        return self.create(request=request, *args, **kwargs)
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
+    
+class MmsActivityCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    queryset = models.MmsActivity.objects.all()
+    serializer_class = serializers.MmsActivityAddUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    
+    def post(self, request, *args, **kwargs):
+        return self.create(request=request, *args, **kwargs)
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
     

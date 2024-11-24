@@ -275,12 +275,12 @@ class MmsRestaurant(models.Model):
     restaurantid = models.SmallIntegerField(primary_key=True, db_comment='Unique identifier for each restaurant')
     restaurantname = models.CharField(max_length=50, db_comment='Name of the resturant')
     floornumber = models.SmallIntegerField(db_comment='Floor where the restaurant is located in the ship')
-    openingtime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the restaurant opens')
-    closingtime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the restaurant closes')
+    openingtime = models.TimeField(blank=True, null=True, db_comment='Time at which the restaurant opens')
+    closingtime = models.TimeField(blank=True, null=True, db_comment='Time at which the restaurant closes')
     servesbreakfast = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves breakfast or not. For e.g., 'Y' for yes and 'N' for no")
     serveslunch = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves lunch or not. For e.g., 'Y' for yes and 'N' for no")
     servesdinner = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves dinner or not. For e.g., 'Y' for yes and 'N' for no")
-    servesalcohol = models.CharField(max_length=1, blank=True, null=True, db_comment="Value to specify if the restaurant serves alcohol or not. For e.g., 'Y' for yes and 'N' for no")
+    servesalcohol = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves alcohol or not. For e.g., 'Y' for yes and 'N' for no")
 
     class Meta:
         managed = False

@@ -51,4 +51,10 @@ urlpatterns = [
     path('logout/', views.LogoutView.as_view(), name = 'token_blacklist'),
     path('trips/',views.MmsTripListView.as_view(),name = 'trip_list_view'),
     path('trips/<int:pk>/', views.MmsTripDetailView.as_view(), name='trip-detail'),
+    path('add-port/', views.MmsPortCreateUpdateView.as_view(), name='add-port'),
+    path('add-port/<int:pk>/', views.MmsPortCreateUpdateView.as_view(), name='add-port'),
+    path('add-restaurant/', views.MmsRestaurantCreateUpdateView.as_view(), name='add-restuarant'),
+    path('add-restaurant/<int:pk>/', views.MmsRestaurantCreateUpdateView.as_view(), name='update-restuarant'),
+    path('add-activity/', views.MmsActivityCreateUpdateView.as_view(), name='add-activity'),
+    path('add-activity/<int:pk>/', views.MmsActivityCreateUpdateView.as_view(), name='update-activity'),
 ]
