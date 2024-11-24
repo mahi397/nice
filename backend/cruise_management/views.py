@@ -1,16 +1,16 @@
 from .models import MmsTrip
-from django.utils.timezone import now
 from rest_framework import status
 from .filters import CruiseFilter
+from rest_framework import mixins
 from rest_framework import generics
 from django.core.mail import send_mail
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer, MmsTripSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer, MmsTripListSerializer, MmsTripDetailSerializer
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -66,7 +66,7 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
-class MmsTripListAPIView(APIView):
+'''class MmsTripListAPIView(APIView):
     permission_classes = [AllowAny]  # Or more specific permissions for passenger, staff, and admin
 
     def get(self, request, *args, **kwargs):
@@ -86,6 +86,34 @@ class MmsTripListAPIView(APIView):
         filtered_queryset = CruiseFilter(request.GET, queryset=queryset).qs
         
         # Serialize the filtered queryset
-        serializer = MmsTripSerializer(filtered_queryset, many=True)
+        serializer = MmsTripListSerializer(filtered_queryset, many=True)
         
         return Response(serializer.data)
+'''
+
+class MmsTripListView(generics.GenericAPIView, mixins.ListModelMixin):
+    queryset = MmsTrip.objects.all()
+    serializer_class = MmsTripListSerializer
+    permission_classes = [AllowAny]
+    filter_class = CruiseFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return MmsTrip.objects.all()
+        return MmsTrip.objects.filter(tripstatus__iexact='upcoming')
+
+    def get(self, request, *args, **kwargs):
+        # Apply filters dynamically
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+        # Serialize data
+        return self.list(request, *args, **kwargs)
+    
+class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
+    queryset = MmsTrip.objects.all()
+    serializer_class = MmsTripDetailSerializer
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+    

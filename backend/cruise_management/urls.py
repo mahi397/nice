@@ -49,5 +49,6 @@ urlpatterns = [
     path('login/', views.LoginView.as_view(), name='token_obtain_pair'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', views.LogoutView.as_view(), name = 'token_blacklist'),
-    path('home/',views.MmsTripListAPIView.as_view(),name = 'home_view'),
+    path('trips/',views.MmsTripListView.as_view(),name = 'trip_list_view'),
+    path('trips/<int:pk>/', views.MmsTripDetailView.as_view(), name='trip-detail'),
 ]

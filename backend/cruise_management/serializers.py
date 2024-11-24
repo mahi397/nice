@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import MmsTrip, MmsPortStop, MmsPort
+from .models import MmsTrip, MmsPortStop, MmsPort, MmsRestaurant, MmsTripActivity, MmsTripRestaurant, MmsActivity
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -91,13 +91,128 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         return data
     
-class MmsTripSerializer(serializers.ModelSerializer):
+class MmsTripListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
-    start_port = serializers.CharField(source='mmsportstop_set.filter(isstartport="Y").first().portid.portname', read_only=True)
+    port_stops = serializers.SerializerMethodField()
+    start_port = serializers.SerializerMethodField()
+    end_port = serializers.SerializerMethodField()
 
     class Meta:
         model = MmsTrip
-        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'start_port']
+        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'start_port', 'end_port', 'port_stops']
+    
+    def get_port_stops(self, obj):
+        """
+        Fetch all port stops with their details and order them.
+        """
+        port_stops = obj.mmsportstop_set.all().order_by('orderofstop')
+        return [
+            {
+                "port_name": stop.portid.portname if stop.portid else None,
+                "city": stop.portid.portcity if stop.portid else None,
+                "country": stop.portid.portcountry if stop.portid else None,
+                "order_of_stop": stop.orderofstop,
+                "is_start_port": stop.isstartport == "Y",
+                "is_end_port": stop.isendport == "Y",
+            }
+            for stop in port_stops
+        ]
+
+    def get_start_port(self, obj):
+        """
+        Extract the start port from the list of port stops.
+        """
+        port_stops = self.get_port_stops(obj)  # Use the pre-fetched port stops
+        start_port = next((stop for stop in port_stops if stop['is_start_port']), None)
+        return start_port['port_name'] if start_port else None
+
+    def get_end_port(self, obj):
+        """
+        Extract the end port from the list of port stops.
+        """
+        port_stops = self.get_port_stops(obj)  # Use the pre-fetched port stops
+        end_port = next((stop for stop in port_stops if stop['is_end_port']), None)
+        return end_port['port_name'] if end_port else None
+             
+class MmsTripDetailSerializer(MmsTripListSerializer):
+    # Nested serializer for related start port (via MmsPortStop and MmsPort)
+    # Additional fields
+    trip_description = serializers.CharField(source='description', read_only=True)
+    cancellation_policy = serializers.CharField(source='cancellationpolicy', read_only=True)
+    #ship_details = serializers.SerializerMethodField()
+    additional_fees = serializers.DecimalField(source='additionalfees', max_digits=10, decimal_places=2, read_only=True)
+    port_times = serializers.SerializerMethodField()
+    restaurants = serializers.SerializerMethodField()
+    activities = serializers.SerializerMethodField()
+
+    class Meta(MmsTripListSerializer.Meta):
+        fields = MmsTripListSerializer.Meta.fields + [
+            'trip_description', 
+            'cancellation_policy',  
+            'additional_fees', 
+            'port_stops',
+            'port_times',
+            'restaurants',
+            'activities'
+        ]
+
+    '''def get_ship_details(self, obj):
+        """
+        Fetch details about the ship associated with the trip.
+        """
+        ship = obj.ship
+        return {
+            "name": ship.name,
+            "capacity": ship.capacity,
+            "crew_count": ship.crew_count,
+        } if ship else None'''
+        
+    def get_port_times(self, obj):
+        """
+        Get arrival and departure times for each port in the trip.
+        """
+        port_times = []
+
+        # Iterate over all port stops for the trip
+        for port_stop in obj.mmsportstop_set.all().order_by('orderofstop'):
+            # Retrieve port information
+            port = port_stop.portid  
+            
+            # Prepare the port time data
+            port_time_data = {
+                "port_name": port.portname,  
+                "arrival_time": port_stop.arrivaltime,  
+                "departure_time": port_stop.departuretime,  
+            }
+            # Add the port time data to the list
+            port_times.append(port_time_data)
+
+        return port_times if port_times else None
+    
+    def get_restaurants(self, obj):
+        restaurants = obj.mmstriprestaurant_set.all()
+        return [
+            {
+                "restaurant_name": restaurant.restaurantid.restaurantname if restaurant.restaurantid else None,
+                "breakfast": restaurant.restaurantid.servesbreakfast if restaurant.servesbreakfast else None,
+                "lunch": restaurant.restaurantid.serveslunch if restaurant.serveslunch else None,
+                "dinner": restaurant.restaurantid.servesdinner if restaurant.servesdinner else None,
+                "alcohol": restaurant.restaurantid.servesalcohol if restaurant.servesalcohol else None
+            }
+            for restaurant in restaurants
+        ]
+        
+    def get_activities(self, obj):
+        activities = obj.mmstripactivity_set.all()
+        return [
+            {
+                "activity_name":activity.activityid.activityname if activity.activityid else None,
+                "activity_type":activity.activityid.activitytype if activity.activitytype else None,
+                "capacity":activity.activityid.capacity if activity.capacity else None
+            }
+            for acitivty in activities
+        ]
+    
 
 
     
