@@ -1,0 +1,26 @@
+Customer        Web App           Database            Payment Gateway         Email Service
+    |                      |                    |                        |                     |
+    |----> Register ------->|                    |                        |                     |
+    |                      |-------> Save User Details ----->|                     |                     |
+    |                      |<------- Redirect to Login -------|                     |                     |
+    |----> Login ---------->|                    |                        |                     |
+    |                      |<------- Authenticate ------->|                     |                     |
+    |                      |<-------- Redirect to Dashboard ---|                     |                     |
+    |----> Browse Trips ---->|                    |-----> Get Cruise Details ------->|                     |
+    |                      |<-------- Display Available Trips ----|                     |                     |
+    |----> Select Trip ---->|                    |-----> Get Selected Trip Details ------>|                     |
+    |                      |<-------- Display Trip Details ------|                     |                     |
+    |----> Add Passengers -->|                    |-----> Store Passenger Details ----->|                     |
+    |                      |<-------- Update Trip ------>|                     |                     |
+    |----> Choose Packages -->|                    |-----> Update Packages ------->|                     |
+    |                      |<-------- Display Summary ------>|                     |                     |
+    |----> Confirm Booking -->|                    |-----> Process Payment ------->|                     |
+    |                      |----> Submit Payment --->|-------> Confirm Payment --->|                     |
+    |                      |<--------- Confirm Booking ------->|<------------------|                     |
+    |                      |-------> Send Confirmation Email ------>|                    |
+    |                      |<-------- Display Confirmation ------->|                     |
+    |                      |                    |                        |                     |
+    |----> View/Modify Bookings ---->|              |-----> Get Booking Details ---->|                     |
+    |                      |<-------- Display Bookings ------>|                     |                     |
+    |----> Cancel Booking -->|                    |-----> Update Cancellation ---->|                     |
+    |                      |<-------- Send Cancellation Email ---->|                     |
