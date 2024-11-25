@@ -1,42 +1,115 @@
-#root {
-  max-width: 1280px;
+/* src/App.css */
+
+/* Reset default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* App Container */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Header */
+.header {
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* width: 90%; */
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #434344;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.nav-links {
+  display: flex;
+  gap: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.nav-link {
+  text-decoration: none;
+  font-size: 1.1rem;
+  color: #333;
+  transition: color 0.3s;
 }
 
-.card {
-  padding: 2em;
+.nav-link:hover {
+  color: #c3c6c8;
 }
 
-.read-the-docs {
-  color: #888;
+.login-link {
+  background-color: #40403f;
+  padding: 8px 16px;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+}
+
+.login-link:hover {
+  background-color: #515150;
+}
+
+/* Hero Section */
+.hero {
+  background-color: #f8e8dd;
+  color: rgb(31, 91, 221);
+  text-align: center;
+  padding: 60px 0;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.hero-content p {
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+}
+
+.cta-button {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  color: #0077b6;
+  background-color: #f1c40f;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cta-button:hover {
+  background-color: #e67e22;
+}
+
+/* Footer */
+.footer {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
 }
