@@ -1,13 +1,13 @@
--- MySQL dump 10.13  Distrib 8.4.3, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.40, for macos14 (arm64)
 --
--- Host: localhost    Database: nice
+-- Host: 127.0.0.1    Database: nice
 -- ------------------------------------------------------
--- Server version	8.4.3
+-- Server version	8.0.40
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8mb4 */;
+/*!50503 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -18,9 +18,7 @@
 --
 -- Table structure for table `auth_group`
 --
-create database nice;
 
-use nice;
 DROP TABLE IF EXISTS `auth_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -31,6 +29,15 @@ CREATE TABLE `auth_group` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `auth_group`
+--
+
+LOCK TABLES `auth_group` WRITE;
+/*!40000 ALTER TABLE `auth_group` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auth_group` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `auth_group_permissions`
@@ -52,6 +59,15 @@ CREATE TABLE `auth_group_permissions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `auth_group_permissions`
+--
+
+LOCK TABLES `auth_group_permissions` WRITE;
+/*!40000 ALTER TABLE `auth_group_permissions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auth_group_permissions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `auth_permission`
 --
 
@@ -68,6 +84,15 @@ CREATE TABLE `auth_permission` (
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=161 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `auth_permission`
+--
+
+LOCK TABLES `auth_permission` WRITE;
+/*!40000 ALTER TABLE `auth_permission` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auth_permission` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `auth_user`
@@ -94,6 +119,15 @@ CREATE TABLE `auth_user` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `auth_user`
+--
+
+LOCK TABLES `auth_user` WRITE;
+/*!40000 ALTER TABLE `auth_user` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auth_user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `auth_user_groups`
 --
 
@@ -113,6 +147,15 @@ CREATE TABLE `auth_user_groups` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `auth_user_groups`
+--
+
+LOCK TABLES `auth_user_groups` WRITE;
+/*!40000 ALTER TABLE `auth_user_groups` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auth_user_groups` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `auth_user_user_permissions`
 --
 
@@ -130,6 +173,15 @@ CREATE TABLE `auth_user_user_permissions` (
   CONSTRAINT `auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `auth_user_user_permissions`
+--
+
+LOCK TABLES `auth_user_user_permissions` WRITE;
+/*!40000 ALTER TABLE `auth_user_user_permissions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auth_user_user_permissions` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `django_admin_log`
@@ -157,6 +209,15 @@ CREATE TABLE `django_admin_log` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `django_admin_log`
+--
+
+LOCK TABLES `django_admin_log` WRITE;
+/*!40000 ALTER TABLE `django_admin_log` DISABLE KEYS */;
+/*!40000 ALTER TABLE `django_admin_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `django_content_type`
 --
 
@@ -171,6 +232,15 @@ CREATE TABLE `django_content_type` (
   UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
 ) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `django_content_type`
+--
+
+LOCK TABLES `django_content_type` WRITE;
+/*!40000 ALTER TABLE `django_content_type` DISABLE KEYS */;
+/*!40000 ALTER TABLE `django_content_type` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `django_migrations`
@@ -189,6 +259,15 @@ CREATE TABLE `django_migrations` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `django_migrations`
+--
+
+LOCK TABLES `django_migrations` WRITE;
+/*!40000 ALTER TABLE `django_migrations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `django_migrations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `django_session`
 --
 
@@ -205,6 +284,15 @@ CREATE TABLE `django_session` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `django_session`
+--
+
+LOCK TABLES `django_session` WRITE;
+/*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
+/*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_activity`
 --
 
@@ -212,14 +300,24 @@ DROP TABLE IF EXISTS `mms_activity`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_activity` (
-  `activityid` smallint NOT NULL COMMENT 'Unique identifier for every entertainment and activity',
+  `activityid` smallint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for every entertainment and activity',
   `activitytype` varchar(30) NOT NULL COMMENT 'Type of the activity',
   `activityname` varchar(50) NOT NULL COMMENT 'Name of the activity	',
+  `activity_description` varchar(45) NOT NULL COMMENT 'Description of the activity on board the ship.',
   `floor` smallint NOT NULL COMMENT 'Floor at which the activity or entertainment is located',
   `capacity` int NOT NULL COMMENT 'Capacity of the activity/ entertainment',
   PRIMARY KEY (`activityid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_activity`
+--
+
+LOCK TABLES `mms_activity` WRITE;
+/*!40000 ALTER TABLE `mms_activity` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_activity` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_activity_psngr`
@@ -241,6 +339,15 @@ CREATE TABLE `mms_activity_psngr` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_activity_psngr`
+--
+
+LOCK TABLES `mms_activity_psngr` WRITE;
+/*!40000 ALTER TABLE `mms_activity_psngr` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_activity_psngr` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_booking`
 --
 
@@ -248,7 +355,7 @@ DROP TABLE IF EXISTS `mms_booking`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_booking` (
-  `bookingid` bigint NOT NULL COMMENT 'Unique identifier for every booking',
+  `bookingid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for every booking',
   `bookingdate` datetime NOT NULL COMMENT 'Date when the booking was made. Important for scheduling and availability tracking.',
   `bookingstatus` varchar(20) NOT NULL COMMENT 'Status of the booking, e.g., "Confirmed," "Pending," "Canceled." Assists with management tracking.',
   `estimatedcost` decimal(8,2) NOT NULL COMMENT 'Estimated cost for the trip including base cost, room price and package price exclusing tax and other add ons',
@@ -266,6 +373,15 @@ CREATE TABLE `mms_booking` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_booking`
+--
+
+LOCK TABLES `mms_booking` WRITE;
+/*!40000 ALTER TABLE `mms_booking` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_booking` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_group`
 --
 
@@ -273,11 +389,20 @@ DROP TABLE IF EXISTS `mms_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_group` (
-  `groupid` bigint NOT NULL COMMENT 'Unqiue identifier for every group',
+  `groupid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unqiue identifier for every group',
   `groupname` varchar(50) NOT NULL COMMENT 'Name of the group',
   PRIMARY KEY (`groupid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_group`
+--
+
+LOCK TABLES `mms_group` WRITE;
+/*!40000 ALTER TABLE `mms_group` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_group` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_invoice`
@@ -287,7 +412,7 @@ DROP TABLE IF EXISTS `mms_invoice`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_invoice` (
-  `invoiceid` bigint NOT NULL COMMENT 'Primary key for the invoice.',
+  `invoiceid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary key for the invoice.',
   `invoicedate` datetime NOT NULL COMMENT 'Date when the invoice was generated. Important for tracking billing and payment cycles.',
   `totalamount` decimal(8,2) NOT NULL COMMENT 'Total amount billed on the invoice ',
   `paymentstatus` varchar(20) NOT NULL COMMENT 'Indicates whether the invoice is "Paid," "Unpaid," or "Overdue." Tracks financial status.',
@@ -300,6 +425,15 @@ CREATE TABLE `mms_invoice` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_invoice`
+--
+
+LOCK TABLES `mms_invoice` WRITE;
+/*!40000 ALTER TABLE `mms_invoice` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_invoice` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_package`
 --
 
@@ -307,13 +441,22 @@ DROP TABLE IF EXISTS `mms_package`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_package` (
-  `packageid` smallint NOT NULL COMMENT 'Unique identifier for every package',
+  `packageid` smallint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for every package',
   `packagename` varchar(30) NOT NULL COMMENT 'Name of the packages offered on the trip',
   `base_price` decimal(5,2) NOT NULL COMMENT 'Price of the package per person per night',
   `packagedetails` varchar(255) NOT NULL COMMENT 'Details of the package',
   PRIMARY KEY (`packageid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_package`
+--
+
+LOCK TABLES `mms_package` WRITE;
+/*!40000 ALTER TABLE `mms_package` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_package` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_passenger`
@@ -323,7 +466,7 @@ DROP TABLE IF EXISTS `mms_passenger`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_passenger` (
-  `passengerid` bigint NOT NULL COMMENT 'Unique identifier for each passenger',
+  `passengerid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for each passenger',
   `firstname` varchar(50) NOT NULL COMMENT 'Stores the passenger''s first name',
   `lastname` varchar(50) NOT NULL COMMENT 'Stores the passenger''s last name',
   `dateofbirth` datetime NOT NULL COMMENT 'Hold''s the passenger''s birth date',
@@ -347,6 +490,15 @@ CREATE TABLE `mms_passenger` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_passenger`
+--
+
+LOCK TABLES `mms_passenger` WRITE;
+/*!40000 ALTER TABLE `mms_passenger` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_passenger` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_payment_detail`
 --
 
@@ -354,7 +506,7 @@ DROP TABLE IF EXISTS `mms_payment_detail`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_payment_detail` (
-  `paymentid` bigint NOT NULL COMMENT 'Primary key for each payment record.',
+  `paymentid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary key for each payment record.',
   `paymentdate` datetime NOT NULL COMMENT 'Date when the payment was made. Important for financial records.',
   `paymentamount` decimal(6,2) NOT NULL COMMENT 'Amount paid during the transaction. Helps track partial or full payments.',
   `paymentmethod` varchar(20) NOT NULL COMMENT 'Method of payment (e.g., "Credit Card," "Bank Transfer," "Cash"). Provides context for processing.',
@@ -365,6 +517,15 @@ CREATE TABLE `mms_payment_detail` (
   CONSTRAINT `mms_payment_mms_invoice_fk` FOREIGN KEY (`invoiceid`) REFERENCES `mms_invoice` (`invoiceid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_payment_detail`
+--
+
+LOCK TABLES `mms_payment_detail` WRITE;
+/*!40000 ALTER TABLE `mms_payment_detail` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_payment_detail` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_port`
@@ -387,6 +548,15 @@ CREATE TABLE `mms_port` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_port`
+--
+
+LOCK TABLES `mms_port` WRITE;
+/*!40000 ALTER TABLE `mms_port` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_port` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_port_stop`
 --
 
@@ -394,13 +564,12 @@ DROP TABLE IF EXISTS `mms_port_stop`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_port_stop` (
-  `itineraryid` bigint NOT NULL COMMENT 'Unique identifier for every port stop of a trip',
+  `itineraryid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for every port stop of a trip',
   `portid` int NOT NULL COMMENT 'Primary key for the port entity. Unique identifier for each port.',
   `tripid` bigint NOT NULL COMMENT 'Primary key for each trip. Unique identifier for each trip entry.',
-  `arrivaltime` datetime NOT NULL COMMENT 'Time at which the ship arrives at the port',
-  `departuretime` datetime NOT NULL COMMENT 'Time of departure from the port',
+  `arrivaltime` datetime DEFAULT NULL COMMENT 'Time at which the ship arrives at the port',
+  `departuretime` datetime DEFAULT NULL COMMENT 'Time of departure from the port',
   `orderofstop` smallint NOT NULL COMMENT 'The order in which the ship stops at each port',
-  `porttime` time DEFAULT NULL COMMENT 'Time at the port',
   `isstartport` char(1) NOT NULL COMMENT 'Indicates if the port is starting point of the trip',
   `isendport` char(1) NOT NULL COMMENT 'Indicates if the port is ending point of the trip',
   PRIMARY KEY (`itineraryid`),
@@ -412,6 +581,15 @@ CREATE TABLE `mms_port_stop` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_port_stop`
+--
+
+LOCK TABLES `mms_port_stop` WRITE;
+/*!40000 ALTER TABLE `mms_port_stop` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_port_stop` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_psngr_package`
 --
 
@@ -419,7 +597,7 @@ DROP TABLE IF EXISTS `mms_psngr_package`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_psngr_package` (
-  `purchaseid` bigint NOT NULL COMMENT 'Unique identifier for every package purchased by the passenger',
+  `purchaseid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for every package purchased by the passenger',
   `packageid` smallint NOT NULL COMMENT 'Unique identifier for every package',
   `passengerid` bigint DEFAULT NULL COMMENT 'Unique identifier for each passenger',
   `sale_price` decimal(6,2) NOT NULL COMMENT 'The actual price paid by the passenger for the package at the time of booking. \nThis price may differ from the base price in the mms_package table due to discounts, promotions, or special offers applied at the time of purchase.\n ',
@@ -430,6 +608,15 @@ CREATE TABLE `mms_psngr_package` (
   CONSTRAINT `mms_psngr_mms_package_fk` FOREIGN KEY (`packageid`) REFERENCES `mms_package` (`packageid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_psngr_package`
+--
+
+LOCK TABLES `mms_psngr_package` WRITE;
+/*!40000 ALTER TABLE `mms_psngr_package` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_psngr_package` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_restaurant`
@@ -448,9 +635,19 @@ CREATE TABLE `mms_restaurant` (
   `serveslunch` char(1) NOT NULL COMMENT 'Value to specify if the restaurant serves lunch or not. For e.g., ''Y'' for yes and ''N'' for no',
   `servesdinner` char(1) NOT NULL COMMENT 'Value to specify if the restaurant serves dinner or not. For e.g., ''Y'' for yes and ''N'' for no',
   `servesalcohol` char(1) NOT NULL COMMENT 'Value to specify if the restaurant serves alcohol or not. For e.g., ''Y'' for yes and ''N'' for no',
+  `resturant_description` varchar(45) NOT NULL COMMENT 'Description of the cuisine served with the restaurant.',
   PRIMARY KEY (`restaurantid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_restaurant`
+--
+
+LOCK TABLES `mms_restaurant` WRITE;
+/*!40000 ALTER TABLE `mms_restaurant` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_restaurant` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_restaurant_psngr`
@@ -460,7 +657,7 @@ DROP TABLE IF EXISTS `mms_restaurant_psngr`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_restaurant_psngr` (
-  `restreservationid` bigint NOT NULL COMMENT 'Unique ID for every restaurant reservation',
+  `restreservationid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unique ID for every restaurant reservation',
   `restaurantid` smallint NOT NULL COMMENT 'Unique identifier for each restaurant',
   `passengerid` bigint DEFAULT NULL COMMENT 'Unique identifier for each passenger',
   PRIMARY KEY (`restreservationid`),
@@ -470,6 +667,15 @@ CREATE TABLE `mms_restaurant_psngr` (
   CONSTRAINT `mms_restaurant_mms_psngr_fk` FOREIGN KEY (`passengerid`) REFERENCES `mms_passenger` (`passengerid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_restaurant_psngr`
+--
+
+LOCK TABLES `mms_restaurant_psngr` WRITE;
+/*!40000 ALTER TABLE `mms_restaurant_psngr` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_restaurant_psngr` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_room`
@@ -493,6 +699,15 @@ CREATE TABLE `mms_room` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_room`
+--
+
+LOCK TABLES `mms_room` WRITE;
+/*!40000 ALTER TABLE `mms_room` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_room` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_room_loc`
 --
 
@@ -505,6 +720,15 @@ CREATE TABLE `mms_room_loc` (
   PRIMARY KEY (`locid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_room_loc`
+--
+
+LOCK TABLES `mms_room_loc` WRITE;
+/*!40000 ALTER TABLE `mms_room_loc` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_room_loc` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_room_type`
@@ -525,6 +749,15 @@ CREATE TABLE `mms_room_type` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_room_type`
+--
+
+LOCK TABLES `mms_room_type` WRITE;
+/*!40000 ALTER TABLE `mms_room_type` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_room_type` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_trip`
 --
 
@@ -532,15 +765,28 @@ DROP TABLE IF EXISTS `mms_trip`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_trip` (
-  `tripid` bigint NOT NULL COMMENT 'Primary key for each trip. Unique identifier for each trip entry.',
+  `tripid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary key for each trip. Unique identifier for each trip entry.',
   `tripname` varchar(50) NOT NULL COMMENT 'Descriptive name of the trip.',
   `startdate` datetime NOT NULL COMMENT 'The date when the trip begins. Ensures accurate tracking of trip schedules.',
   `enddate` datetime NOT NULL COMMENT 'The date when the trip ends. Helps define the trip duration.',
   `tripcostperperson` decimal(8,2) NOT NULL COMMENT 'Cost per person for the trip, including taxes. Supports budgeting and billing.',
   `tripstatus` varchar(20) NOT NULL COMMENT 'Status of the trip (e.g., upcoming, ongoing, completed).',
+  `trip_cancellation` varchar(10) NOT NULL COMMENT 'Trip cancellation status ‘canceled’.',
+  `trip_capacity` int NOT NULL COMMENT 'Total passenger capacity for the cruise liner.',
+  `trip_description` text NOT NULL COMMENT 'Description of the trip booked.',
+  `final_booking` date NOT NULL,
   PRIMARY KEY (`tripid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_trip`
+--
+
+LOCK TABLES `mms_trip` WRITE;
+/*!40000 ALTER TABLE `mms_trip` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_trip` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_trip_activity`
@@ -550,7 +796,7 @@ DROP TABLE IF EXISTS `mms_trip_activity`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_trip_activity` (
-  `tripactivityid` int NOT NULL COMMENT 'A unique identifier for each record in the trip_activity junction table. This serves as the primary key and distinguishes each trip-activity relationship.',
+  `tripactivityid` int NOT NULL AUTO_INCREMENT COMMENT 'A unique identifier for each record in the trip_activity junction table. This serves as the primary key and distinguishes each trip-activity relationship.',
   `tripid` bigint NOT NULL,
   `activityid` smallint NOT NULL COMMENT 'Unique identifier for every entertainment and activity',
   PRIMARY KEY (`tripactivityid`),
@@ -562,6 +808,15 @@ CREATE TABLE `mms_trip_activity` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_trip_activity`
+--
+
+LOCK TABLES `mms_trip_activity` WRITE;
+/*!40000 ALTER TABLE `mms_trip_activity` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_trip_activity` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `mms_trip_restaurant`
 --
 
@@ -569,7 +824,7 @@ DROP TABLE IF EXISTS `mms_trip_restaurant`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_trip_restaurant` (
-  `restauranttripid` int NOT NULL COMMENT 'A unique identifier for each record in the trip_restaurant junction table. This serves as the primary key and uniquely identifies the relationship between a trip and a restaurant.',
+  `restauranttripid` int NOT NULL AUTO_INCREMENT COMMENT 'A unique identifier for each record in the trip_restaurant junction table. This serves as the primary key and uniquely identifies the relationship between a trip and a restaurant.',
   `tripid` bigint NOT NULL COMMENT 'Primary key for each trip. Unique identifier for each trip entry.',
   `restaurantid` smallint NOT NULL COMMENT 'Unique identifier for each restaurant',
   PRIMARY KEY (`restauranttripid`),
@@ -579,6 +834,15 @@ CREATE TABLE `mms_trip_restaurant` (
   CONSTRAINT `mms_trip_mms_restaurant_fk` FOREIGN KEY (`restaurantid`) REFERENCES `mms_restaurant` (`restaurantid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mms_trip_restaurant`
+--
+
+LOCK TABLES `mms_trip_restaurant` WRITE;
+/*!40000 ALTER TABLE `mms_trip_restaurant` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_trip_restaurant` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `mms_trip_room`
@@ -601,6 +865,15 @@ CREATE TABLE `mms_trip_room` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `mms_trip_room`
+--
+
+LOCK TABLES `mms_trip_room` WRITE;
+/*!40000 ALTER TABLE `mms_trip_room` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mms_trip_room` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `token_blacklist_blacklistedtoken`
 --
 
@@ -616,6 +889,15 @@ CREATE TABLE `token_blacklist_blacklistedtoken` (
   CONSTRAINT `token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `token_blacklist_blacklistedtoken`
+--
+
+LOCK TABLES `token_blacklist_blacklistedtoken` WRITE;
+/*!40000 ALTER TABLE `token_blacklist_blacklistedtoken` DISABLE KEYS */;
+/*!40000 ALTER TABLE `token_blacklist_blacklistedtoken` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `token_blacklist_outstandingtoken`
@@ -637,6 +919,15 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
   CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_auth_user` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `token_blacklist_outstandingtoken`
+--
+
+LOCK TABLES `token_blacklist_outstandingtoken` WRITE;
+/*!40000 ALTER TABLE `token_blacklist_outstandingtoken` DISABLE KEYS */;
+/*!40000 ALTER TABLE `token_blacklist_outstandingtoken` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -647,4 +938,4 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-25 19:17:41
+-- Dump completed on 2024-11-25 21:32:30
