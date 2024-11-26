@@ -5,12 +5,9 @@
 
 
 
-CREATE USER nice IDENTIFIED BY nice
-    ACCOUNT UNLOCK;
+CREATE DATABASE test;
 
--- predefined type, no DDL - MDSYS.SDO_GEOMETRY
-
--- predefined type, no DDL - XMLTYPE
+use test;
 
 CREATE SEQUENCE auth_group_permissions_seq START WITH 1 INCREMENT BY 1;
 

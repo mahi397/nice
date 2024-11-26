@@ -145,4 +145,25 @@ class MmsActivityCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMix
     
     def put(self, request, *args, **kwargs):
         return self.update(request=request, *args, **kwargs)
-    
+
+class MmsTripAddUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripAddUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]  # Ensure staff or superuser permission is enforced
+    lookup_field = 'tripid'
+
+    def post(self, request, *args, **kwargs):
+        """Handle trip creation."""
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        """Handle trip update."""
+        # Ensure the trip exists using tripid from the URL kwargs
+        tripid = kwargs.get('tripid')
+        try:
+            trip_instance = self.get_object()  # This will automatically get the object based on tripid from the URL
+        except models.MmsTrip.DoesNotExist:
+            return Response({"detail": "Trip not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Proceed to update the trip with the serializer
+        return self.update(request, *args, **kwargs)

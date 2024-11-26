@@ -1,7 +1,8 @@
 import re
+from django.db import transaction
 from rest_framework import serializers 
 from django.contrib.auth.models import User
-from .models import MmsTrip, MmsPort, MmsRestaurant, MmsActivity
+from .models import MmsTrip, MmsPort, MmsRestaurant, MmsActivity, MmsPortStop
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -253,14 +254,8 @@ class MmsPortAddUpdateSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         
-        instance.portname = validated_data.get('portname', instance.portname)
-        instance.portcity = validated_data.get('portcity', instance.portcity)
-        instance.portcountry = validated_data.get('portcountry', instance.portcountry)
-        instance.address = validated_data.get('address', instance.address)
-        instance.portstate = validated_data.get('portstate', instance.portstate)
-        instance.nearestairport = validated_data.get('nearestairport', instance.nearestairport)
-        instance.parkingspots = validated_data.get('parkingspots', instance.parkingspots)
-        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
         return instance
     
@@ -302,16 +297,10 @@ class MmsRestaurantAddUpdateSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         
-        instance.restaurantname = validated_data.get('restaurantname', instance.restaurantname)
-        instance.floornumber = validated_data.get('floornumber', instance.floornumber)
-        instance.openingtime = validated_data.get('openingtime', instance.openingtime)
-        instance.closingtime = validated_data.get('closingtime', instance.closingtime)
-        instance.servesbreakfast = validated_data.get('servesbreakfast', instance.servesbreakfast)
-        instance.serveslunch = validated_data.get('serveslunch', instance.serveslunch)
-        instance.servesdinner = validated_data.get('servesdinner', instance.servesdinner)
-        instance.servesalcohol = validated_data.get('servesalcohol', instance.servesalcohol)
-        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
+        return instance
            
 class MmsActivityAddUpdateSerializer(serializers.ModelSerializer):
    
@@ -357,6 +346,101 @@ class MmsActivityAddUpdateSerializer(serializers.ModelSerializer):
         instance.floor = validated_data.get('floor', instance.floor)
         instance.capacity = validated_data.get('capacity', instance.capacity)
         instance.save()
-        
         return instance
-          
+    
+class MmsPortStopAddUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MmsPortStop
+        fields = ['itineraryid','portid', 'arrivaltime', 'departuretime', 'orderofstop', 'isstartport', 'isendport']
+    
+    def validate(self, data):
+        # Ensure `isstartport` and `isendport` are valid
+        if data.get('isstartport') not in ['Y', 'N']:
+            raise serializers.ValidationError("isstartport must be 'Y' or 'N'.")
+        if data.get('isendport') not in ['Y', 'N']:
+            raise serializers.ValidationError("isendport must be 'Y' or 'N'.")
+
+        # Ensure arrival time is before departure time
+        if data['arrivaltime'] >= data['departuretime']:
+            raise serializers.ValidationError("Arrival time must be before departure time.")
+        return data 
+
+class MmsTripAddUpdateSerializer(serializers.ModelSerializer):
+    
+    portstops = MmsPortStopAddUpdateSerializer(many=True)
+                                                   
+    class Meta:
+        model = MmsTrip
+        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'portstops']
+
+    def validate(self, data):
+        # Validate trip dates
+        if data['startdate'] >= data['enddate']:
+            raise serializers.ValidationError("Start date must be before end date.")
+
+        # Validate port stops
+        portstops = data.get('portstops', [])
+        start_ports = sum(1 for ps in portstops if ps.get('isstartport') == 'Y')
+        end_ports = sum(1 for ps in portstops if ps.get('isendport') == 'Y')
+        print(start_ports, end_ports)
+        
+        # Ensure at least one start port and one end port are provided
+        if start_ports < 1:
+            raise serializers.ValidationError("At least one port stop must be marked as the start port.")
+        if end_ports < 1:
+            raise serializers.ValidationError("At least one port stop must be marked as the end port.")
+        if start_ports > 1:
+            raise serializers.ValidationError("Exactly one port stop must be marked as the start port.")
+        if end_ports > 1:
+            raise serializers.ValidationError("Exactly one port stop must be marked as the end port.")
+        return data
+
+    def create(self, validated_data):
+        # Extract port stops data
+        portstops_data = validated_data.pop('portstops', [])
+
+        # Create trip instance
+        trip = MmsTrip.objects.create(**validated_data)
+
+        # Create port stops
+        for portstop_data in portstops_data:
+            MmsPortStop.objects.create(tripid=trip, **portstop_data)
+
+        return trip
+    
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        portstops_data = validated_data.pop('portstops', [])
+        # Handle port stops
+        existing_portstops = {ps.itineraryid: ps for ps in instance.portstops.all()}
+        updated_portstops = []
+        for portstop_data in portstops_data:
+            itinerary_id = portstop_data.get('itineraryid')
+            
+            if itinerary_id:
+                # Find the existing port stop by itinerary_id
+                portstop = existing_portstops.get(itinerary_id)
+                if portstop:
+                    # Update existing port stop fields (i.e., access portstop, not the trip instance)
+                    portstop.portid = portstop_data.get('portid', portstop.portid)
+                    portstop.arrivaltime = portstop_data.get('arrivaltime', portstop.arrivaltime)
+                    portstop.departuretime = portstop_data.get('departuretime', portstop.departuretime)
+                    portstop.orderofstop = portstop_data.get('orderofstop', portstop.orderofstop)
+                    portstop.porttime = portstop_data.get('porttime', portstop.porttime)
+                    portstop.isstartport = portstop_data.get('isstartport', portstop.isstartport)
+                    portstop.isendport = portstop_data.get('isendport', portstop.isendport)
+                    portstop.save()  # Save the updated port stop
+            else:
+                # If no itinerary_id, create a new port stop
+                portstop = instance.portstops.create(**portstop_data)
+
+                updated_portstops.append(portstop.itineraryid)
+
+            # Remove any port stops that weren't in the update data
+            instance.portstops.exclude(itineraryid__in=updated_portstops).delete()
+        
+        # Update the trip fields (non-portstop related fields)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
