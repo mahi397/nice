@@ -1,15 +1,18 @@
+from . import models
+from django.db import transaction
+from . import filters, serializers
 from django.core.mail import send_mail
 from . permissions import IsAdminOrStaff
 from rest_framework.views import APIView
-from . import models, filters, serializers
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from rest_framework import mixins, generics, status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-class UserRegistrationView(generics.CreateAPIView):
+class UserCreateView(generics.CreateAPIView):
     """
     User Registration View that handles the creation of a new user.
     - Validates input using UserRegistrationSerializer.
@@ -17,7 +20,7 @@ class UserRegistrationView(generics.CreateAPIView):
     """
         
     queryset = User.objects.all()
-    serializer_class = serializers.UserRegistrationSerializer
+    serializer_class = serializers.UserCreateSerializer
     permission_classes = [AllowAny]
     
     def perform_create(self, serializer):
@@ -32,13 +35,54 @@ class UserRegistrationView(generics.CreateAPIView):
             recipient_list=[user.email],
             fail_silently=True,
         )
+    
+class UserUpdateView(generics.GenericAPIView, mixins.UpdateModelMixin):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = "id"
+    
+    def partial_update(self, request, *args, **kwargs):
+        # Extract `portid` from URL
+        userid = kwargs.get('id')
+
+        # Validate the `userid` in the request body (if provided)
+        if 'userid' in request.data and str(request.data['userid']) != str(userid):
+            return Response(
+                {"detail": "User ID in the request body does not match the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Call the parent class update method
+        return super().partial_update(request, *args, **kwargs)
+    
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request=request, *args, **kwargs)
+    
+class UserDeleteView(mixins.DestroyModelMixin, generics.GenericAPIView):
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        # Optional: Validate username and password before deletion
+        username = request.user.username  # The current authenticated user
+        password = request.data.get("password")
+
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({"detail": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return self.destroy(request, *args, **kwargs)
 
 class LoginView(TokenObtainPairView):
     """
     Custom Token Obtain View to handle login and issue JWT tokens.
     Uses the CustomTokenObtainPairSerializer to validate and generate tokens.
     """
-    serializer_class = serializers.CustomTokenObtainPairSerializer
+    serializer_class = serializers.LoginSerializer
     
 class LogoutView(APIView):    
     """
@@ -88,7 +132,7 @@ class LogoutView(APIView):
 '''
 
 class MmsTripListView(generics.GenericAPIView, mixins.ListModelMixin):
-    queryset = models.MmsTrip.objects.all()
+    queryset = models.MmsTrip.objects.prefetch_related('portstops')
     serializer_class = serializers.MmsTripListSerializer
     permission_classes = [AllowAny]
     filter_class = filters.CruiseFilter
@@ -115,8 +159,23 @@ class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
 
 class MmsPortCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsPort.objects.all()
-    serializer_class = serializers.MmsPortAddUpdateSerializer
+    serializer_class = serializers.MmsPortCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    lookup_field = 'portid'  # Use URL to identify the resource
+    
+    def update(self, request, *args, **kwargs):
+        # Extract `portid` from URL
+        portid = kwargs.get('portid')
+
+        # Validate the `portid` in the request body (if provided)
+        if 'portid' in request.data and str(request.data['portid']) != str(portid):
+            return Response(
+                {"detail": "Port ID in the request body does not match the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Call the parent class update method
+        return super().update(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
@@ -126,8 +185,22 @@ class MmsPortCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, 
     
 class MmsRestaurantCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsRestaurant.objects.all()
-    serializer_class = serializers.MmsRestaurantAddUpdateSerializer
+    serializer_class = serializers.MmsRestaurantCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    lookup_field = 'restaurantid'  # Use URL to identify the resource
+    
+    def update(self, request, *args, **kwargs):
+        # Extract `portid` from URL
+        restaurantid = kwargs.get('restaurantid')
+
+        # Validate the `portid` in the request body (if provided)
+        if 'restaurantid' in request.data and str(request.data['restaurantid']) != str(restaurantid):
+            return Response(
+                {"detail": "Restaurant ID in the request body does not match the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Call the parent class update method
+        return super().update(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
@@ -137,15 +210,29 @@ class MmsRestaurantCreateUpdateView(generics.GenericAPIView, mixins.CreateModelM
     
 class MmsActivityCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsActivity.objects.all()
-    serializer_class = serializers.MmsActivityAddUpdateSerializer
+    serializer_class = serializers.MmsActivityCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    lookup_field = 'activityid'  # Use URL to identify the resource
+    
+    def update(self, request, *args, **kwargs):
+        # Extract `portid` from URL
+        activityid = kwargs.get('activityid')
+
+        # Validate the `portid` in the request body (if provided)
+        if 'activityid' in request.data and str(request.data['activityid']) != str(activityid):
+            return Response(
+                {"detail": "Restaurant ID in the request body does not match the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Call the parent class update method
+        return super().update(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
     def put(self, request, *args, **kwargs):
         return self.update(request=request, *args, **kwargs)
-
+'''
 class MmsTripAddUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsTrip.objects.all()
     serializer_class = serializers.MmsTripAddUpdateSerializer
@@ -167,3 +254,92 @@ class MmsTripAddUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mix
 
         # Proceed to update the trip with the serializer
         return self.update(request, *args, **kwargs)
+        '''
+
+class  MmsPortStopCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    queryset = models.MmsPortStop.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    serializer_class = serializers.MmsPortStopCreateUpdateSerializer
+    lookup_field = 'itineraryid'
+    
+    def update(self, request, *args, **kwargs):
+        # Extract `itineraryid` from URL
+        itineraryid = kwargs.get('itineraryid')
+
+        # Validate the `tripid` in the request body (if provided)
+        if 'itineraryid' in request.data and str(request.data['itineraryid']) != str(itineraryid):
+            return Response(
+                {"detail": "itinerary ID in the request body does not match the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Call the parent class update method
+        return super().update(request, *args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handles creating multiple port stops.
+        The request should send a list of port stops (many=True).
+        """
+        # Initialize serializer with many=True to handle list of port stops
+        serializer = self.get_serializer(data=request.data, many=True)
+        
+        # Validate the data
+        serializer.is_valid(raise_exception=True)
+        
+        # Use the mixin's create method to save the data
+        self.perform_create(serializer)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def put(self, request, *args, **kwargs):
+        """
+        Handles updating multiple port stops.
+        The request should send a list of port stops (many=True).
+        """
+        # Initialize serializer with many=True to handle list of port stops
+        serializer = self.get_serializer(data=request.data, many=True)
+        
+        # Validate the data
+        serializer.is_valid(raise_exception=True)
+        
+        # Use the mixin's update method to save the data
+        self.perform_update(serializer)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def perform_create(self, serializer):
+        """
+        Override this method to use the mixin's create functionality
+        """
+        serializer.save()
+
+    def perform_update(self, serializer):
+        """
+        Override this method to use the mixin's update functionality
+        """
+        serializer.save()  
+      
+class MmsTripCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    queryset = models.MmsTrip.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    serializer_class = serializers.MmsTripCreateUpdateSerializer
+    lookup_field = 'tripid'  # Use URL to identify the resource
+    
+    def update(self, request, *args, **kwargs):
+        # Extract `tripid` from URL
+        tripid = kwargs.get('tripid')
+
+        # Validate the `tripid` in the request body (if provided)
+        if 'tripid' in request.data and str(request.data['tripid']) != str(tripid):
+            return Response(
+                {"detail": "trip ID in the request body does not match the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Call the parent class update method
+        return super().update(request, *args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        return self.create(request=request, *args, **kwargs)
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
