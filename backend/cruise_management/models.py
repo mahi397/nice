@@ -245,12 +245,11 @@ class MmsPort(models.Model):
 
 class MmsPortStop(models.Model):
     itinerary_id = models.BigIntegerField(primary_key=True, db_comment='Unique identifier for every port stop of a trip')
-    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.')
-    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
+    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.', related_name='portstop')
+    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.', related_name='portstop')
     arrivaltime = models.DateTimeField(db_comment='Time at which the ship arrives at the port')
     departuretime = models.DateTimeField(db_comment='Time of departure from the port')
     orderofstop = models.SmallIntegerField(db_comment='The order in which the ship stops at each port')
-    porttime = models.DateTimeField(db_comment='Time at the port')
     isstartport = models.CharField(max_length=1, db_comment='Indicates if the port is starting point of the trip')
     isendport = models.CharField(max_length=1, db_comment='Indicates if the port is ending point of the trip')
 
@@ -274,8 +273,8 @@ class MmsRestaurant(models.Model):
     restaurantid = models.SmallIntegerField(primary_key=True, db_comment='Unique identifier for each restaurant')
     restaurantname = models.CharField(max_length=50, db_comment='Name of the resturant')
     floornumber = models.SmallIntegerField(db_comment='Floor where the restaurant is located in the ship')
-    openingtime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the restaurant opens')
-    closingtime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the restaurant closes')
+    openingtime = models.TimeField(blank=True, null=True, db_comment='Time at which the restaurant opens')
+    closingtime = models.TimeField(blank=True, null=True, db_comment='Time at which the restaurant closes')
     servesbreakfast = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves breakfast or not. For e.g., 'Y' for yes and 'N' for no")
     serveslunch = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves lunch or not. For e.g., 'Y' for yes and 'N' for no")
     servesdinner = models.CharField(max_length=1, db_comment="Value to specify if the restaurant serves dinner or not. For e.g., 'Y' for yes and 'N' for no")
@@ -302,7 +301,7 @@ class MmsRoom(models.Model):
     roombaseprice = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Price of the room per night')
     stateroomtypeid = models.ForeignKey('MmsRoomType', models.DO_NOTHING, db_column='stateroomtypeid', db_comment='Unique identifier of room type')
     locid = models.ForeignKey('MmsRoomLoc', models.DO_NOTHING, db_column='locid')
-    bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid', db_comment='Unique identifier for every booking')
+    
 
     class Meta:
         managed = False
