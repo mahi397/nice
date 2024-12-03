@@ -1,0 +1,45 @@
+/* Basic styling for the overview page */
+.overview-container {
+    padding: 20px;
+  }
+  
+  .overview-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+  }
+  
+  .stat-card {
+    width: 30%;
+    padding: 20px;
+    background-color: #c6c6c6;
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-card h3 {
+    margin-bottom: 10px;
+  }
+  
+  .charts-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+  }
+  
+  .chart {
+    width: 30%;
+  }
+
+  .recent-activities table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .recent-activities th, .recent-activities td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
