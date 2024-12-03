@@ -1,72 +1,110 @@
 import re
+from tarfile import data_filter
 from wsgiref.util import request_uri
 from . import models
 from datetime import date
 from django.db import transaction
 from rest_framework import serializers 
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
 
 
 # Admin related features
+
+class AdminLoginSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        identifier = attrs.get('username')  # Can be email or username
+        password = attrs.get('password')
+
+        user = None
+
+        # Check if the identifier is an email
+        if re.match(r"[^@]+@[^@]+\.[^@]+", identifier):
+            try:
+                # Fetch user by email
+                user = User.objects.get(email=identifier)
+            except User.DoesNotExist:
+                raise AuthenticationFailed('No account found with that email.')
+        else:
+            try:
+                # Fetch user by username
+                user = User.objects.get(username=identifier)
+            except User.DoesNotExist:
+                raise AuthenticationFailed('No account found with that username.')
+
+        # Restrict access to only staff and admin accounts
+        if not user.is_staff and not user.is_superuser:
+            raise AuthenticationFailed('Only staff and admin accounts are allowed to log in.')
+
+        # Authenticate user explicitly using username and password
+        user = authenticate(username=user.username, password=password)
+        if not user:
+            raise AuthenticationFailed('Invalid credentials.')
+
+        # Call the parent method to generate tokens
+        data = super().validate({"username": user.username, "password": password})
+
+        # Add custom claims
+        data['username'] = user.username
+        data['email'] = user.email
+        if user.is_staff:
+            data['is_staff'] = user.is_staff
+        else:
+            data['is_superuser'] = user.is_superuser
+
+        return data
+
 class MmsPortSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MmsPort
-        fields = ['portid', 'portname', 'address', 'portcity', 'portstate', 'portcountry', 'nearestairport', 'parkingspots']
-
-    def validate_portid(self, value):
-        # Ensure portid is a positive integer
-        if value <= 0:
-            raise ValidationError("Port ID must be a positive integer.")
-        # Ensure the portid is unique
-        port_id = self.instance.portid if self.instance else None
-        if models.MmsPort.objects.filter(portid=value).exclude(portid=port_id).exists():
-            raise ValidationError(f"A port with portid {value} already exists.")
-        return value
-
-    def validate_portname(self, value):
+        fields = ['portname', 'address', 'portcity', 'portstate', 'portcountry', 'nearestairport', 'parkingspots']
+        
+    def validate_portname(self, data):
         # Ensure portname is a non-empty string
-        if not value or value.strip() == "":
+        if not data or data.strip() == "":
             raise ValidationError("Port name cannot be empty.")
-        return value
+        if models.MmsPort.objects.filter(portname=data).exists():
+            raise ValidationError(f"A port with name {data} already exists.")
+        return data
 
-    def validate_address(self, value):
+    def validate_address(self, data):
         # Ensure address is a non-empty string
-        if not value or value.strip() == "":
+        if not data or data.strip() == "":
             raise ValidationError("Address cannot be empty.")
-        return value
+        return data
 
-    def validate_portcity(self, value):
+    def validate_portcity(self, data):
         # Ensure portcity is a valid string
-        if not value or value.strip() == "":
+        if not data or data.strip() == "":
             raise ValidationError("Port city cannot be empty.")
-        return value
+        return data
 
-    def validate_portstate(self, value):
+    def validate_portstate(self, data):
         # Ensure portstate is a valid string
-        if not value or value.strip() == "":
+        if not data or data.strip() == "":
             raise ValidationError("Port state cannot be empty.")
-        return value
+        return data
 
-    def validate_portcountry(self, value):
+    def validate_portcountry(self, data):
         # Ensure portcountry is a valid country
-        if not value or value.strip() == "":
+        if not data or data.strip() == "":
             raise ValidationError("Port country cannot be empty.")
         # Optional: Add a check to validate the country, e.g., check against a list of countries
-        return value
+        return data
 
-    def validate_nearestairport(self, value):
+    def validate_nearestairport(self, data):
         # Ensure nearestairport is a valid string (if applicable, you could check if the airport exists in a database)
-        if not value or value.strip() == "":
+        if not data or data.strip() == "":
             raise ValidationError("Nearest airport cannot be empty.")
-        return value
+        return data
 
-    def validate_parkingspots(self, value):
+    def validate_parkingspots(self, data):
         # Ensure parkingspots is a non-negative integer
-        if value < 0:
+        if data < 0:
             raise ValidationError("Parking spots must be a non-negative integer.")
-        return value
+        return data
 
     def validate(self, attrs):
         """
@@ -74,7 +112,6 @@ class MmsPortSerializer(serializers.ModelSerializer):
         """
         if (
             not attrs.get('portname') 
-            or not attrs.get('portid') 
             or not attrs.get('portcity') 
             or not attrs.get('portcountry')
             or not attrs.get('address')
@@ -93,14 +130,11 @@ class MmsPortSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         
-        validated_data.pop('portid', None)  # Remove the portid field if it exists
-        
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
-        
-      
+                   
 class MmsPortListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
 
@@ -112,25 +146,36 @@ class MmsRestaurantCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.MmsRestaurant
-        fields = ['restaurantid', 'restaurantname', 'floornumber', 'openingtime', 'closingtime', 'servesbreakfast',
-                  'serveslunch', 'servesdinner', 'servesalcohol']
+        fields = ['restaurantname', 'floornumber', 'openingtime', 'closingtime', 'servesbreakfast',
+                  'serveslunch', 'servesdinner', 'servesalcohol', 'restaurant_description']
     
-    def validate_restaurantid(self, data):
-        """
-        Validate that the itinerary ID is unique.
-        Allow the current object to keep the same itinerary ID during updates.
-        """
-        restaurant_id = self.instance.restaurantid if self.instance else None
-        if models.MmsRestaurant.objects.filter(restaurantid=data).exclude(restaurantid=restaurant_id).exists():
-            raise serializers.ValidationError("A restaurant with this restaurant ID already exists.")
-        
+    def validate_restaurantname(self, data):
+        # Ensure portname is a non-empty string
+        if not data or data.strip() == "":
+            raise ValidationError("Restaurant name cannot be empty.")
+        if models.MmsRestaurant.objects.filter(restaurantname=data).exclude(restaurantname=data).exists():
+            raise ValidationError(f"A restaurant with name {data} already exists.")
         return data
         
-    def validate_floornumber(self, value):
-        if value < 0:
+    def validate_floornumber(self, data):
+        if data < 0:
             raise serializers.ValidationError("Floor number cannot be negative.")
-        return value
+        return data
 
+    def validate_restaurant_description(self, data):
+        """
+        Validate restaurant description field.
+        """
+        # Ensure it's not empty
+        if not data.strip():
+            raise ValidationError("Description cannot be empty.")
+        
+        # Ensure it's not too long (max length 500 characters as an example)
+        if len(data) > 500:
+            raise ValidationError("Description cannot be longer than 500 characters.")
+        
+        return data
+    
     def validate(self, data):
         openingtime = data.get('openingtime')
         closingtime = data.get('closingtime')
@@ -153,18 +198,19 @@ class MmsRestaurantCreateUpdateSerializer(serializers.ModelSerializer):
         data.get('servesdinner') == 'Y'
         ]):
             raise serializers.ValidationError("At least one meal service (breakfast, lunch, or dinner) must be 'Y'.")
+        
+        
+        return data
 
-    '''def create(self, validated_data):
+    def create(self, validated_data):
         return models.MmsRestaurant.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
-        
-        validated_data.pop('restaurantid', None)  # Remove the portid field if it exists
-        
+            
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return instance'''
+        return instance
 
 class MmsRestaurantListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
@@ -896,7 +942,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         # Create the user profile if data is provided
         
         if profile_data:
-            models.MmsUserProfile.objects.create(user_id=user.pk, **profile_data)
+            models.MmsUserProfile.objects.create(userid=user.pk, **profile_data)
         
         # Save the user instance
         user.save()
@@ -918,7 +964,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         # Update profile fields if provided
         profile_data = validated_data.pop('profile', None)
         if profile_data:
-            profile_instance = models.MmsUserProfile.objects.get(user_id=instance.id)  
+            profile_instance = models.MmsUserProfile.objects.get(userid=instance.id)  
             profile_instance.phonenumber = profile_data.get('phonenumber', profile_instance.phonenumber)
             profile_instance.save()
 
@@ -940,7 +986,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
         return representation
 
-class LoginSerializer(TokenObtainPairSerializer):
+'''class LoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # Check if the username exists
         username = attrs.get('username')
@@ -965,6 +1011,45 @@ class LoginSerializer(TokenObtainPairSerializer):
         data['username'] = user.username
         data['email'] = user.email
         
+        return data'''
+
+class LoginSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        identifier = attrs.get('username')  # Can be email or username
+        password = attrs.get('password')
+
+        user = None
+
+        # Check if the identifier is an email
+        if re.match(r"[^@]+@[^@]+\.[^@]+", identifier):
+            try:
+                # Fetch user by email
+                user = User.objects.get(email=identifier)
+            except User.DoesNotExist:
+                raise AuthenticationFailed('No account found with that email.')
+        else:
+            try:
+                # Fetch user by username
+                user = User.objects.get(username=identifier)
+            except User.DoesNotExist:
+                raise AuthenticationFailed('No account found with that username.')
+        
+        # Restrict access to staff and admin accounts
+        if user.is_staff or user.is_superuser:
+            raise AuthenticationFailed('Only regular users are allowed to log in.')
+
+        # Authenticate user explicitly using username and password
+        user = authenticate(username=user.username, password=password)
+        if not user:
+            raise AuthenticationFailed('Invalid credentials.')
+
+        # Call the parent method to generate tokens
+        data = super().validate({"username": user.username, "password": password})
+
+        # Add custom claims
+        data['username'] = user.username
+        data['email'] = user.email
+
         return data
 
 class PasswordResetRequestSerializer(serializers.Serializer):

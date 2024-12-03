@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 from rest_framework import mixins, generics, status
 from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -40,32 +41,62 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
         
         return Response(serializer.data)
 '''
-    
+
+class AdminLoginView(TokenObtainPairView):
+    """
+    Custom Token Obtain View to handle login and issue JWT tokens.
+    Uses the CustomTokenObtainPairSerializer to validate and generate tokens.
+    """
+    serializer_class = serializers.AdminLoginSerializer
+
+class AdminLogoutView(APIView):
+    """
+    Logs out authenticated staff/admin users by blacklisting their refresh token.
+    """
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+
+    def post(self, request):
+        try:
+            # Extract the refresh token from the request data
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create a RefreshToken instance
+            token = RefreshToken(refresh_token)
+
+            # Blacklist the token to invalidate it
+            token.blacklist()
+
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+                
 class MmsPortCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsPort.objects.all()
     serializer_class = serializers.MmsPortSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'portid'  # Use URL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        portid = kwargs.get('portid')
-
-        # Validate the `portid` in the request body (if provided)
-        if 'portid' in request.data and str(request.data['portid']) != str(portid):
-            return Response(
-                {"detail": "port ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
+    def get_object(self):
+        """
+        Override the get_object method to check if the portid exists before proceeding with update.
+        """
+        portid = self.kwargs['portid']
+        
+        try:
+            # Retrieve the port object or raise a NotFound exception if it doesn't exist
+            return models.MmsPort.objects.get(portid=portid)
+        except models.MmsPort.DoesNotExist:
+            # Handle the case where the portid does not exist
+            raise NotFound(f"Port with {portid} not found.")
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
     def put(self, request, *args, **kwargs):
         return self.update(request=request, *args, **kwargs)
-    
+        
 class MmsPortListView(generics.ListAPIView):
     queryset = models.MmsPort.objects.all()
     serializer_class = serializers.MmsPortListSerializer
@@ -104,24 +135,24 @@ class MmsRestaurantCreateUpdateView(generics.GenericAPIView, mixins.CreateModelM
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'restaurantid'  # Use URportidL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        restaurantid = kwargs.get('restaurantid')
-
-        # Validate the `portid` in the request body (if provided)
-        if 'restaurantid' in request.data and str(request.data['restaurantid']) != str(restaurantid):
-            return Response(
-                {"detail": "Restaurant ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
+    def get_object(self):
+        """
+        Override the get_object method to check if the restaurantid exists before proceeding with update.
+        """
+        restaurantid = self.kwargs['restaurantid']
+        
+        try:
+            # Retrieve the port object or raise a NotFound exception if it doesn't exist
+            return models.MmsRestaurant.objects.get(restaurantid=restaurantid)
+        except models.MmsRestaurant.DoesNotExist:
+            # Handle the case where the portid does not exist
+            raise NotFound(f"Restaurant with ID {restaurantid} not found.")
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
 
 class MmsRestaurantListView(generics.ListAPIView):
     queryset = models.MmsRestaurant.objects.all()
@@ -447,8 +478,7 @@ class MmsPackageDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
             {"message": f"Package {instance.packagename} deleted successfully."},
             status=status.HTTP_200_OK
     )
-        
-          
+                  
 '''
 class MmsTripAddUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsTrip.objects.all()
@@ -472,7 +502,6 @@ class MmsTripAddUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mix
         # Proceed to update the trip with the serializer
         return self.update(request, *args, **kwargs)
         '''
-
         
 class  MmsPortStopCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsPortStop.objects.all()
