@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Register = () => {
   const navigate = useNavigate(); // Using useNavigate instead of useHistory
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirm_password, setconfirm_password] = useState("");
   const [email, setEmail] = useState("");
-  const [fName, setFName] = useState("");
-  const [lName, setLName] = useState("");
+  const [first_name, setfirst_name] = useState("");
+  const [last_name, setlast_name] = useState("");
   const [errors, setErrors] = useState([]);
 
   const handleSubmit = async (e) => {
@@ -21,15 +20,19 @@ const Register = () => {
     const validationErrors = [];
     if (username.length < 5)
       validationErrors.push("Username must be at least 5 characters long.");
+
     if (password.length < 8)
       validationErrors.push("Password must be at least 8 characters.");
+
     if (!/[A-Z]/.test(password))
       validationErrors.push(
         "Password must contain at least one uppercase letter."
       );
+
     if (!/[0-9]/.test(password))
       validationErrors.push("Password must contain at least one number.");
-    if (password !== confirmPassword)
+
+    if (password !== confirm_password)
       validationErrors.push("Passwords do not match.");
 
     if (validationErrors.length > 0) {
@@ -37,14 +40,21 @@ const Register = () => {
       return;
     }
 
-    // Send the registration request to the Django backend
+    // Send the registration request to the backend
     try {
-      const response = await axios.post("http://localhost:8000/api/register/", {
-        username,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:8000/nice/register/",
+        {
+          username,
+          email,
+          password,
+          confirm_password,
+          first_name,
+          last_name
+        }
+      );
       if (response.status === 201) {
-        navigate("/login"); // Use navigate instead of history.push
+        navigate("/nice/login"); // Use navigate instead of history.push
       }
     } catch (error) {
       setErrors([
@@ -54,7 +64,7 @@ const Register = () => {
   };
 
   return (
-    <div className="container">
+    <div className="form-container">
       <div className="wrapper">
         <h2>Register</h2>
         <form onSubmit={handleSubmit}>
@@ -70,16 +80,16 @@ const Register = () => {
             <label>First Name:</label>
             <input
               type="text"
-              value={fName}
-              onChange={(e) => setFName(e.target.value)}
+              value={first_name}
+              onChange={(e) => setfirst_name(e.target.value)}
             />
           </div>
           <div className="input-box">
             <label>Last Name:</label>
             <input
               type="text"
-              value={lName}
-              onChange={(e) => setLName(e.target.value)}
+              value={last_name}
+              onChange={(e) => setlast_name(e.target.value)}
             />
           </div>
           <div className="input-box">
@@ -90,7 +100,7 @@ const Register = () => {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          
+
           <div className="input-box">
             <label>Password:</label>
             <input
@@ -103,8 +113,8 @@ const Register = () => {
             <label>Confirm Password:</label>
             <input
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={confirm_password}
+              onChange={(e) => setconfirm_password(e.target.value)}
             />
           </div>
           <button type="submit">Register</button>
@@ -123,7 +133,7 @@ const Register = () => {
           Already registered?
           <br />
           <span className="line">
-            <Link to="/login">Sign In</Link>
+            <Link to="/nice/login">Sign In</Link>
           </span>
         </p>
       </div>

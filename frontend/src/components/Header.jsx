@@ -24,8 +24,8 @@ function Header() {
             <li>Contact</li>
         </ul>
         <button className='nav--button'>
-          <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
-            Sign In
+          <Link to="/nice/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+            Login/Register
           </Link>
         </button>
     </nav>
