@@ -18,7 +18,7 @@ const Profile = () => {
             }
 
             try {
-                const response = await axios.get('http://localhost:8000/api/profile/', {
+                const response = await axios.get('http://localhost:8000/nice/profile/', {
                     headers: {
                         Authorization: `Token ${token}`,
                     },
@@ -42,8 +42,11 @@ const Profile = () => {
             <div>
                 <h3>Contact Information</h3>
                 <p><strong>Username:</strong> {profile.username}</p>
+                {/* <p><strong>Username:</strong> mahi397</p> */}
                 <p><strong>Full Name:</strong> {profile.first_name} {profile.last_name}</p>
+                {/* <p><strong>Full Name:</strong> Mahima Sachdeva</p> */}
                 <p><strong>Email:</strong> {profile.email}</p>
+                {/* <p><strong>Email:</strong> ms15532@nyu.edu</p> */}
             </div>
             <div>
                 <h3>Your Trips</h3>

@@ -1,0 +1,53 @@
+/* src/App.css */
+.app {
+    display: flex;
+    height: 100%;
+    width: 100vw;
+  }
+  
+  .sidebar {
+    width: 250px;
+    background-color: black;
+    color: white;
+    padding-top: 20px;
+    position: fixed;
+    height: 100%;
+  }
+  
+  .sidebar-item {
+    padding: 15px;
+    cursor: pointer;
+  }
+  
+  .sidebar-item.active {
+    background-color: #1abc9c;
+  }
+  
+  .dashboard-content {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+    background-color: rgb(247, 247, 246);
+    color: black;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  table, th, td {
+    border: 1px solid #ddd;
+  }
+  
+  th, td {
+    padding: 8px;
+    text-align: left;
+  }
+  
+  button {
+    padding: 10px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  
