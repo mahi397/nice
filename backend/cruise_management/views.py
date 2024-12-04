@@ -1,4 +1,5 @@
 from . import models
+from django.http import Http404
 from django.db import transaction
 from . import filters, serializers
 from django.core.mail import send_mail
@@ -120,15 +121,23 @@ class MmsPortDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'portid'  # Use URL to identify the resource
     
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Port not found."})
+    
     def delete(self, request, *args, **kwargs):
+      
         instance = self.get_object()  # Retrieve the object to be deleted
         pid = instance.portname
         self.perform_destroy(instance)  # Perform the deletion
         return Response(
             {"message": f"{pid} deleted successfully from the database."},
             status=status.HTTP_200_OK
-    )
-        
+        )
+                   
 class MmsRestaurantCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsRestaurant.objects.all()
     serializer_class = serializers.MmsRestaurantCreateUpdateSerializer
@@ -177,13 +186,21 @@ class MmsRestaurantDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin)
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'restaurantid'  # Use URL to identify the resource
     
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Restaurant not found."})
+    
     def delete(self, request, *args, **kwargs):
+      
         instance = self.get_object()  # Retrieve the object to be deleted
         self.perform_destroy(instance)  # Perform the deletion
         return Response(
             {"message": f"Restaurant {instance.restaurantname} deleted successfully."},
             status=status.HTTP_200_OK
-    )
+        )
     
 class MmsActivityCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsActivity.objects.all()
@@ -191,24 +208,24 @@ class MmsActivityCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMix
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'activityid'  # Use URL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        activityid = kwargs.get('activityid')
-
-        # Validate the `portid` in the request body (if provided)
-        if 'activityid' in request.data and str(request.data['activityid']) != str(activityid):
-            return Response(
-                {"detail": "Restaurant ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
+    def get_object(self):
+        """
+        Override the get_object method to check if the restaurantid exists before proceeding with update.
+        """
+        activityid = self.kwargs['activityid']
+        
+        try:
+            # Retrieve the port object or raise a NotFound exception if it doesn't exist
+            return models.MmsActivity.objects.get(activityid=activityid)
+        except models.MmsActivity.DoesNotExist:
+            # Handle the case where the portid does not exist
+            raise NotFound(f"Activity with ID {activityid} not found.")
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
 
 class MmsActivityListView(generics.ListAPIView):
     queryset = models.MmsActivity.objects.all()
@@ -233,11 +250,19 @@ class MmsActivityDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'activityid'  # Use URL to identify the resource
     
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Activity not found."})
+    
     def delete(self, request, *args, **kwargs):
+
         instance = self.get_object()  # Retrieve the object to be deleted
         self.perform_destroy(instance)  # Perform the deletion
         return Response(
-            {"message": f"Restaurant {instance.activityname} deleted successfully."},
+            {"message": f"Activity {instance.activityname} deleted successfully."},
             status=status.HTTP_200_OK
     )
         
@@ -247,30 +272,30 @@ class MmsRoomLocCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixi
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'locid'  # Use URL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        locid = kwargs.get('locid')
-
-        # Validate the `portid` in the request body (if provided)
-        if 'locid' in request.data and str(request.data['locid']) != str(locid):
-            return Response(
-                {"detail": "loc ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
-    
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
 
 class MmsRoomLocListView(generics.GenericAPIView, mixins.ListModelMixin):
     queryset = models.MmsRoomLoc.objects.all()
     serializer_class = serializers.MmsRoomLocListSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
 
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            return Response(
+                {"message": "No room locations found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+            
     def get(self, request, *args, **kwargs):
         return self.list(request=request, *args, **kwargs)   
     
@@ -279,6 +304,13 @@ class MmsRoomLocDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     serializer_class = serializers.MmsRoomLocCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'locid'  # Use URL to identify the resource
+    
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Room location not found."})
     
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()  # Retrieve the object to be deleted
@@ -317,6 +349,18 @@ class MmsRoomTypeListView(generics.GenericAPIView, mixins.ListModelMixin):
     queryset = models.MmsRoomType.objects.all()
     serializer_class = serializers.MmsRoomTypeListSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            return Response(
+                {"message": "No room types found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def get(self, request, *args, **kwargs):
         return self.list(request=request, *args, **kwargs)   

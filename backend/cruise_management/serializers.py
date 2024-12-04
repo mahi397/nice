@@ -223,20 +223,18 @@ class MmsActivityCreateUpdateSerializer(serializers.ModelSerializer):
    
     class Meta:
         model = models.MmsActivity
-        fields = ['activityid', 'activitytype', 'activityname', 'floor', 'capacity']
-       
-    def validate_activityid(self, data):
-        """
-        Validate that the itinerary ID is unique.
-        Allow the current object to keep the same itinerary ID during updates.
-        """
-        activity_id = self.instance.activityid if self.instance else None
-        if models.MmsActivity.objects.filter(activityid=data).exclude(activityid=activity_id).exists():
-            raise serializers.ValidationError("An activity with this activity ID already exists.")
+        fields = ['activitytype', 'activityname', 'activitydescription', 'floor', 'capacity']
         
-        if data <= 0:
-            raise serializers.ValidationError("Activity ID must be a positive number.")
+    def validate_activityname(self, data):
+        # Ensure portname is a non-empty string
+        if not data or data.strip() == "":
+            raise ValidationError("Activity name cannot be empty.")
         
+        if len(data) > 100:
+            raise serializers.ValidationError("Activity name cannot exceed 100 characters.")
+        
+        if models.MmsActivity.objects.filter(activityname=data).exists():
+            raise ValidationError(f"An activity with name {data} already exists.")
         return data
 
     def validate_activitytype(self, data):
@@ -244,14 +242,21 @@ class MmsActivityCreateUpdateSerializer(serializers.ModelSerializer):
         if data.lower() not in valid_types:
             raise serializers.ValidationError(f"Invalid activity type. Must be one of {valid_types}.")
         return data
-
-    def validate_activityname(self, data):
-        if not data.strip():
-            raise serializers.ValidationError("Activity name cannot be blank.")
-        if len(data) > 100:
-            raise serializers.ValidationError("Activity name cannot exceed 100 characters.")
+    
+    def validate_activitydescription(self, data):
+        # Ensure the description is not empty or just whitespace
+        if not data or data.strip() == "":
+            raise ValidationError("Activity description cannot be empty.")
+        
+        # Ensure the description does not exceed the maximum length
+        if len(data) > 300:
+            raise ValidationError("Activity description must not exceed 300 characters.")
+        
+        if not re.match(r'^[a-zA-Z0-9.,!? ]*$', data):
+            raise ValidationError("Activity description contains invalid characters.")
+        
         return data
-
+    
     def validate_floor(self, data):
         if data < 0:
             raise serializers.ValidationError("Floor number cannot be negative.")
@@ -275,17 +280,15 @@ class MmsActivityCreateUpdateSerializer(serializers.ModelSerializer):
         
         return data
     
-    '''def create(self, validated_data):
+    def create(self, validated_data):
         return models.MmsActivity.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
         
-        validated_data.pop('activityid', None)  # Remove the portid field if it exists
-        
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return instance'''
+        return instance
 
 class MmsActivityListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
@@ -298,18 +301,7 @@ class MmsRoomLocCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.MmsRoomLoc
-        fields = ['locid', 'location']
-    
-    def validate_locid(self, data):
-        """
-        Validate that the location ID is unique.
-        Allow the current object to keep the same location ID during updates.
-        """
-        loc_id = self.instance.locid if self.instance else None
-        if models.MmsRoomLoc.objects.filter(locid=data).exclude(locid=loc_id).exists():
-            raise serializers.ValidationError("A location with this location ID already exists.")
-        
-        return data
+        fields = ['location']
         
     def validate(self, data):
         location = data.get('location')
@@ -320,7 +312,7 @@ class MmsRoomLocCreateUpdateSerializer(serializers.ModelSerializer):
          
         return data
 
-    '''def create(self, validated_data):
+    def create(self, validated_data):
         return models.MmsRoomLoc.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
@@ -328,7 +320,7 @@ class MmsRoomLocCreateUpdateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return instance'''
+        return instance
 
 class MmsRoomLocListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
@@ -341,7 +333,7 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.MmsRoomType
-        fields = ['stateroomtypeid', 'stateroomtype', 'roomsize', 'numberofbeds', 'numberofbaths', 'numberofbalconies']
+        fields = ['stateroomtype', 'roomsize', 'numberofbeds', 'numberofbaths', 'numberofbalconies']
     
     def validate_stateroomtypeid(self, data):
         """
@@ -638,18 +630,7 @@ class MmsPackageListSerializer(serializers.ModelSerializer):
 class MmsPortStopCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MmsPortStop
-        fields = ['itineraryid','tripid', 'portid', 'arrivaltime', 'departuretime', 'orderofstop', 'isstartport', 'isendport']
-    
-    def validate_itineraryid(self, data):
-        """
-        Validate that the itinerary ID is unique.
-        Allow the current object to keep the same itinerary ID during updates.
-        """
-        current_itineraryid = self.instance.itineraryid if self.instance else None
-        if models.MmsPortStop.objects.filter(itineraryid=data).exclude(itineraryid=current_itineraryid).exists():
-            raise serializers.ValidationError("A port stop with this itinerary ID already exists.")
-        
-        return data
+        fields = ['arrivaltime', 'departuretime', 'orderofstop', 'isstartport', 'isendport']
     
     def validate(self, data):
         # Ensure `isstartport` and `isendport` are valid
@@ -701,10 +682,11 @@ class MmsPortStopCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 class MmsTripCreateUpdateSerializer(serializers.ModelSerializer):
+    
                                                        
     class Meta:
         model = models.MmsTrip
-        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'capacity']
+        fields = ['tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'capacity']
     
     def validate_tripid(self, data):
         trip_id = self.instance.tripid if self.instance else None
