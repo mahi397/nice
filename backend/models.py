@@ -296,7 +296,7 @@ class MmsRoom(models.Model):
 
 class MmsRoomLoc(models.Model):
     locid = models.SmallAutoField(primary_key=True, db_comment='Unique ID of the location\tin the ship')
-    location = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='Name of the location in the ship')
+    location = models.CharField(max_length=50, db_comment='Name of the location in the ship')
 
     class Meta:
         managed = False
@@ -305,12 +305,12 @@ class MmsRoomLoc(models.Model):
 
 class MmsRoomType(models.Model):
     stateroomtypeid = models.SmallAutoField(primary_key=True, db_comment='Unique identifier of room type')
-    stateroomtype = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Name of the stateroom type')
+    stateroomtype = models.CharField(max_length=20, db_comment='Name of the stateroom type')
     roomsize = models.BigIntegerField(db_comment='Size of the stateroom in SQFT')
     numberofbeds = models.SmallIntegerField(db_comment='Number of beds in the room')
     numberofbaths = models.DecimalField(max_digits=2, decimal_places=1, db_comment='Number of the bathrooms in the stateroom')
     numberofbalconies = models.SmallIntegerField(db_comment='Number of balconies in the stateroom')
-    roomtypedescription = models.CharField(max_length=500, db_collation='utf8mb4_unicode_ci', db_comment='Description of the room type.')
+    roombaseprice = models.DecimalField(max_digits=6, decimal_places=2, db_comment='Price of the room type per night')
 
     class Meta:
         managed = False
