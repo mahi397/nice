@@ -241,25 +241,14 @@ class MmsPortStop(models.Model):
     tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
     arrivaltime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the ship arrives at the port')
     departuretime = models.DateTimeField(blank=True, null=True, db_comment='Time of departure from the port')
-    orderofstop = models.SmallIntegerField(db_comment='The order in which the ship stops at each port')
-    isstartport = models.CharField(max_length=1, db_collation='utf8mb4_unicode_ci', db_comment='Indicates if the port is starting point of the trip')
-    isendport = models.CharField(max_length=1, db_collation='utf8mb4_unicode_ci', db_comment='Indicates if the port is ending point of the trip')
+    orderofstop = models.IntegerField(db_comment='The order in which the ship stops at each port')
+    isstartport = models.IntegerField(db_comment='Indicates if the port is starting point of the trip')
+    isendport = models.IntegerField(db_comment='Indicates if the port is ending point of the trip')
     description = models.CharField(max_length=500)
 
     class Meta:
         managed = False
         db_table = 'mms_port_stop'
-
-
-class MmsPsngrPackage(models.Model):
-    purchaseid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every package purchased by the passenger')
-    packageid = models.ForeignKey(MmsPackage, models.DO_NOTHING, db_column='packageid', db_comment='Unique identifier for every package')
-    passengerid = models.ForeignKey(MmsPassenger, models.DO_NOTHING, db_column='passengerid', blank=True, null=True, db_comment='Unique identifier for each passenger')
-    sale_price = models.DecimalField(max_digits=6, decimal_places=2, db_comment='The actual price paid by the passenger for the package at the time of booking. \nThis price may differ from the base price in the mms_package table due to discounts, promotions, or special offers applied at the time of purchase.\n ')
-
-    class Meta:
-        managed = False
-        db_table = 'mms_psngr_package'
 
 
 class MmsRestaurant(models.Model):
@@ -280,14 +269,11 @@ class MmsRestaurant(models.Model):
 
 
 class MmsRoom(models.Model):
-    roomid = models.AutoField(primary_key=True, db_comment='Unique identifier for every room')
+    roomnumber = models.AutoField(primary_key=True)
     roomfloor = models.SmallIntegerField(db_comment='Floor number of the room')
+    price = models.DecimalField(max_digits=6, decimal_places=2)
     stateroomtypeid = models.ForeignKey('MmsRoomType', models.DO_NOTHING, db_column='stateroomtypeid', db_comment='Unique identifier of room type')
     locid = models.ForeignKey('MmsRoomLoc', models.DO_NOTHING, db_column='locid')
-    shipid = models.ForeignKey('MmsShip', models.DO_NOTHING, db_column='shipid')
-    availability = models.IntegerField()
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    roomnumber = models.IntegerField()
 
     class Meta:
         managed = False
@@ -295,7 +281,7 @@ class MmsRoom(models.Model):
 
 
 class MmsRoomLoc(models.Model):
-    locid = models.SmallIntegerField(primary_key=True, db_comment='Unique ID of the location\tin the ship')
+    locid = models.SmallAutoField(primary_key=True, db_comment='Unique ID of the location in the ship')
     location = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='Name of the location in the ship')
 
     class Meta:
@@ -304,12 +290,13 @@ class MmsRoomLoc(models.Model):
 
 
 class MmsRoomType(models.Model):
-    stateroomtypeid = models.SmallIntegerField(primary_key=True, db_comment='Unique identifier of room type')
+    stateroomtypeid = models.SmallAutoField(primary_key=True, db_comment='Unique identifier of room type')
     stateroomtype = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Name of the stateroom type')
     roomsize = models.BigIntegerField(db_comment='Size of the stateroom in SQFT')
     numberofbeds = models.SmallIntegerField(db_comment='Number of beds in the room')
     numberofbaths = models.DecimalField(max_digits=2, decimal_places=1, db_comment='Number of the bathrooms in the stateroom')
     numberofbalconies = models.SmallIntegerField(db_comment='Number of balconies in the stateroom')
+    roomtypedescription = models.CharField(max_length=500)
 
     class Meta:
         managed = False
@@ -345,17 +332,27 @@ class MmsShipRestaurant(models.Model):
         db_table = 'mms_ship_restaurant'
 
 
+class MmsShipRoom(models.Model):
+    roomid = models.AutoField(primary_key=True)
+    shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
+    roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
+
+    class Meta:
+        managed = False
+        db_table = 'mms_ship_room'
+
+
 class MmsTrip(models.Model):
     tripid = models.BigAutoField(primary_key=True, db_comment='Primary key for each trip. Unique identifier for each trip entry.')
     tripname = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='Descriptive name of the trip.')
-    startdate = models.DateTimeField(db_comment='The date when the trip begins. Ensures accurate tracking of trip schedules.')
-    enddate = models.DateTimeField(db_comment='The date when the trip ends. Helps define the trip duration.')
+    startdate = models.DateField(db_comment='The date when the trip begins. Ensures accurate tracking of trip schedules.')
+    enddate = models.DateField(db_comment='The date when the trip ends. Helps define the trip duration.')
     tripcostperperson = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Cost per person for the trip, including taxes. Supports budgeting and billing.')
     tripstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Status of the trip (e.g., upcoming, ongoing, completed).')
-    trip_cancellation = models.CharField(max_length=10, db_collation='utf8mb4_unicode_ci', db_comment='Trip cancellation status ΓÇÿcanceledΓÇÖ.')
-    trip_capacity = models.IntegerField(db_comment='Total passenger capacity for the cruise liner.')
-    trip_description = models.TextField(db_collation='utf8mb4_unicode_ci', db_comment='Description of the trip booked.')
-    final_booking = models.DateField()
+    cancellationpolicy = models.CharField(max_length=300, db_collation='utf8mb4_unicode_ci', db_comment='Trip cancellation status ΓÇÿcanceledΓÇÖ.')
+    tripcapacity = models.IntegerField(db_comment='Total passenger capacity for the cruise liner.')
+    tripdescription = models.CharField(max_length=300, db_collation='utf8mb4_unicode_ci', db_comment='Description of the trip booked.')
+    finalbookingdate = models.DateField()
     shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
 
     class Meta:
@@ -363,15 +360,13 @@ class MmsTrip(models.Model):
         db_table = 'mms_trip'
 
 
-class MmsTripRoom(models.Model):
-    triproomid = models.AutoField(primary_key=True, db_comment='A unique identifier for the association between a trip and a specific room allocation. This ID links a particular room to a specific trip, allowing the tracking of room assignments for each trip. It is used to map rooms to the trips they are associated with, facilitating room reservations and occupancy management for each trip.')
-    roomid = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomid')
+class MmsTripPackage(models.Model):
     tripid = models.ForeignKey(MmsTrip, models.DO_NOTHING, db_column='tripid')
-    roomsaleprice = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Room sale price for that particular trip')
+    packageid = models.ForeignKey(MmsPackage, models.DO_NOTHING, db_column='packageid')
 
     class Meta:
         managed = False
-        db_table = 'mms_trip_room'
+        db_table = 'mms_trip_package'
 
 
 class MmsUserProfile(models.Model):

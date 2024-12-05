@@ -1,6 +1,5 @@
 from . import models
 from django.http import Http404
-from django.db import transaction
 from . import filters, serializers
 from django.core.mail import send_mail
 from . permissions import IsAdminOrStaff
@@ -9,6 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, generics, status
 from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -46,17 +46,96 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 class AdminLoginView(TokenObtainPairView):
     """
     Custom Token Obtain View to handle login and issue JWT tokens.
-    Uses the CustomTokenObtainPairSerializer to validate and generate tokens.
+    This view uses the `AdminLoginSerializer` to validate credentials
+    and generate JWT tokens. Only staff and admin users are allowed to log in.
     """
+
+    # Set the serializer class to use for validation and token generation
     serializer_class = serializers.AdminLoginSerializer
+
+    @extend_schema(
+        description="Endpoint for admin users to log in. It validates the user's credentials "
+                    "(email/username and password) and returns JWT tokens for authenticated users.",
+        request=serializers.AdminLoginSerializer,  # Specifies the expected request body format
+        responses={
+            200: {
+                "description": "Successfully logged in. JWT tokens issued.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "access": "JWT_ACCESS_TOKEN",   # The access token
+                            "refresh": "JWT_REFRESH_TOKEN", # The refresh token
+                            "username": "admin_user",       # Username of the authenticated user
+                            "email": "admin@example.com",   # Email of the authenticated user
+                            "is_staff": True                # Custom claim indicating if the user is a staff member
+                        }
+                    }
+                }
+            },
+            400: {
+                "description": "Invalid credentials or the account is not authorized to log in "
+                               "(must be a staff or admin).",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "detail": "No account found with that email."  # Example error message
+                        }
+                    }
+                }
+            },
+        },
+        tags=["Authentication"],  # This endpoint is grouped under 'Authentication' in the API docs
+    )
+    def post(self, request, *args, **kwargs):
+        """
+        Override the post method to add custom behavior for the admin login.
+
+        If additional custom logic is needed before returning the response, 
+        you can handle it here.
+        """
+        return super().post(request, *args, **kwargs)
 
 class AdminLogoutView(APIView):
     """
     Logs out authenticated staff/admin users by blacklisting their refresh token.
+    Only users with staff or admin privileges can log out.
     """
-    permission_classes = [IsAuthenticated, IsAdminOrStaff]
 
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]  # Ensures that only authenticated staff/admin users can access this view
+
+    @extend_schema(
+        description="Endpoint for logging out authenticated staff/admin users by blacklisting their refresh token.",
+        request=None,  # No request body needed, the refresh token is sent in the body of the POST request
+        responses={
+            205: {
+                "description": "Successfully logged out. Refresh token is blacklisted.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "message": "Successfully logged out."
+                        }
+                    }
+                }
+            },
+            400: {
+                "description": "Bad request. Either refresh token is missing or an error occurred while processing the request.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "error": "Refresh token is required."
+                        }
+                    }
+                }
+            }
+        },
+        tags=["Authentication"],  # Grouping under 'Authentication' in the API documentation
+    )
     def post(self, request):
+        """
+        Logs out the authenticated user by blacklisting their refresh token.
+        This will invalidate the refresh token and prevent further use.
+        """
+
         try:
             # Extract the refresh token from the request data
             refresh_token = request.data.get("refresh")
@@ -71,17 +150,25 @@ class AdminLogoutView(APIView):
 
             return Response({"message": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
+            # If an error occurs during the process, return an error message
             return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
                 
 class MmsPortCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+    """
+    View to create or update ports.
+    Requires authentication and admin/staff permissions.
+    The 'portid' is used as a lookup field to identify the resource for update.
+    """
+    
     queryset = models.MmsPort.objects.all()
     serializer_class = serializers.MmsPortSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'portid'  # Use URL to identify the resource
-    
+
     def get_object(self):
         """
-        Override the get_object method to check if the portid exists before proceeding with update.
+        Override the get_object method to check if the portid exists before proceeding with the update.
+        The 'portid' from the URL is used to fetch the port.
         """
         portid = self.kwargs['portid']
         
@@ -91,29 +178,189 @@ class MmsPortCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, 
         except models.MmsPort.DoesNotExist:
             # Handle the case where the portid does not exist
             raise NotFound(f"Port with {portid} not found.")
-    
+
+    @extend_schema(
+        description="Create a new port. Admins and staff can create a port with necessary details.",
+        request=serializers.MmsPortSerializer,  # Specifies the request body format (port details)
+        responses={
+            201: {
+                "description": "Port successfully created.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "portname": "Port A",
+                            "address": "123 Port St.",
+                            "portcity": "City A",
+                            "portstate": "State A",
+                            "portcountry": "Country A",
+                            "nearestairport": "Airport A",
+                            "parkingspots": 50
+                        }
+                    }
+                }
+            },
+            400: {
+                "description": "Invalid data. Failed to create the port.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "error": "Invalid port details provided."
+                        }
+                    }
+                }
+            }
+        },
+        tags=["Ports"],  # Grouping under 'Ports' in the API documentation
+    )
     def post(self, request, *args, **kwargs):
+        """
+        Create a new port using the provided details.
+        Only authenticated admin or staff users are allowed to create a port.
+        """
         return self.create(request=request, *args, **kwargs)
-    
+
+    @extend_schema(
+        description="Update an existing port by its portid. Only admins and staff can update port details.",
+        request=serializers.MmsPortSerializer,  # Specifies the request body format (updated port details)
+        responses={
+            200: {
+                "description": "Port successfully updated.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "portname": "Updated Port A",
+                            "address": "456 Updated Port St.",
+                            "portcity": "Updated City A",
+                            "portstate": "Updated State A",
+                            "portcountry": "Updated Country A",
+                            "nearestairport": "Updated Airport A",
+                            "parkingspots": 100
+                        }
+                    }
+                }
+            },
+            400: {
+                "description": "Invalid data. Failed to update the port.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "error": "Invalid port details provided."
+                        }
+                    }
+                }
+            },
+            404: {
+                "description": "Port with the specified portid not found.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "error": "Port with {portid} not found."
+                        }
+                    }
+                }
+            }
+        },
+        tags=["Ports"],  # Grouping under 'Ports' in the API documentation
+    )
     def put(self, request, *args, **kwargs):
+        """
+        Update the details of an existing port identified by the portid.
+        Only authenticated admin or staff users are allowed to update a port.
+        """
         return self.update(request=request, *args, **kwargs)
         
 class MmsPortListView(generics.ListAPIView):
+    """
+    API view to retrieve a list of ports.
+    This view supports filtering, searching, and ordering of port data.
+    It uses the MmsPortListSerializer to return serialized port data.
+    """
+
+    # Specifies the queryset that will be used for retrieving port data.
     queryset = models.MmsPort.objects.all()
+    
+    # Specifies the serializer class to be used to convert queryset data into JSON.
     serializer_class = serializers.MmsPortListSerializer
+
+    # Specifies the permission classes. Only authenticated users with staff/admin roles can access this view.
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
+
+    # Specifies the filter backends to be used for filtering, searching, and ordering.
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+
+    # Specifies the filter set class to be used for filtering data.
     filterset_class = filters.PortFilter
+
+    # Specifies the fields that can be searched via the 'search' query parameter.
     search_fields = ['portname', 'portcity', 'portcountry', 'nearestairport']
+
+    # Specifies the fields by which the results can be ordered.
     ordering_fields = ['portname', 'parkingspots']
+    
+    # Specifies the default ordering of results if no ordering parameter is provided.
     ordering = ['portname']
 
-    '''def list(self):
+    @extend_schema(
+        description="Endpoint to retrieve a list of ports. Supports filtering by portname, city, country, and nearest airport, "
+                    "searching by portname, city, country, and nearest airport, and ordering by portname or parkingspots.",
+        responses={
+            200: {
+                "description": "A list of ports matching the search and filter criteria.",
+                "content": {
+                    "application/json": {
+                        "example": [
+                            {
+                                "portname": "Port of New York",
+                                "address": "1234 Port St.",
+                                "portcity": "New York",
+                                "portstate": "NY",
+                                "portcountry": "USA",
+                                "nearestairport": "JFK",
+                                "parkingspots": 100
+                            },
+                            {
+                                "portname": "Port of Los Angeles",
+                                "address": "5678 Dock Rd.",
+                                "portcity": "Los Angeles",
+                                "portstate": "CA",
+                                "portcountry": "USA",
+                                "nearestairport": "LAX",
+                                "parkingspots": 150
+                            }
+                        ]
+                    }
+                }
+            },
+            404: {
+                "description": "No ports found matching the filters or search criteria.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "detail": "No ports found matching the filters."
+                        }
+                    }
+                }
+            }
+        },
+        tags=["Ports"],  # This groups the endpoint under "Ports" in the API documentation
+    )
+    def list(self, request, *args, **kwargs):
+        """
+        Retrieves a list of ports. The list can be filtered by portname, portcity, portcountry, and nearest airport,
+        and it can be searched or ordered based on the criteria specified in the query parameters.
+        """
+        # Applies filtering, searching, and ordering to the queryset based on request parameters.
         queryset = self.filter_queryset(self.get_queryset())
+
+        # If no ports are found, return a 404 response indicating no matching results.
         if not queryset.exists():
             return Response({"detail": "No ports found matching the filters."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serializes the queryset into JSON format.
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)'''
+
+        # Returns the serialized data in the response with a 200 OK status.
+        return Response(serializer.data)
     
 class MmsPortDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     queryset = models.MmsPort.objects.all()
@@ -272,6 +519,19 @@ class MmsRoomLocCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixi
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'locid'  # Use URL to identify the resource
     
+    def get_object(self):
+        """
+        Override the get_object method to check if the locid exists before proceeding with update.
+        """
+        locid = self.kwargs['locid']
+        
+        try:
+            # Retrieve the port object or raise a NotFound exception if it doesn't exist
+            return models.MmsRoomLoc.objects.get(locid=locid)
+        except models.MmsRoomLoc.DoesNotExist:
+            # Handle the case where the portid does not exist
+            raise NotFound(f"location with ID {locid} not found.")
+    
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
@@ -326,24 +586,24 @@ class MmsRoomTypeCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMix
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'stateroomtypeid'  # Use URL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        stateroomtypeid = kwargs.get('stateroomtypeid')
-
-        # Validate the `stateroomtypeid` in the request body (if provided)
-        if 'stateroomtypeid' in request.data and str(request.data['stateroomtypeid']) != str(stateroomtypeid):
-            return Response(
-                {"detail": "stateroomtype ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
+    def get_object(self):
+        """
+        Override the get_object method to check if the restaurantid exists before proceeding with update.
+        """
+        stateroomtypeid = self.kwargs['stateroomtypeid']
+        
+        try:
+            # Retrieve the port object or raise a NotFound exception if it doesn't exist
+            return models.MmsRoomType.objects.get(stateroomtypeid=stateroomtypeid)
+        except models.MmsRoomType.DoesNotExist:
+            # Handle the case where the portid does not exist
+            raise NotFound(f"stateroomtype with ID {stateroomtypeid} not found.")
     
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
 
 class MmsRoomTypeListView(generics.GenericAPIView, mixins.ListModelMixin):
     queryset = models.MmsRoomType.objects.all()
@@ -371,6 +631,13 @@ class MmsRoomTypeDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'stateroomtypeid'  # Use URL to identify the resource
     
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Room type not found."})
+    
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()  # Retrieve the object to be deleted
         self.perform_destroy(instance)  # Perform the deletion
@@ -378,31 +645,73 @@ class MmsRoomTypeDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
             {"message": f"State room type {instance.stateroomtype} deleted successfully."},
             status=status.HTTP_200_OK
     )    
-        
-class MmsRoomCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
+
+class MmsRoomCreateView(generics.GenericAPIView, mixins.CreateModelMixin):
     queryset = models.MmsRoom.objects.all()
-    serializer_class = serializers.MmsRoomCreateUpdateSerializer
+    serializer_class = serializers.MmsRoomsCreateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    
+    '''def create(self, request, *args, **kwargs):
+        # Extract `shipid` from the URL
+        shipid = kwargs.get('shipid')
+        if not shipid:
+            return Response(
+                {"detail": "Ship ID is required in the URL."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Ensure the ship exists before proceeding
+        try:
+            ship = models.MmsShip.objects.get(shipid=shipid)
+        except models.MmsShip.DoesNotExist:
+            return Response(
+                {"detail": f"Ship with ID {shipid} does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Add the `shipid` to the request data before passing it to the serializer
+        request.data['shipid'] = ship.shipid
+        print(request.data)
+        
+        # Call the parent class's create method
+        return super().create(request, *args, **kwargs)'''
+
+    def post(self, request, *args, **kwargs):
+        # Directly call the create method, as validation is handled in the serializer
+        return self.create(request=request, *args, **kwargs)
+
+class MmsRoomListView(generics.ListAPIView):
+    queryset = models.MmsRoom.objects.select_related('stateroomtypeid', 'locid').all()
+    serializer_class = serializers.MmsRoomListSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.RoomFilter
+    search_fields = ['roomnumber']
+    ordering_fields = ['roomnumber', 'roomfloor', 'price']
+    ordering = ['roomnumber']  
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if not queryset.exists():
+            return Response({"detail": "No rooms found matching the filters."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class MmsRoomDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):    
+    queryset = models.MmsRoom.objects.all()
+    serializer_class = serializers.MmsRoomBaseSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'roomnumber'  # Use URL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        roomnumber = kwargs.get('roomnumber')
-
-        # Validate the `stateroomtypeid` in the request body (if provided)
-        if 'roomnumber' in request.data and str(request.data['roomnumber']) != str(roomnumber):
-            return Response(
-                {"detail": "roomnumber in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
-    
-    def post(self, request, *args, **kwargs):
-        return self.create(request=request, *args, **kwargs)
-    
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()  # Retrieve the object to be deleted
+        self.perform_destroy(instance)  # Perform the deletion (handled by DestroyModelMixin)
+        return Response(
+            {"message": f"Room {instance.roomnumber} deleted successfully."},
+            status=status.HTTP_200_OK  # You can use 204 for no content
+        )    
+                           
+'''
 
 class MmsRoomBulkCSVCreateView(generics.CreateAPIView):
     serializer_class = serializers.MmsRoomCSVUploadSerializer
@@ -451,60 +760,86 @@ class MmsRoomBulkUpdateView(generics.GenericAPIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+'''    
+   
+class MmsShipCreateView(generics.CreateAPIView):
     
-class MmsRoomListView(generics.ListAPIView):
-    queryset = models.MmsRoom.objects.select_related('stateroomtypeid', 'locid').all()
-    serializer_class = serializers.MmsRoomListSerializer
+    serializer_class = serializers.MmsShipCreateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = filters.RoomFilter
-    search_fields = ['roomnumber']
-    ordering_fields = ['roomnumber', 'roomfloor', 'roombaseprice']
-    ordering = ['roomnumber']  # Default ordering (earliest trips first)
     
-class MmsRoomDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):    
-    queryset = models.MmsRoom.objects.all()
-    serializer_class = serializers.MmsRoomBaseSerializer
+    def post(self, request, *args, **kwargs):
+        return self.create(request=request, *args, **kwargs)
+
+class MmsShipListView(generics.GenericAPIView, mixins.ListModelMixin):
+    queryset = models.MmsShip.objects.all()
+    serializer_class = serializers.MmsShipListSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    lookup_field = 'roomnumber'  # Use URL to identify the resource
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            return Response(
+                {"message": "No ships found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request=request, *args, **kwargs)   
+                
+class MmsShipDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):    
+    queryset = models.MmsShip.objects.all()
+    serializer_class = serializers.MmsShipCreateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    lookup_field = 'shipid'  # Use URL to identify the resource
+    
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Ship not found."})
     
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()  # Retrieve the object to be deleted
-        self.perform_destroy(instance)  # Perform the deletion (handled by DestroyModelMixin)
+        self.perform_destroy(instance)  # Perform the deletion
         return Response(
-            {"message": f"Room {instance.roomnumber} deleted successfully."},
-            status=status.HTTP_200_OK  # You can use 204 for no content
-        )       
-        
+            {"message": f"Ship {instance.shipname} deleted successfully."},
+            status=status.HTTP_200_OK
+    )     
+
 class MmsPackageCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsPackage.objects.all()
     serializer_class = serializers.MmsPackageCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'packageid'  # Use URL to identify the resource
     
-    def update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        packageid = kwargs.get('packageid')
-
-        # Validate the `portid` in the request body (if provided)
-        if 'packageid' in request.data and str(request.data['packageid']) != str(packageid):
-            return Response(
-                {"detail": "package ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
-    
     def post(self, request, *args, **kwargs):
         return self.create(request=request, *args, **kwargs)
     
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request=request, *args, **kwargs)
 
 class MmsPackageListView(generics.GenericAPIView, mixins.ListModelMixin):
     queryset = models.MmsPackage.objects.all()
     serializer_class = serializers.MmsPackageListSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            return Response(
+                {"message": "No packages found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def get(self, request, *args, **kwargs):
         return self.list(request=request, *args, **kwargs)   
@@ -513,7 +848,14 @@ class MmsPackageDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     queryset = models.MmsPackage.objects.all()
     serializer_class = serializers.MmsPackageCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    lookup_field = 'locid'  # Use URL to identify the resource
+    lookup_field = 'packageid'  # Use URL to identify the resource
+    
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            # Customize the error response
+            raise NotFound({"message": "Package not found."})
     
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()  # Retrieve the object to be deleted
@@ -523,97 +865,21 @@ class MmsPackageDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
             status=status.HTTP_200_OK
     )
                   
-'''
-class MmsTripAddUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
-    queryset = models.MmsTrip.objects.all()
-    serializer_class = serializers.MmsTripAddUpdateSerializer
+class MmsTripAddView(generics.GenericAPIView, mixins.CreateModelMixin):
+    
+    serializer_class = serializers.MmsTripCreateSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]  # Ensure staff or superuser permission is enforced
-    lookup_field = 'tripid'
+    
 
     def post(self, request, *args, **kwargs):
         """Handle trip creation."""
-        return self.create(request, *args, **kwargs)
+        return self.create(request=request, *args, **kwargs)
 
-    def put(self, request, *args, **kwargs):
-        """Handle trip update."""
-        # Ensure the trip exists using tripid from the URL kwargs
-        tripid = kwargs.get('tripid')
-        try:
-            trip_instance = self.get_object()  # This will automatically get the object based on tripid from the URL
-        except models.MmsTrip.DoesNotExist:
-            return Response({"detail": "Trip not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Proceed to update the trip with the serializer
-        return self.update(request, *args, **kwargs)
-        '''
-        
-class  MmsPortStopCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
-    queryset = models.MmsPortStop.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    serializer_class = serializers.MmsPortStopCreateUpdateSerializer
-    lookup_field = 'itineraryid'
-    
-    def update(self, request, *args, **kwargs):
-        # Extract `itineraryid` from URL
-        itineraryid = kwargs.get('itineraryid')
-
-        # Validate the `tripid` in the request body (if provided)
-        if 'itineraryid' in request.data and str(request.data['itineraryid']) != str(itineraryid):
-            return Response(
-                {"detail": "itinerary ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Call the parent class update method
-        return super().update(request, *args, **kwargs)
-    
-    def post(self, request, *args, **kwargs):
-        """
-        Handles creating multiple port stops.
-        The request should send a list of port stops (many=True).
-        """
-        # Initialize serializer with many=True to handle list of port stops
-        serializer = self.get_serializer(data=request.data, many=True)
-        
-        # Validate the data
-        serializer.is_valid(raise_exception=True)
-        
-        # Use the mixin's create method to save the data
-        self.perform_create(serializer)
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    def put(self, request, *args, **kwargs):
-        """
-        Handles updating multiple port stops.
-        The request should send a list of port stops (many=True).
-        """
-        # Initialize serializer with many=True to handle list of port stops
-        serializer = self.get_serializer(data=request.data, many=True)
-        
-        # Validate the data
-        serializer.is_valid(raise_exception=True)
-        
-        # Use the mixin's update method to save the data
-        self.perform_update(serializer)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def perform_create(self, serializer):
-        """
-        Override this method to use the mixin's create functionality
-        """
-        serializer.save()
-
-    def perform_update(self, serializer):
-        """
-        Override this method to use the mixin's update functionality
-        """
-        serializer.save()  
-      
+           
 class MmsTripCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin):
     queryset = models.MmsTrip.objects.all()
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    serializer_class = serializers.MmsTripCreateUpdateSerializer
+    serializer_class = serializers.MmsTripCreateSerializer
     lookup_field = 'tripid'  # Use URL to identify the resource
     
     def update(self, request, *args, **kwargs):

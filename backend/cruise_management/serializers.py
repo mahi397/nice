@@ -1,11 +1,12 @@
 import re
-from tarfile import data_filter
-from wsgiref.util import request_uri
+import csv
 from . import models
-from datetime import date
+from rest_framework import status
 from django.db import transaction
+from datetime import date, datetime
 from rest_framework import serializers 
 from django.contrib.auth.models import User
+from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
@@ -14,101 +15,150 @@ from rest_framework.exceptions import ValidationError, AuthenticationFailed
 # Admin related features
 
 class AdminLoginSerializer(TokenObtainPairSerializer):
+    """
+    Custom serializer for admin login.
+    Validates login credentials (email or username) and generates JWT tokens for authenticated users.
+    """
     def validate(self, attrs):
+        # Extract username or email and password from the request attributes
         identifier = attrs.get('username')  # Can be email or username
         password = attrs.get('password')
 
-        user = None
+        user = None  # Initialize the user variable
 
-        # Check if the identifier is an email
+        # Check if the identifier is an email (using a simple regex to match email format)
         if re.match(r"[^@]+@[^@]+\.[^@]+", identifier):
             try:
-                # Fetch user by email
+                # Fetch user by email if identifier is an email
                 user = User.objects.get(email=identifier)
             except User.DoesNotExist:
+                # Raise an error if no user is found with the provided email
                 raise AuthenticationFailed('No account found with that email.')
         else:
             try:
-                # Fetch user by username
+                # Fetch user by username if the identifier is not an email
                 user = User.objects.get(username=identifier)
             except User.DoesNotExist:
+                # Raise an error if no user is found with the provided username
                 raise AuthenticationFailed('No account found with that username.')
 
-        # Restrict access to only staff and admin accounts
+        # Restrict access to only staff and admin accounts (checking if user is staff or admin)
         if not user.is_staff and not user.is_superuser:
+            # Raise error if the user is neither staff nor admin
             raise AuthenticationFailed('Only staff and admin accounts are allowed to log in.')
 
-        # Authenticate user explicitly using username and password
+        # Authenticate the user explicitly by checking if the username and password are correct
         user = authenticate(username=user.username, password=password)
         if not user:
+            # Raise error if the authentication fails (invalid credentials)
             raise AuthenticationFailed('Invalid credentials.')
 
-        # Call the parent method to generate tokens
+        # Call the parent class's `validate` method to generate tokens for the authenticated user
         data = super().validate({"username": user.username, "password": password})
 
-        # Add custom claims
-        data['username'] = user.username
-        data['email'] = user.email
+        # Add custom claims to the token data
+        data['username'] = user.username  # Add username to the token data
+        data['email'] = user.email  # Add email to the token data
         if user.is_staff:
-            data['is_staff'] = user.is_staff
+            data['is_staff'] = user.is_staff  # Add is_staff claim if the user is a staff member
         else:
-            data['is_superuser'] = user.is_superuser
+            data['is_superuser'] = user.is_superuser  # Add is_superuser claim if the user is a superuser
 
         return data
 
 class MmsPortSerializer(serializers.ModelSerializer):
+    """
+    Serializer to handle port details.
+    Includes custom validation for required fields and data integrity.
+    """
+
     class Meta:
-        model = models.MmsPort
-        fields = ['portname', 'address', 'portcity', 'portstate', 'portcountry', 'nearestairport', 'parkingspots']
+        model = models.MmsPort  # The model associated with this serializer is MmsPort
+        fields = [
+            'portname', 'address', 'portcity', 'portstate', 'portcountry', 
+            'nearestairport', 'parkingspots'
+        ]
         
     def validate_portname(self, data):
-        # Ensure portname is a non-empty string
+        """
+        Validate the portname field.
+        - Ensures the port name is not empty.
+        - Checks that the port name is unique.
+        """
         if not data or data.strip() == "":
+            # Raise error if portname is empty
             raise ValidationError("Port name cannot be empty.")
         if models.MmsPort.objects.filter(portname=data).exists():
+            # Check if the portname already exists in the database
             raise ValidationError(f"A port with name {data} already exists.")
         return data
 
     def validate_address(self, data):
-        # Ensure address is a non-empty string
+        """
+        Validate the address field.
+        - Ensures the address is not empty.
+        """
         if not data or data.strip() == "":
+            # Raise error if address is empty
             raise ValidationError("Address cannot be empty.")
         return data
 
     def validate_portcity(self, data):
-        # Ensure portcity is a valid string
+        """
+        Validate the portcity field.
+        - Ensures the city is not empty.
+        """
         if not data or data.strip() == "":
+            # Raise error if portcity is empty
             raise ValidationError("Port city cannot be empty.")
         return data
 
     def validate_portstate(self, data):
-        # Ensure portstate is a valid string
+        """
+        Validate the portstate field.
+        - Ensures the state is not empty.
+        """
         if not data or data.strip() == "":
+            # Raise error if portstate is empty
             raise ValidationError("Port state cannot be empty.")
         return data
 
     def validate_portcountry(self, data):
-        # Ensure portcountry is a valid country
+        """
+        Validate the portcountry field.
+        - Ensures the country is not empty.
+        - Optionally, a check could be added to verify if the country is valid.
+        """
         if not data or data.strip() == "":
+            # Raise error if portcountry is empty
             raise ValidationError("Port country cannot be empty.")
-        # Optional: Add a check to validate the country, e.g., check against a list of countries
+        # Optional: Add a check here to validate against a list of countries if needed
         return data
 
     def validate_nearestairport(self, data):
-        # Ensure nearestairport is a valid string (if applicable, you could check if the airport exists in a database)
+        """
+        Validate the nearestairport field.
+        - Ensures the nearest airport is not empty.
+        """
         if not data or data.strip() == "":
+            # Raise error if nearestairport is empty
             raise ValidationError("Nearest airport cannot be empty.")
         return data
 
     def validate_parkingspots(self, data):
-        # Ensure parkingspots is a non-negative integer
+        """
+        Validate the parkingspots field.
+        - Ensures the number of parking spots is a non-negative integer.
+        """
         if data < 0:
+            # Raise error if parkingspots is a negative integer
             raise ValidationError("Parking spots must be a non-negative integer.")
         return data
 
     def validate(self, attrs):
         """
-        Custom validation logic for the port.
+        Custom validation for the entire port.
+        Ensures all the required fields are provided.
         """
         if (
             not attrs.get('portname') 
@@ -119,28 +169,37 @@ class MmsPortSerializer(serializers.ModelSerializer):
             or not attrs.get('nearestairport')
             or not attrs.get('parkingspots')
         ):
+            # Raise an error if any of the fields are missing
             raise serializers.ValidationError("All port details are required.")
         return attrs
 
     def create(self, validated_data):
         """
-        Create a new port using the validated data.
+        Create a new port with the validated data.
         """
         return models.MmsPort.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
-        
+        """
+        Update an existing port with the validated data.
+        - Iterates through the validated data and updates the instance.
+        """
         for attr, value in validated_data.items():
+            # Update each attribute of the instance with the new value
             setattr(instance, attr, value)
+        # Save the updated instance
         instance.save()
         return instance
-                   
+    
 class MmsPortListSerializer(serializers.ModelSerializer):
-    # Nested serializer for related start port (via MmsPortStop and MmsPort)
+    """
+    Serializer for listing the ports. This serializer is used for rendering data for the port list view.
+    It includes all fields from the MmsPort model to represent port details.
+    """
 
     class Meta:
-        model = models.MmsPort
-        fields = '__all__'
+        model = models.MmsPort  # Specifies the model that this serializer will use, which is MmsPort
+        fields = '__all__'  # Includes all fields from the MmsPort model in the serialized data
             
 class MmsRestaurantCreateUpdateSerializer(serializers.ModelSerializer):
     
@@ -163,16 +222,16 @@ class MmsRestaurantCreateUpdateSerializer(serializers.ModelSerializer):
         return data
 
     def validate_restaurant_description(self, data):
-        """
-        Validate restaurant description field.
-        """
-        # Ensure it's not empty
-        if not data.strip():
-            raise ValidationError("Description cannot be empty.")
+        # Ensure the description is not empty or just whitespace
+        if not data or data.strip() == "":
+            raise ValidationError("Restaurant description cannot be empty.")
         
-        # Ensure it's not too long (max length 500 characters as an example)
-        if len(data) > 500:
-            raise ValidationError("Description cannot be longer than 500 characters.")
+        # Ensure the description does not exceed the maximum length
+        if len(data) > 300:
+            raise ValidationError("Restaurant description must not exceed 300 characters.")
+        
+        if not re.match(r'^[a-zA-Z0-9.,!?\-]*$', data):
+            raise ValidationError("Restaurant description contains invalid characters.")
         
         return data
     
@@ -333,21 +392,8 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.MmsRoomType
-        fields = ['stateroomtype', 'roomsize', 'numberofbeds', 'numberofbaths', 'numberofbalconies']
+        fields = ['stateroomtype', 'roomsize', 'numberofbeds', 'numberofbaths', 'numberofbalconies', 'roomtypedescription']
     
-    def validate_stateroomtypeid(self, data):
-        """
-        Validate that the state room type ID is unique.
-        Allow the current object to keep the same state room type ID during updates.
-        """
-        stateroomtype_id = self.instance.stateroomtypeid if self.instance else None
-        if models.MmsRoomType.objects.filter(stateroomtypeid=data).exclude(stateroomtypeid=stateroomtype_id).exists():
-            raise serializers.ValidationError("A state room type with this state room type ID already exists.")
-        
-        if data <= 0:
-            raise serializers.ValidationError("Stateroom Type ID must be a positive number.")
-        
-        return data
     
     def validate_stateroomtype(self, data):
         if not data.strip():
@@ -384,15 +430,22 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
         if data > 3:
             raise serializers.ValidationError("Number of balconies seems unrealistically high.")
         return data
-
-    def validate(self, attrs):
-        if attrs.get('numberofbeds', 0) == 0:
-            raise serializers.ValidationError("A room must have at least one bed.")
-        if attrs.get('numberofbalconies', 0) > 0 and attrs.get('numberofbeds', 0) == 0:
-            raise serializers.ValidationError("A room with balconies must have at least one bed.")
-        return attrs
-
-    '''def create(self, validated_data):
+    
+    def validate_roomtypedescription(self, data):
+        # Ensure the description is not empty or just whitespace
+        if not data or data.strip() == "":
+            raise ValidationError("Room type description cannot be empty.")
+        
+        # Ensure the description does not exceed the maximum length
+        if len(data) > 500:
+            raise ValidationError("Room type description must not exceed 300 characters.")
+        
+        if not re.match(r'^[a-zA-Z0-9.,!? ]*$', data):
+            raise ValidationError("Room type description contains invalid characters.")
+        
+        return data
+        
+    def create(self, validated_data):
         return models.MmsRoomType.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
@@ -400,7 +453,7 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return instance'''
+        return instance
 
 class MmsRoomTypeListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
@@ -410,84 +463,79 @@ class MmsRoomTypeListSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MmsRoomBaseSerializer(serializers.ModelSerializer):
-    stateroomtypeid = serializers.CharField()
-    locid = serializers.CharField()    
+    # Expecting IDs to be passed for stateroom type, location, and ship
+    stateroomtypeid = serializers.IntegerField()
+    locid = serializers.IntegerField()
+
+    
     class Meta:
         model = models.MmsRoom
-        fields = ['roomnumber', 'roomfloor', 'roombaseprice', 'stateroomtypeid', 'locid']
-    
-    
+        fields = ['roomnumber', 'roomfloor', 'price', 'stateroomtypeid', 'locid']
+
     def validate_roomnumber(self, data):
-        print(self.instance)
-        room_number = self.instance.roomnumber if self.instance else None
-        
-        if models.MmsRoom.objects.filter(roomnumber=room_number).exclude(roomnumber=room_number).exists():
-            raise serializers.ValidationError("A room with this room number already exists.")
-        
+        # Check if room number is valid (positive and unique)
         if data < 0:
             raise serializers.ValidationError("Room number must be a positive number.")
+        
+        if models.MmsRoom.objects.filter(roomnumber=data).exists():
+            raise serializers.ValidationError("A room with this room number already exists.")
+        
         return data
     
     def validate_roomfloor(self, data):
+        # Validate floor number (positive and within valid range)
         if data < 0:
             raise serializers.ValidationError("Floor number cannot be negative.")
         if data > 20:
             raise serializers.ValidationError("Floor number cannot be more than 20.")
+        
         return data
     
-    def validate_roombaseprice(self, data):
+    def validate_price(self, data):
+        # Validate price (positive and reasonable)
         if data < 0:
             raise serializers.ValidationError("Room price cannot be negative.")
         if data > 1000:
             raise serializers.ValidationError("Room price seems unrealistically high.")
-        return data
         
+        return data
+            
     def validate_stateroomtypeid(self, data):
-        # Lookup the room type based on the name (or another attribute)
-        room_type = models.MmsRoomType.objects.filter(stateroomtype=data).first()
-        if not room_type:
-            raise serializers.ValidationError(f"Invalid room type: {data}")
-        return room_type  # Store the ID in the model
-
+        # Ensure stateroomtypeid exists in the MmsRoomType table
+        try:
+            room_type = models.MmsRoomType.objects.get(stateroomtypeid=data)
+        except models.MmsRoomType.DoesNotExist:
+            raise serializers.ValidationError(f"Invalid stateroom type ID: {data}")
+        
+        return room_type  # Returning the room type object for the foreign key
+    
     def validate_locid(self, data):
-        # Lookup the location based on the name (or another attribute)
-        location = models.MmsRoomLoc.objects.filter(location=data).first()
-        if not location:
-            raise serializers.ValidationError(f"Invalid location: {data}")
-        return location  # Store the ID in the model
-    
-class MmsRoomCreateUpdateSerializer(MmsRoomBaseSerializer):
-    
-    def create(self, validated_data):
-        """
-        Create a new room using the validated data.
-        """
-        return models.MmsRoom.objects.create(**validated_data)
-    
-    def update(self, instance, validated_data):
-        # Update fields on the instance
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
-    
+        # Ensure locid exists in the MmsRoomLoc table
+        try:
+            location = models.MmsRoomLoc.objects.get(locid=data)
+        except models.MmsRoomLoc.DoesNotExist:
+            raise serializers.ValidationError(f"Invalid location ID: {data}")
+        
+        return location  # Returning the location object for the foreign key
+   
 class MmsRoomCSVUploadSerializer(serializers.Serializer):
-    file = serializers.FileField()
-
+    file = serializers.FileField(required=False)
+    
     def validate_file(self, file):
-        import csv
+        # Read and decode the uploaded CSV file
         decoded_file = file.read().decode('utf-8').splitlines()
         reader = csv.DictReader(decoded_file)
 
         rows = []
         errors = {}
         for i, row in enumerate(reader, start=1):
-            serializer = MmsRoomBaseSerializer(data=row)
-            if serializer.is_valid():
-                rows.append(serializer.validated_data)
+            # Here we pass the row data to the room base serializer for validation
+            room_serializer = MmsRoomBaseSerializer(data=row)
+            if room_serializer.is_valid():
+                rows.append(room_serializer.validated_data)
             else:
-                # You may want to include the row number in the error message for better clarity
-                errors[i] = serializer.errors
+                # Capture errors along with the row number
+                errors[i] = room_serializer.errors
 
         if errors:
             raise serializers.ValidationError({"row_errors": errors})
@@ -495,56 +543,67 @@ class MmsRoomCSVUploadSerializer(serializers.Serializer):
         return rows
 
     def create(self, validated_data):
-        with transaction.atomic():
-            try: 
-                # Extract rows from the validated data
-                rows = validated_data['file']
-
-                # Bulk create MmsRoom instances
-                rooms = [models.MmsRoom(**room_data) for room_data in rows]
-                created_rooms = models.MmsRoom.objects.bulk_create(rooms)
-
-                return created_rooms
-
-            except Exception as e:
-                raise serializers.ValidationError(f"Bulk create failed: {str(e)}")
-    
-class MmsRoomBulkUpdateSerializer(serializers.Serializer):
-    rooms = serializers.ListField(
-        child=serializers.DictField(),  # Use a DictField for simplicity
-        allow_empty=False
-    )
-
-    def validate_rooms(self, data):
-        #print(data)
-        validated_data = []
-        
-        for room_data in data:
-            # Validate using the base serializer logic
-            #print(room_data)
-            serializer = MmsRoomBaseSerializer(data=room_data)
-            #print(serializer)
-            serializer.is_valid(raise_exception=True)
-            validated_data.append(serializer.validated_data)
-            
-
-        return validated_data
+        # Bulk create rooms after validation
+        rooms_data = validated_data.get('file', [])
+        rooms = [models.MmsRoom(**room_data) for room_data in rooms_data]
+        created_rooms = models.MmsRoom.objects.bulk_create(rooms)
+        return created_rooms
+                                    
+class MmsRoomsCreateSerializer(serializers.ModelSerializer):
+    rooms = MmsRoomBaseSerializer(many=True, required=False)
+    csv_file = serializers.FileField(write_only=True, required=False, allow_null=True)
     
 
-    def update(self, instance, validated_data):
-        updated_instances = []
+    class Meta:
+        model = models.MmsRoom
+        fields = ['rooms', 'csv_file']
 
-        for data in validated_data:
-            # Match the roomnumber
-            if instance.roomnumber == data.get("roomnumber"):
-                # Update instance attributes
-                for attr, value in data.items():
-                    setattr(instance, attr, value)
-                instance.save()  # Save the updated instance to the database
-                updated_instances.append(instance)
-    
+    '''def validate_shipid(self, data):
+        """
+        Ensure the ship exists before processing rooms.
+        """
+        try:
+            ship = models.MmsShip.objects.get(shipid=data)
+            #print(ship)
+        except models.MmsShip.DoesNotExist:
+            raise serializers.ValidationError("Ship with this ID does not exist.")
+        return ship  # Return the ship instance for later use'''
 
-        return updated_instances
+    def validate(self, data):
+        """
+        Ensure that either `rooms` or `csv_file` is provided, but not both.
+        """
+        rooms = data.get('rooms', None)
+        csv_file = data.get('csv_file', None)
+        if not rooms and not csv_file:
+            raise serializers.ValidationError("You must provide either `rooms` data or a `csv_file`.")
+        if rooms and csv_file:
+            raise serializers.ValidationError("You cannot provide both `rooms` data and a `csv_file`.")
+        return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Handles creation of rooms.
+        """
+
+        rooms_data = validated_data.get('rooms', [])
+        csv_file = validated_data.get('csv_file', None)
+
+        if rooms_data:
+            # Handle nested room creation
+            for room_data in rooms_data:
+                models.MmsRoom.objects.create(**room_data)
+
+        elif csv_file:
+            # Handle CSV upload
+            csv_serializer = MmsRoomCSVUploadSerializer(data={'file': csv_file})
+            if csv_serializer.is_valid(raise_exception=True):
+                validated_rows = csv_serializer.validated_data['file']
+                for row in validated_rows:
+                    models.MmsRoom.objects.create(**row)
+
+        return {"message": "Rooms added successfully."}
         
 class MmsRoomListSerializer(serializers.ModelSerializer):
     roomtype = serializers.SerializerMethodField()
@@ -552,7 +611,7 @@ class MmsRoomListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.MmsRoom
-        fields = ['roomnumber', 'roomfloor', 'roombaseprice', 'roomtype', 'location']
+        fields = ['roomnumber', 'roomfloor', 'price', 'roomtype', 'location']
         
     def get_roomtype(self, obj):
         """
@@ -564,8 +623,140 @@ class MmsRoomListSerializer(serializers.ModelSerializer):
         """
         Retrieve the location from the related location table.
         """
-        return obj.locid.location if obj.locid else None
+        return obj.locid.location if obj.locid else None        
+                                               
+class MmsShipActivitySerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.MmsShipActivity
+        fields = ['shipid', 'activityid']
+        
+    def validate(self, data):
+        # Ensure unique combination of ship and activity
+        if models.MmsShipActivity.objects.filter(shipid=data['shipid'], activityid=data['activityid']).exists():
+            raise serializers.ValidationError(
+                f"Activity {data['activityid'].activityname} already exists for ship {data['shipid'].shipname}."
+            )
+        return data
 
+class MmsShipRestaurantSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.MmsShipRestaurant
+        fields = ['shipid', 'restaurantid']
+        
+    def validate(self, data):
+        # Ensure unique combination of ship and activity
+        if models.MmsShipRestaurant.objects.filter(shipid=data['shipid'], restaurantid=data['restaurantid']).exists():
+            raise serializers.ValidationError(
+                f"Activity {data['restaurantid'].restaurantname} already exists for ship {data['shipid'].shipname}."
+            )
+        return data
+
+class MmsShipRoomsSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.MmsShipRoom
+        fields = ['shipid', 'roomnumber']
+        
+    def validate(self, data):
+        # Ensure unique combination of ship and activity
+        if models.MmsShipRoom.objects.filter(shipid=data['shipid'], roomnumber=data['roomnumber']).exists():
+            raise serializers.ValidationError(
+                f"Activity {data['roomnumber']} already exists for ship {data['shipid'].shipname}."
+            )
+        return data    
+        
+class MmsShipCreateSerializer(serializers.ModelSerializer):
+    activities = serializers.ListField(child=serializers.DictField(), required=False)
+    restaurants = serializers.ListField(child=serializers.DictField(), required=False)
+    rooms = serializers.ListField(child=serializers.DictField(), required=False)
+    
+    class Meta:
+        model = models.MmsShip
+        fields = ['shipid', 'shipname', 'description', 'capacity', 'activities', 'restaurants', 'rooms']
+        
+    def validate_shipname(self, data):
+        # Ensure portname is a non-empty string
+        if not data or data.strip() == "":
+            raise ValidationError("ship name cannot be empty.")
+        
+        if len(data) > 45:
+            raise serializers.ValidationError("ship name cannot exceed 45 characters.")
+        
+        if models.MmsShip.objects.filter(shipname=data).exists():
+            raise ValidationError(f"A ship with name {data} already exists.")
+        return data 
+    
+    def validate_description(self, data):
+        # Ensure the description is not empty or just whitespace
+        if not data or data.strip() == "":
+            raise ValidationError("Ship description cannot be empty.")
+        
+        # Ensure the description does not exceed the maximum length
+        if len(data) > 150:
+            raise ValidationError("Ship description must not exceed 150 characters.")
+        
+        if not re.match(r'^[a-zA-Z0-9.,!? \-]*$', data):
+            raise ValidationError("Ship description contains invalid characters.")
+        
+        return data
+    
+    def validate_capacity(self, data):
+        if data <= 0:
+            raise serializers.ValidationError("Capacity must be a positive number.")
+        return data
+    
+    def create_ship_activities(self, ship, activities):
+        if activities:
+            for activity in activities:
+                activity_id = activity.get('activityid')
+                if activity_id:  # Ensure ID is present
+                    activity = models.MmsActivity.objects.get(activityid=activity_id)
+                    models.MmsShipActivity.objects.create(shipid=ship, activityid=activity)
+
+    def create_ship_restaurants(self, ship, restaurants):
+        if restaurants:
+            for restaurant in restaurants:
+                restaurant_id = restaurant.get('restaurantid')
+                if restaurant_id:  # Ensure ID is present
+                    restaurant = models.MmsRestaurant.objects.get(restaurantid=restaurant_id)
+                    models.MmsShipRestaurant.objects.create(shipid=ship, restaurantid=restaurant)
+    
+    def create_ship_rooms(self, ship, rooms):
+        if rooms:
+            for room in rooms:
+                room_number = room.get('roomnumber')
+                if room_number:  # Ensure room number is present
+                    try:
+                        room_instance = models.MmsRoom.objects.get(roomnumber=room_number)
+                    except models.MmsRoom.DoesNotExist:
+                        raise serializers.ValidationError(f"Room with number {room_number} does not exist.")
+                    
+                    models.MmsShipRoom.objects.create(shipid=ship, roomnumber=room_instance)
+                    
+    @transaction.atomic
+    def create(self, validated_data): 
+        activities = validated_data.pop('activities', [])
+        restaurants = validated_data.pop('restaurants', [])
+        rooms = validated_data.pop('rooms', [])
+        # Save the ship first
+        
+        ship = models.MmsShip.objects.create(**validated_data)
+        ship.save()
+
+        self.create_ship_activities(ship, activities)
+        self.create_ship_restaurants(ship, restaurants)
+        self.create_ship_rooms(ship, rooms)
+        
+        return ship
+
+class MmsShipListSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.MmsShip
+        fields = '__all__'  
+         
 class MmsPackageCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -585,7 +776,7 @@ class MmsPackageCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_packagename(self, data):
 
         # Validate location 
-        valid_types = [' hydration plus', 'cheers unlimited', 'connected traveler', 'internet freedom', 'gourmet feast']
+        valid_types = ['hydration plus', 'cheers unlimited', 'connected traveler', 'internet freedom', 'gourmet feast']
         if data.lower() not in valid_types:
             raise serializers.ValidationError(f"Package has to be one of {valid_types}")
         
@@ -610,7 +801,7 @@ class MmsPackageCreateUpdateSerializer(serializers.ModelSerializer):
         
         return data
 
-    '''def create(self, validated_data):
+    def create(self, validated_data):
         return models.MmsPackage.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
@@ -618,7 +809,7 @@ class MmsPackageCreateUpdateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return instance'''
+        return instance
 
 class MmsPackageListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
@@ -627,95 +818,288 @@ class MmsPackageListSerializer(serializers.ModelSerializer):
         model = models.MmsPackage
         fields = '__all__'
                                      
-class MmsPortStopCreateUpdateSerializer(serializers.ModelSerializer):
+class MmsItinerarySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MmsPortStop
-        fields = ['arrivaltime', 'departuretime', 'orderofstop', 'isstartport', 'isendport']
+        fields = ['tripid', 'portid', 'arrivaltime', 'departuretime', 'orderofstop', 'isstartport', 'isendport', 'description']
+
+    def validate_description(self, data):
+        # Ensure the description is not empty or just whitespace
+        if not data or data.strip() == "":
+            raise ValidationError("Stop description cannot be empty.")
+        
+        # Ensure the description does not exceed the maximum length
+        if len(data) > 300:
+            raise ValidationError("Stop description must not exceed 300 characters.")
+        
+        if not re.match(r'^[a-zA-Z0-9.,!?\-]*$', data):
+            raise ValidationError("Stop description contains invalid characters.")
+        
+        return data
     
+    def validate_orderofstop(self, data):
+        if data < 0:
+            raise serializers.ValidationError("Stop number cannot be negative")
+        return data
+        
     def validate(self, data):
-        # Ensure `isstartport` and `isendport` are valid
-        if data.get('isstartport') not in ['Y', 'N']:
-            raise serializers.ValidationError("isstartport must be 'Y' or 'N'.")
-        if data.get('isendport') not in ['Y', 'N']:
-            raise serializers.ValidationError("isendport must be 'Y' or 'N'.")
+        # Validate the data
+        self.validate_is_boolean(data)
+        self.validate_arrival_before_departure(data)
+        self.validate_order_of_stop(data)
+        self.validate_trip_has_start_and_end_port(data)
+        
+        if data.get('isstartport'):
+            if data.get('arrivaltime'):
+                raise ValidationError("Arrival time is not needed for the start port.")
+            if not data.get('departuretime'):
+                raise ValidationError("Departure time is required for the start port.")
 
-        # Ensure arrival time is before departure time
-        if data['arrivaltime'] >= data['departuretime']:
+        # Validate end port conditions
+        if data.get('isendport'):
+            if data.get('departuretime'):
+                raise ValidationError("Departure time is not needed for the end port.")
+            if not data.get('arrivaltime'):
+                raise ValidationError("Arrival time is required for the end port.")
+
+        # Validate intermediate ports
+        if not data.get('isstartport') and not data.get('isendport'):
+            if not data.get('arrivaltime') or not data.get('departuretime'):
+                raise ValidationError("Both arrival and departure times are required for intermediate ports.")
+
+        return data
+
+    def validate_is_boolean(self, data):
+        """Ensure that `isstartport` and `isendport` are boolean values."""
+        if not isinstance(data.get('isstartport'), bool):
+            raise serializers.ValidationError("isstartport must be a boolean value.")
+        if not isinstance(data.get('isendport'), bool):
+            raise serializers.ValidationError("isendport must be a boolean value.")
+
+    def validate_arrival_before_departure(self, data):
+        """Ensure arrival time is before departure time."""
+        if data.get('arrivaltime') and data.get('departuretime') and data['arrivaltime'] >= data['departuretime']:
             raise serializers.ValidationError("Arrival time must be before departure time.")
-        return data 
+
+    def validate_order_of_stop(self, data):
     
-    def create(self, validated_data): 
-        # Create trip instance
-        trip = models.MmsPortStop.objects.create(**validated_data)
-        return trip
+        """Ensure `orderofstop` is sequential and does not skip numbers."""
+        tripid = data['tripid']
+        order_of_stop = data['orderofstop']
+        
+        # Check if this is the first stop being created for the trip
+        existing_stops = models.MmsPortStop.objects.filter(tripid=tripid).order_by('orderofstop')
+        existing_order_of_stop = [stop.orderofstop for stop in existing_stops]
 
-    '''def update(self, instance, validated_data):
-        # Extract port stops data
-        portstops_data = validated_data.pop('portstops', [])
-        # Handle port stops
-        existing_portstops = {ps.itineraryid: ps for ps in instance.portstops.all()}
-        updated_portstops = []
+        # Ensure that order of stops is sequential (1, 2, 3, ...)
+        if order_of_stop != len(existing_order_of_stop) + 1:
+            raise serializers.ValidationError(f"Order of stop must be sequential. Next available stop number is {len(existing_order_of_stop) + 1}.")
 
-        for portstop_data in portstops_data:
-            itinerary_id = portstop_data.get('itineraryid')
+    def validate_trip_has_start_and_end_port(self, data):
+        """Ensure every trip has both a start port and an end port."""
+        tripid = data['tripid']
+        
+        # Check if this trip has a start port and an end port in the current port stops
+        start_ports = models.MmsPortStop.objects.filter(tripid=tripid, isstartport=True)
+        end_ports = models.MmsPortStop.objects.filter(tripid=tripid, isendport=True)
+        
+        # Ensure there is at least one start port and one end port
+        if not start_ports.exists():
+            raise serializers.ValidationError(f"Trip {tripid} must have a start port.")
+        if not end_ports.exists():
+            raise serializers.ValidationError(f"Trip {tripid} must have an end port.")
 
-            if itinerary_id and itinerary_id in existing_portstops:
-                # Update existing port stop
-                portstop = existing_portstops[itinerary_id]
-                for attr, value in portstop_data.items():
-                    setattr(portstop, attr, value)
-                portstop.save()
-            else:
-                # Create a new port stop
-                new_portstop = MmsPortStop.objects.create(tripid=instance, **portstop_data)
-                updated_portstops.append(new_portstop.itineraryid)
-
-        # Remove any port stops that are no longer in the update data
-        instance.portstops.exclude(itineraryid__in=updated_portstops).delete()
-        instance.save()
-        return instance'''
-    def update(self, instance, validated_data):
-        # Update trip fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
-
-class MmsTripCreateUpdateSerializer(serializers.ModelSerializer):
+class MmsTrippackageSerializer(serializers.ModelSerializer):
     
+    class Meta:
+        model = models.MmsTripPackage
+        fields = ['tripid', 'packageid']
+        
+    def validate_packageid(self, data):
+        if not models.MmsPackage.objects.filter(packageid=data).exists():
+            raise serializers.ValidationError(f"Package ID {data} doesn't exist.")
+        
+        
+    def validate(self, data):
+        # Ensure unique combination of ship and activity
+        if models.MmsTripPackage.objects.filter(tripid=data['tripid'], packageid=data['packageid']).exists():
+            raise serializers.ValidationError(
+                f"Activity {data['packageid'].packagename} already exists for trip {data['tripid'].tripname}."
+            )
+        return data
+            
+class MmsTripCreateSerializer(serializers.ModelSerializer):
+    stops = serializers.ListField(child=serializers.DictField(), required=False)
+    packages = serializers.ListField(child=serializers.DictField(), required=False)
                                                        
     class Meta:
         model = models.MmsTrip
-        fields = ['tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'capacity']
+        fields = ['tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'tripcapacity', 'cancellationpolicy', 
+                  'tripdescription', 'finalbookingdate', 'shipid', 'stops', 'packages']
+
+    def validate_tripname(self, data):
+        # Trip name validation: Ensure it's not empty and within length limits
+        if not data or data.strip() == "":
+            raise ValidationError("Trip name cannot be empty.")
+        
+        if len(data) > 50:
+            raise ValidationError("Trip name cannot exceed 100 characters.")
+        
+        return data
+
+    def validate_startdate(self, data):
+        # Ensure start date is not in the past
+        if data < datetime.now().date():
+            raise ValidationError("Start date cannot be in the past.")
+        
+        return data
+
+    def validate_enddate(self, data):
+        startdate = self.initial_data.get('startdate')
+        if startdate and data < datetime.strptime(startdate, "%Y-%m-%d").date():
+            raise ValidationError("End date cannot be before the start date.")
+        
+        if data < datetime.now().date():
+            raise ValidationError("End date cannot be in the past.")
+        
+        return data
+
+    def validate_tripcostperperson(self, data):
+        # Ensure cost per person is a positive number
+        if data <= 0:
+            raise ValidationError("Trip cost per person must be a positive number.")
+        
+        return data
+
+    def validate_tripstatus(self, data):
+        # Ensure valid trip status
+        valid_statuses = ['Scheduled', 'Completed', 'Cancelled', 'Postponed']
+        if data not in valid_statuses:
+            raise ValidationError(f"Trip status must be one of: {', '.join(valid_statuses)}.")
+        
+        return data
+
+    def validate_tripcapacity(self, data):
+        # Ensure capacity is a positive number
+        if data <= 0:
+            raise ValidationError("Capacity must be a positive number.")
+        
+        return data
+
+    def validate_cancellationpolicy(self, data):
+        # Ensure cancellation policy is not empty or just whitespace
+        if not data or data.strip() == "":
+            raise ValidationError("Cancellation policy cannot be empty.")
+        
+        # Optional: Additional checks for the format of cancellation policy (e.g., a valid text or specific string format)
+        if len(data) > 300:
+            raise ValidationError("Cancellation policy cannot exceed 500 characters.")
+        
+        return data
+
+    def validate_tripdescription(self, data):
+        # Ensure trip description is not empty and within length limits
+        if not data or data.strip() == "":
+            raise ValidationError("Trip description cannot be empty.")
+        
+        if len(data) > 300:
+            raise ValidationError("Trip description cannot exceed 300 characters.")
+        
+        return data
+
+    def validate_finalbookingdate(self, data):
+        # Ensure final booking date is not in the past and is before the trip start date
+        trip_start_date = self.initial_data.get('startdate')
+        if data and data < datetime.now().date():
+            raise ValidationError("Final booking date cannot be in the past.")
+        
+        if trip_start_date and data and data > datetime.strptime(trip_start_date, "%Y-%m-%d").date():
+            raise ValidationError("Final booking date must be before the trip start date.")
+        
+        return data
+
     
-    def validate_tripid(self, data):
-        trip_id = self.instance.tripid if self.instance else None
-        if models.MmsTrip.objects.filter(tripid=data).exclude(tripid=trip_id).exists():
-            raise serializers.ValidationError("A trip with this trip id already exists")
+     
+    def validate_tripname_and_dates(self, data):
+        tripname = data.get('tripname')
+        startdate = data.get('startdate')
+        enddate = data.get('enddate')
+
+        # Ensure there are no overlapping trips with the same name
+        overlapping_trips = models.MmsTrip.objects.filter(
+            tripname=tripname,
+            startdate__lt=enddate,
+            enddate__gt=startdate
+        )
+
+        if overlapping_trips.exists():
+            raise ValidationError(f"There's already an existing trip named '{tripname}' with overlapping dates.")
         
         return data
     
     def validate(self, data):
-        # Validate trip dates
-        if data['startdate'] >= data['enddate']:
-            raise serializers.ValidationError("Start date must be before end date.")
-        
-        if data['capacity'] <=100:
-            raise serializers.ValidationError("Cruise capacity must be more than 100.")
+        self.validate_trip_start_and_end_dates(data)
         return data
 
-    def create(self, validated_data):
+    def validate_trip_start_and_end_dates(self, data):
+        startdate = data.get('startdate')
+        enddate = data.get('enddate')
+        stops = data.get('stops', [])
+
+        # Find start and end ports
+        start_port = next((stop for stop in stops if stop.get('isstartport') == 1), None)
+        end_port = next((stop for stop in stops if stop.get('isendport') == 1), None)
+
+        if not start_port:
+            raise ValidationError("A start port is required.")
+        if not end_port:
+            raise ValidationError("An end port is required.")
         
-        # Create trip instance
-        trip = models.MmsTrip.objects.create(**validated_data)
-        return trip
+        # Validate start date matches start port departure date
+        if 'departuretime' in start_port:
+            start_departure = datetime.strptime(start_port['departuretime'], "%Y-%m-%dT%H:%M:%SZ").date()
+            if startdate != start_departure:
+                raise ValidationError(f"Start date must match the departure date of the start port ({start_departure}).")
+
+        # Validate end date matches end port arrival date
+        if 'arrivaltime' in end_port:
+            end_arrival = datetime.strptime(end_port['arrivaltime'], "%Y-%m-%dT%H:%M:%SZ").date()
+            if enddate != end_arrival:
+                raise ValidationError(f"End date must match the arrival date of the end port ({end_arrival}).")
+
+        return data
     
-    def update(self, instance, validated_data):
-        # Update trip fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+    def create_trip_stops(self, trip, stops):
+        if stops:
+            for stop in stops:
+                port_id = stop.pop('portid')
+                if port_id:  # Ensure ID is present
+                    port = models.MmsPort.objects.get(portid=port_id)
+                    order_of_stop = stop.get('orderofstop')
+                    if order_of_stop is None:
+                        raise ValidationError("Each stop must have an 'orderofstop' value.")
+                    models.MmsPortStop.objects.create(tripid=trip, portid=port, **stop)
+
+    def create_trip_packages(self, trip, packages):
+        if packages:
+            for package in packages:
+                package_id = package.get('packageid')
+                if package_id:  # Ensure ID is present
+                    package_instance = models.MmsPackage.objects.get(packageid=package_id)
+                    models.MmsTripPackage.objects.create(tripid=trip, packageid=package_instance)
+    
+    @transaction.atomic
+    def create(self, validated_data): 
+        packages = validated_data.pop('packages', [])
+        stops = validated_data.pop('stops', [])
+        print(validated_data)
+        
+        trip = models.MmsTrip.objects.create(**validated_data)
+    
+        self.create_trip_stops(trip, stops)
+        self.create_trip_packages(trip, packages)
+    
+        return trip
 
 class MmsTripListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)

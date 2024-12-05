@@ -58,7 +58,7 @@ DB_PASSWORD=your_database_password
 Run the following command to inspect your database schema and generate models:
 
 ```bash
-python manage.py inspectdb > cruise_management/models.py
+python -Xutf8  manage.py inspectdb > cruise_management/models.py 
 ```
 #### Common Error:
 - models.py may save in UTF-16 encoding. When the file is saved in UTF-16, inspectdb command will throw an error. If this happens:
