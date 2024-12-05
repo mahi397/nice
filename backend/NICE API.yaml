@@ -1,0 +1,2800 @@
+openapi: 3.0.3
+info:
+  title: NICE API
+  version: 1.0.0
+  description: API documentation for the NICE project.
+paths:
+  /nice/admin/activities/{activityid}/delete:
+    delete:
+      operationId: nice_admin_activities_delete_destroy
+      description: Delete an activity by its ID.
+      parameters:
+      - in: path
+        name: activityid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Activity Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully deleted the activity.
+                examples:
+                  application/json:
+                    example:
+                      message: Activity Basketball deleted successfully.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Activity not found for the provided ID.
+                examples:
+                  application/json:
+                    example:
+                      message: Activity not found.
+          description: ''
+  /nice/admin/activities/{activityid}/update:
+    post:
+      operationId: nice_admin_activities_update_create
+      description: Create a new activity entry. Only accessible to authenticated users
+        with staff or admin permissions.
+      parameters:
+      - in: path
+        name: activityid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Activity Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Successfully created a new activity.
+                examples:
+                  application/json:
+                    example:
+                      activitytype: sports
+                      activityname: Basketball
+                      activitydescription: An exciting basketball game.
+                      floor: 1
+                      capacity: 50
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+    put:
+      operationId: nice_admin_activities_update_update
+      description: Update an existing activity entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      parameters:
+      - in: path
+        name: activityid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Activity Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully updated the activity.
+                examples:
+                  application/json:
+                    example:
+                      activitytype: sports
+                      activityname: Updated Basketball
+                      activitydescription: Updated description for basketball game.
+                      floor: 1
+                      capacity: 60
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Activity not found for the provided activityid.
+                examples:
+                  application/json:
+                    example:
+                      message: Activity with ID X not found.
+          description: ''
+  /nice/admin/activities/add:
+    post:
+      operationId: nice_admin_activities_add_create
+      description: Create a new activity entry. Only accessible to authenticated users
+        with staff or admin permissions.
+      tags:
+      - Activity Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Successfully created a new activity.
+                examples:
+                  application/json:
+                    example:
+                      activitytype: sports
+                      activityname: Basketball
+                      activitydescription: An exciting basketball game.
+                      floor: 1
+                      capacity: 50
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+    put:
+      operationId: nice_admin_activities_add_update
+      description: Update an existing activity entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      tags:
+      - Activity Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsActivityCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully updated the activity.
+                examples:
+                  application/json:
+                    example:
+                      activitytype: sports
+                      activityname: Updated Basketball
+                      activitydescription: Updated description for basketball game.
+                      floor: 1
+                      capacity: 60
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Activity not found for the provided activityid.
+                examples:
+                  application/json:
+                    example:
+                      message: Activity with ID X not found.
+          description: ''
+  /nice/admin/activities/list:
+    get:
+      operationId: nice_admin_activities_list_list
+      description: |-
+        API view to retrieve a list of activities.
+        It supports filtering, searching, and ordering based on activity name.
+        Only accessible by authenticated users with staff or admin permissions.
+      parameters:
+      - in: query
+        name: activity_name
+        schema:
+          type: string
+        description: Restaurant Name (partial match)
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Serves Breakfast
+      - in: query
+        name: capacity_max
+        schema:
+          type: integer
+        description: Max Capacity
+      - in: query
+        name: capacity_min
+        schema:
+          type: string
+        description: Min Capacity
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsActivityList'
+          description: ''
+  /nice/admin/locations/{locid}/delete:
+    delete:
+      operationId: nice_admin_locations_delete_destroy
+      description: Endpoint to delete a room location based on `locid`.
+      parameters:
+      - in: path
+        name: locid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Location Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Room location deleted successfully.
+        '404':
+          description: Room location not found.
+  /nice/admin/locations/{locid}/update:
+    post:
+      operationId: nice_admin_locations_update_create
+      description: Create a new room location entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      parameters:
+      - in: path
+        name: locid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Location Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Successfully created a new room location.
+                examples:
+                  application/json:
+                    example:
+                      location: bow
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+    put:
+      operationId: nice_admin_locations_update_update
+      description: Update an existing room location entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      parameters:
+      - in: path
+        name: locid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Location Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully updated the room location.
+                examples:
+                  application/json:
+                    example:
+                      location: stern
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Room location not found for the provided locid.
+                examples:
+                  application/json:
+                    example:
+                      message: Location with ID X not found.
+          description: ''
+  /nice/admin/locations/add:
+    post:
+      operationId: nice_admin_locations_add_create
+      description: Create a new room location entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      tags:
+      - Room Location Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Successfully created a new room location.
+                examples:
+                  application/json:
+                    example:
+                      location: bow
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+    put:
+      operationId: nice_admin_locations_add_update
+      description: Update an existing room location entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      tags:
+      - Room Location Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomLocCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully updated the room location.
+                examples:
+                  application/json:
+                    example:
+                      location: stern
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Room location not found for the provided locid.
+                examples:
+                  application/json:
+                    example:
+                      message: Location with ID X not found.
+          description: ''
+  /nice/admin/locations/list:
+    get:
+      operationId: nice_admin_locations_list_list
+      description: |-
+        Handle GET requests to list room locations.
+        This method calls the list method to retrieve and return room locations.
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsRoomLocList'
+          description: ''
+  /nice/admin/login:
+    post:
+      operationId: nice_admin_login_create
+      description: Endpoint for admin users to log in. It validates the user's credentials
+        (email/username and password) and returns JWT tokens for authenticated users.
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminLoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully logged in. JWT tokens issued.
+                examples:
+                  application/json:
+                    example:
+                      access: JWT_ACCESS_TOKEN
+                      refresh: JWT_REFRESH_TOKEN
+                      username: admin_user
+                      email: admin@example.com
+                      is_staff: true
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid credentials or the account is not authorized
+                  to log in (must be a staff or admin).
+                examples:
+                  application/json:
+                    example:
+                      detail: No account found with that email.
+          description: ''
+  /nice/admin/logout:
+    post:
+      operationId: nice_admin_logout_create
+      description: Endpoint for logging out authenticated staff/admin users by blacklisting
+        their refresh token.
+      tags:
+      - Authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '205':
+          content:
+            application/json:
+              schema:
+                description: Successfully logged out. Refresh token is blacklisted.
+                examples:
+                  application/json:
+                    example:
+                      message: Successfully logged out.
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Bad request. Either refresh token is missing or an error
+                  occurred while processing the request.
+                examples:
+                  application/json:
+                    example:
+                      error: Refresh token is required.
+          description: ''
+  /nice/admin/packages/{packageid}/delete:
+    delete:
+      operationId: nice_admin_packages_delete_destroy
+      description: Delete a specific package identified by 'packageid'. Only admins
+        or staff can delete packages.
+      parameters:
+      - in: path
+        name: packageid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Package Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully deleted the package.
+        '404':
+          description: Package not found for the given 'packageid'.
+  /nice/admin/packages/{packageid}/update:
+    post:
+      operationId: nice_admin_packages_update_create
+      description: Create or update a package. The 'packageid' is used to identify
+        the package for updates.
+      parameters:
+      - in: path
+        name: packageid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Package Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully created or updated the package.
+        '400':
+          description: Invalid data provided.
+    put:
+      operationId: nice_admin_packages_update_update
+      description: Update a package. The 'packageid' is used to identify the package
+        to be updated.
+      parameters:
+      - in: path
+        name: packageid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Package Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully updated the package.
+        '404':
+          description: Package not found for the given 'packageid'.
+  /nice/admin/packages/add:
+    post:
+      operationId: nice_admin_packages_add_create
+      description: Create or update a package. The 'packageid' is used to identify
+        the package for updates.
+      tags:
+      - Package Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully created or updated the package.
+        '400':
+          description: Invalid data provided.
+    put:
+      operationId: nice_admin_packages_add_update
+      description: Update a package. The 'packageid' is used to identify the package
+        to be updated.
+      tags:
+      - Package Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPackageCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully updated the package.
+        '404':
+          description: Package not found for the given 'packageid'.
+  /nice/admin/packages/list:
+    get:
+      operationId: nice_admin_packages_list_list
+      description: |-
+        API view to list all packages.
+        Only authenticated users with staff or admin permissions can view the list of packages.
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsPackageList'
+          description: ''
+  /nice/admin/ports/{portid}/delete:
+    delete:
+      operationId: nice_admin_ports_delete_destroy
+      description: Endpoint to delete a port by its unique 'portid'. Only authenticated
+        users with admin or staff permissions can perform the deletion.
+      parameters:
+      - in: path
+        name: portid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Port Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Port successfully deleted.
+                examples:
+                  application/json:
+                    example:
+                      message: PortName deleted successfully from the database.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Port not found.
+                examples:
+                  application/json:
+                    example:
+                      message: Port not found.
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Bad request or insufficient permissions.
+                examples:
+                  application/json:
+                    example:
+                      detail: Authentication credentials were not provided.
+          description: ''
+  /nice/admin/ports/{portid}/update:
+    post:
+      operationId: nice_admin_ports_update_create
+      description: Create a new port. Admins and staff can create a port with necessary
+        details.
+      parameters:
+      - in: path
+        name: portid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Ports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Port successfully created.
+                examples:
+                  application/json:
+                    example:
+                      portname: Port A
+                      address: 123 Port St.
+                      portcity: City A
+                      portstate: State A
+                      portcountry: Country A
+                      nearestairport: Airport A
+                      parkingspots: 50
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data. Failed to create the port.
+                examples:
+                  application/json:
+                    example:
+                      error: Invalid port details provided.
+          description: ''
+    put:
+      operationId: nice_admin_ports_update_update
+      description: Update an existing port by its portid. Only admins and staff can
+        update port details.
+      parameters:
+      - in: path
+        name: portid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Ports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Port successfully updated.
+                examples:
+                  application/json:
+                    example:
+                      portname: Updated Port A
+                      address: 456 Updated Port St.
+                      portcity: Updated City A
+                      portstate: Updated State A
+                      portcountry: Updated Country A
+                      nearestairport: Updated Airport A
+                      parkingspots: 100
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data. Failed to update the port.
+                examples:
+                  application/json:
+                    example:
+                      error: Invalid port details provided.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Port with the specified portid not found.
+                examples:
+                  application/json:
+                    example:
+                      error: Port with {portid} not found.
+          description: ''
+  /nice/admin/ports/add:
+    post:
+      operationId: nice_admin_ports_add_create
+      description: Create a new port. Admins and staff can create a port with necessary
+        details.
+      tags:
+      - Ports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Port successfully created.
+                examples:
+                  application/json:
+                    example:
+                      portname: Port A
+                      address: 123 Port St.
+                      portcity: City A
+                      portstate: State A
+                      portcountry: Country A
+                      nearestairport: Airport A
+                      parkingspots: 50
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data. Failed to create the port.
+                examples:
+                  application/json:
+                    example:
+                      error: Invalid port details provided.
+          description: ''
+    put:
+      operationId: nice_admin_ports_add_update
+      description: Update an existing port by its portid. Only admins and staff can
+        update port details.
+      tags:
+      - Ports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsPortRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Port successfully updated.
+                examples:
+                  application/json:
+                    example:
+                      portname: Updated Port A
+                      address: 456 Updated Port St.
+                      portcity: Updated City A
+                      portstate: Updated State A
+                      portcountry: Updated Country A
+                      nearestairport: Updated Airport A
+                      parkingspots: 100
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data. Failed to update the port.
+                examples:
+                  application/json:
+                    example:
+                      error: Invalid port details provided.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Port with the specified portid not found.
+                examples:
+                  application/json:
+                    example:
+                      error: Port with {portid} not found.
+          description: ''
+  /nice/admin/ports/list:
+    get:
+      operationId: nice_admin_ports_list_list
+      description: |-
+        API view to retrieve a list of ports.
+        This view supports filtering, searching, and ordering of port data.
+        It uses the MmsPortListSerializer to return serialized port data.
+      parameters:
+      - in: query
+        name: nearest_airport
+        schema:
+          type: string
+        description: Nearest Airport
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: parking_spots_max
+        schema:
+          type: integer
+        description: Maximum Parking Spots
+      - in: query
+        name: parking_spots_min
+        schema:
+          type: integer
+        description: Minimum Parking Spots
+      - in: query
+        name: port_city
+        schema:
+          type: string
+        description: City (exact match)
+      - in: query
+        name: port_country
+        schema:
+          type: string
+        description: Country
+      - in: query
+        name: port_name
+        schema:
+          type: string
+        description: Port Name (partial match)
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsPortList'
+          description: ''
+  /nice/admin/restaurants/{restaurantid}/delete:
+    delete:
+      operationId: nice_admin_restaurants_delete_destroy
+      description: Handle the DELETE request to delete a restaurant entry.
+      parameters:
+      - in: path
+        name: restaurantid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Restaurant Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully deleted the restaurant.
+                examples:
+                  application/json:
+                    example:
+                      message: Restaurant Restaurant A deleted successfully.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Restaurant not found for the provided restaurantid.
+                examples:
+                  application/json:
+                    example:
+                      message: Restaurant with ID X not found.
+          description: ''
+  /nice/admin/restaurants/{restaurantid}/update:
+    post:
+      operationId: nice_admin_restaurants_update_create
+      description: Create a new restaurant entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      parameters:
+      - in: path
+        name: restaurantid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Restaurant Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Successfully created a new restaurant.
+                examples:
+                  application/json:
+                    example:
+                      restaurantname: Restaurant A
+                      floornumber: 1
+                      openingtime: 08:00
+                      closingtime: '22:00'
+                      servesbreakfast: Y
+                      serveslunch: Y
+                      servesdinner: Y
+                      servesalcohol: Y
+                      restaurant_description: A great place for all meals.
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+    put:
+      operationId: nice_admin_restaurants_update_update
+      description: Update an existing restaurant entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      parameters:
+      - in: path
+        name: restaurantid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Restaurant Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully updated the restaurant.
+                examples:
+                  application/json:
+                    example:
+                      restaurantname: Updated Restaurant A
+                      floornumber: 2
+                      openingtime: 09:00
+                      closingtime: '23:00'
+                      servesbreakfast: Y
+                      serveslunch: Y
+                      servesdinner: Y
+                      servesalcohol: Y
+                      restaurant_description: Updated description for restaurant.
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Restaurant not found for the provided restaurantid.
+                examples:
+                  application/json:
+                    example:
+                      message: Restaurant with ID X not found.
+          description: ''
+  /nice/admin/restaurants/add:
+    post:
+      operationId: nice_admin_restaurants_add_create
+      description: Create a new restaurant entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      tags:
+      - Restaurant Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Successfully created a new restaurant.
+                examples:
+                  application/json:
+                    example:
+                      restaurantname: Restaurant A
+                      floornumber: 1
+                      openingtime: 08:00
+                      closingtime: '22:00'
+                      servesbreakfast: Y
+                      serveslunch: Y
+                      servesdinner: Y
+                      servesalcohol: Y
+                      restaurant_description: A great place for all meals.
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+    put:
+      operationId: nice_admin_restaurants_add_update
+      description: Update an existing restaurant entry. Only accessible to authenticated
+        users with staff or admin permissions.
+      tags:
+      - Restaurant Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRestaurantCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Successfully updated the restaurant.
+                examples:
+                  application/json:
+                    example:
+                      restaurantname: Updated Restaurant A
+                      floornumber: 2
+                      openingtime: 09:00
+                      closingtime: '23:00'
+                      servesbreakfast: Y
+                      serveslunch: Y
+                      servesdinner: Y
+                      servesalcohol: Y
+                      restaurant_description: Updated description for restaurant.
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Invalid data or missing required fields.
+                examples:
+                  application/json:
+                    example:
+                      detail: Missing required fields or invalid values.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Restaurant not found for the provided restaurantid.
+                examples:
+                  application/json:
+                    example:
+                      message: Restaurant with ID X not found.
+          description: ''
+  /nice/admin/restaurants/list:
+    get:
+      operationId: nice_admin_restaurants_list_list
+      description: |-
+        API view to retrieve a list of restaurants with optional filtering, searching, and ordering.
+        This view allows authenticated users with staff or admin permissions to list all restaurants
+        and apply filters or search criteria.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: restaurant_name
+        schema:
+          type: string
+        description: Restaurant Name (partial match)
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: serves_alcohol
+        schema:
+          type: string
+        description: Server Alcohol
+      - in: query
+        name: serves_breakfast
+        schema:
+          type: string
+        description: Serves Breakfast
+      - in: query
+        name: serves_dinner
+        schema:
+          type: string
+        description: Serves Dinner
+      - in: query
+        name: serves_lunch
+        schema:
+          type: string
+        description: Serves Lunch
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsRestaurantList'
+          description: ''
+  /nice/admin/room-types/{stateroomtypeid}/delete:
+    delete:
+      operationId: nice_admin_room_types_delete_destroy
+      description: Delete a specific room type by its stateroomtypeid.
+      parameters:
+      - in: path
+        name: stateroomtypeid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully deleted the room type.
+        '404':
+          description: Room type not found for the given stateroomtypeid.
+  /nice/admin/room-types/{stateroomtypeid}/update:
+    post:
+      operationId: nice_admin_room_types_update_create
+      description: Create a new room type. Authenticated users with admin or staff
+        permissions can create a new room type.
+      parameters:
+      - in: path
+        name: stateroomtypeid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Type Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Successfully created a new room type.
+        '400':
+          description: Invalid request data, validation errors.
+    put:
+      operationId: nice_admin_room_types_update_update
+      description: Update an existing room type by its ID. Only authenticated admin
+        or staff users can update room types.
+      parameters:
+      - in: path
+        name: stateroomtypeid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Type Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully updated the room type.
+        '400':
+          description: Invalid request data, validation errors.
+        '404':
+          description: Room type not found.
+  /nice/admin/room-types/add:
+    post:
+      operationId: nice_admin_room_types_add_create
+      description: Create a new room type. Authenticated users with admin or staff
+        permissions can create a new room type.
+      tags:
+      - Room Type Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Successfully created a new room type.
+        '400':
+          description: Invalid request data, validation errors.
+    put:
+      operationId: nice_admin_room_types_add_update
+      description: Update an existing room type by its ID. Only authenticated admin
+        or staff users can update room types.
+      tags:
+      - Room Type Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomTypeCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully updated the room type.
+        '400':
+          description: Invalid request data, validation errors.
+        '404':
+          description: Room type not found.
+  /nice/admin/room-types/list:
+    get:
+      operationId: nice_admin_room_types_list_list
+      description: Retrieve a list of all room types. Authenticated users with admin
+        or staff permissions can view the list.
+      tags:
+      - Room Type Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: List of room types successfully retrieved.
+        '404':
+          description: No room types found.
+  /nice/admin/rooms/{roomnumber}/delete:
+    delete:
+      operationId: nice_admin_rooms_delete_destroy
+      description: Delete a specific room by its roomnumber.
+      parameters:
+      - in: path
+        name: roomnumber
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Room Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully deleted the room.
+        '404':
+          description: Room not found for the given roomnumber.
+  /nice/admin/rooms/add:
+    post:
+      operationId: nice_admin_rooms_add_create
+      description: Create a new room.
+      tags:
+      - Room Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsRoomsCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsRoomsCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsRoomsCreateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Successfully created a new room.
+        '400':
+          description: Invalid request or missing required data.
+  /nice/admin/rooms/list:
+    get:
+      operationId: nice_admin_rooms_list_list
+      description: |-
+        API view to retrieve a list of rooms.
+        Supports filtering, searching, and ordering of room data.
+        Only authenticated users with staff or admin permissions can access this list.
+      parameters:
+      - in: query
+        name: exclude_room_range
+        schema:
+          type: boolean
+        description: Exclude Room Range
+      - in: query
+        name: exclude_room_type
+        schema:
+          type: string
+        description: Exclude Room Type
+      - in: query
+        name: exclude_ship_location
+        schema:
+          type: string
+        description: Exclude Room Location
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: room_base_price_max
+        schema:
+          type: number
+        description: Maximum Cost
+      - in: query
+        name: room_base_price_min
+        schema:
+          type: number
+        description: Minimum Cost
+      - in: query
+        name: room_floor
+        schema:
+          type: string
+        description: Floor Number
+      - in: query
+        name: room_number_max
+        schema:
+          type: integer
+        description: Maximum Room Number
+      - in: query
+        name: room_number_min
+        schema:
+          type: integer
+        description: Minimum Room Number
+      - in: query
+        name: room_type
+        schema:
+          type: string
+        description: Room Type
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: ship_location
+        schema:
+          type: string
+        description: Room Location
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsRoomList'
+          description: ''
+  /nice/admin/ships/{shipid}/delete:
+    delete:
+      operationId: nice_admin_ships_delete_destroy
+      description: Delete a specific ship identified by 'shipid'. Only admins or staff
+        can delete ships.
+      parameters:
+      - in: path
+        name: shipid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Ship Management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully deleted the ship.
+        '404':
+          description: Ship not found for the given 'shipid'.
+  /nice/admin/ships/add:
+    post:
+      operationId: nice_admin_ships_add_create
+      description: Create a new ship. The request body should contain the ship details,
+        and a new ship will be created.
+      tags:
+      - Ship Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsShipCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsShipCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsShipCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Successfully created the ship.
+        '400':
+          description: Bad request, possibly invalid data in the request body.
+  /nice/admin/ships/list:
+    get:
+      operationId: nice_admin_ships_list_list
+      description: |-
+        API view to list all ships.
+        Only authenticated users with staff or admin permissions can view the list of ships.
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsShipList'
+          description: ''
+  /nice/admin/trips/{tripid}/update:
+    post:
+      operationId: nice_admin_trips_update_create
+      description: Create a new trip. The request body must contain details about
+        the trip.
+      parameters:
+      - in: path
+        name: tripid
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Trip Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsTripCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsTripCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsTripCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Successfully created the trip.
+        '400':
+          description: Invalid data provided.
+  /nice/admin/trips/add:
+    post:
+      operationId: nice_admin_trips_add_create
+      description: Create a new trip. The request body must contain details about
+        the trip.
+      tags:
+      - Trip Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MmsTripCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MmsTripCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MmsTripCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Successfully created the trip.
+        '400':
+          description: Invalid data provided.
+  /nice/admin/trips/list:
+    get:
+      operationId: nice_admin_trips_list_list
+      description: |-
+        API view to list all trips.
+        Staff or admin can view all trips, while regular users can only view upcoming trips.
+      parameters:
+      - in: query
+        name: duration_max
+        schema:
+          type: number
+        description: Max Duration (Days)
+      - in: query
+        name: duration_min
+        schema:
+          type: number
+        description: Min Duration (Days)
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: port_city
+        schema:
+          type: string
+        description: Places to visit
+      - in: query
+        name: port_country
+        schema:
+          type: string
+        description: Regions
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: start_port_name
+        schema:
+          type: string
+        description: Start Port Name
+      - in: query
+        name: startdate_max
+        schema:
+          type: string
+          format: date-time
+        description: Start Date (<=)
+      - in: query
+        name: startdate_min
+        schema:
+          type: string
+          format: date-time
+        description: Start Date (>=)
+      - in: query
+        name: tripcostperperson_max
+        schema:
+          type: number
+        description: Max Cost
+      - in: query
+        name: tripcostperperson_min
+        schema:
+          type: number
+        description: Min Cost
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MmsTripList'
+          description: ''
+  /nice/admin/trips/list/{tripid}:
+    get:
+      operationId: nice_admin_trips_list_retrieve
+      description: Retrieve details of a specific trip by 'tripid'.
+      parameters:
+      - in: path
+        name: tripid
+        schema:
+          type: integer
+        description: A unique integer value identifying this mms trip.
+        required: true
+      tags:
+      - Trip Management
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Successfully retrieved trip details.
+        '404':
+          description: Trip not found.
+  /nice/login:
+    post:
+      operationId: nice_login_create
+      description: Handle user login and issue JWT tokens.
+      tags:
+      - nice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Login successful. Returns JWT access and refresh tokens.
+        '400':
+          description: Invalid credentials provided.
+  /nice/logout:
+    post:
+      operationId: nice_logout_create
+      description: |-
+        Logs the user out by blacklisting their refresh token.
+        This effectively invalidates the session and makes the refresh token unusable.
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '205':
+          description: Successfully logged out. Refresh token blacklisted.
+        '400':
+          description: Invalid request. Refresh token required or error occurred.
+  /nice/refresh:
+    post:
+      operationId: nice_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - nice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /nice/register:
+    post:
+      operationId: nice_register_create
+      description: |-
+        User Registration View that handles the creation of a new user.
+        - Validates input using UserRegistrationSerializer.
+        - Creates a new user and returns the user data.
+      tags:
+      - nice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreate'
+          description: ''
+  /nice/user/{id}/update:
+    put:
+      operationId: nice_user_update_update
+      description: API endpoint to update user details. The user provides new information
+        to modify their profile. Only authenticated users can update their own profile.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User Management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Successfully updated user information.
+        '400':
+          description: Bad Request. Validation error or mismatch between `userid`
+            in URL and request body.
+        '403':
+          description: Forbidden. The user does not have permission to update this
+            profile.
+  /nice/user/delete:
+    delete:
+      operationId: nice_user_delete_destroy
+      tags:
+      - nice
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    AdminLoginRequest:
+      type: object
+      description: |-
+        Custom serializer for admin login.
+        Validates login credentials (email or username) and generates JWT tokens for authenticated users.
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    MmsActivityCreateUpdateRequest:
+      type: object
+      description: |-
+        Serializer for creating or updating activity entries.
+        It includes validation logic for activity fields like name, type, description, floor, and capacity.
+      properties:
+        activitytype:
+          type: string
+          minLength: 1
+          maxLength: 30
+        activityname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        activitydescription:
+          type: string
+          minLength: 1
+          maxLength: 300
+        floor:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        capacity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - activitydescription
+      - activityname
+      - activitytype
+      - capacity
+      - floor
+    MmsActivityList:
+      type: object
+      description: |-
+        Serializer for listing MmsActivity objects.
+        This serializer formats the data for the activity list view,
+        including all fields of the MmsActivity model.
+      properties:
+        activityid:
+          type: integer
+          readOnly: true
+        activitytype:
+          type: string
+          maxLength: 30
+        activityname:
+          type: string
+          maxLength: 50
+        activitydescription:
+          type: string
+          maxLength: 300
+        floor:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        capacity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - activitydescription
+      - activityid
+      - activityname
+      - activitytype
+      - capacity
+      - floor
+    MmsPackageCreateUpdateRequest:
+      type: object
+      description: |-
+        Serializer for creating or updating package data.
+        This serializer validates package details and ensures that certain constraints are met.
+        It also includes validation for unique package IDs and names, and other fields like base price and package details.
+      properties:
+        packagename:
+          type: string
+          minLength: 1
+          maxLength: 30
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        packagedetails:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - base_price
+      - packagedetails
+      - packagename
+    MmsPackageList:
+      type: object
+      description: |-
+        Serializer for listing package data.
+        This serializer includes all fields from the MmsPackage model for retrieval purposes.
+      properties:
+        packageid:
+          type: integer
+          readOnly: true
+        packagename:
+          type: string
+          maxLength: 30
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        packagedetails:
+          type: string
+          maxLength: 255
+      required:
+      - base_price
+      - packagedetails
+      - packageid
+      - packagename
+    MmsPortList:
+      type: object
+      description: |-
+        Serializer for listing the ports. This serializer is used for rendering data for the port list view.
+        It includes all fields from the MmsPort model to represent port details.
+      properties:
+        portid:
+          type: integer
+          readOnly: true
+        portname:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 50
+        portcity:
+          type: string
+          maxLength: 50
+        portstate:
+          type: string
+          maxLength: 50
+        portcountry:
+          type: string
+          maxLength: 50
+        nearestairport:
+          type: string
+          maxLength: 100
+        parkingspots:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - address
+      - nearestairport
+      - parkingspots
+      - portcity
+      - portcountry
+      - portid
+      - portname
+      - portstate
+    MmsPortRequest:
+      type: object
+      description: |-
+        Serializer to handle port details.
+        Includes custom validation for required fields and data integrity.
+      properties:
+        portname:
+          type: string
+          minLength: 1
+          maxLength: 100
+        address:
+          type: string
+          minLength: 1
+          maxLength: 50
+        portcity:
+          type: string
+          minLength: 1
+          maxLength: 50
+        portstate:
+          type: string
+          minLength: 1
+          maxLength: 50
+        portcountry:
+          type: string
+          minLength: 1
+          maxLength: 50
+        nearestairport:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parkingspots:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - address
+      - nearestairport
+      - parkingspots
+      - portcity
+      - portcountry
+      - portname
+      - portstate
+    MmsRestaurantCreateUpdateRequest:
+      type: object
+      description: |-
+        Serializer for creating and updating restaurant data.
+        Includes validation for restaurant-specific fields such as name, description, and operational times.
+      properties:
+        restaurantname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        floornumber:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        openingtime:
+          type: string
+          format: time
+          nullable: true
+        closingtime:
+          type: string
+          format: time
+          nullable: true
+        servesbreakfast:
+          type: string
+          minLength: 1
+          maxLength: 1
+        serveslunch:
+          type: string
+          minLength: 1
+          maxLength: 1
+        servesdinner:
+          type: string
+          minLength: 1
+          maxLength: 1
+        servesalcohol:
+          type: string
+          minLength: 1
+          maxLength: 1
+        restaurant_description:
+          type: string
+          minLength: 1
+          maxLength: 45
+      required:
+      - floornumber
+      - restaurant_description
+      - restaurantname
+      - servesalcohol
+      - servesbreakfast
+      - servesdinner
+      - serveslunch
+    MmsRestaurantList:
+      type: object
+      properties:
+        restaurantid:
+          type: integer
+          readOnly: true
+        restaurantname:
+          type: string
+          maxLength: 50
+        floornumber:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        openingtime:
+          type: string
+          format: time
+          nullable: true
+        closingtime:
+          type: string
+          format: time
+          nullable: true
+        servesbreakfast:
+          type: string
+          maxLength: 1
+        serveslunch:
+          type: string
+          maxLength: 1
+        servesdinner:
+          type: string
+          maxLength: 1
+        servesalcohol:
+          type: string
+          maxLength: 1
+        restaurant_description:
+          type: string
+          maxLength: 45
+      required:
+      - floornumber
+      - restaurant_description
+      - restaurantid
+      - restaurantname
+      - servesalcohol
+      - servesbreakfast
+      - servesdinner
+      - serveslunch
+    MmsRoomBaseRequest:
+      type: object
+      description: |-
+        Serializer for handling room details.
+        This serializer expects IDs to be passed for stateroom type, location, and ship.
+        It validates the room number, floor, price, and ensures the associated stateroom type and location IDs are valid.
+      properties:
+        roomfloor:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+        stateroomtypeid:
+          type: integer
+        locid:
+          type: integer
+      required:
+      - locid
+      - price
+      - roomfloor
+      - stateroomtypeid
+    MmsRoomList:
+      type: object
+      description: |-
+        Serializer for listing room information, including details about room type and location.
+        It provides custom methods to retrieve related room type and location fields.
+      properties:
+        roomnumber:
+          type: integer
+          readOnly: true
+        roomfloor:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+        roomtype:
+          type: string
+          readOnly: true
+        location:
+          type: string
+          readOnly: true
+      required:
+      - location
+      - price
+      - roomfloor
+      - roomnumber
+      - roomtype
+    MmsRoomLocCreateUpdateRequest:
+      type: object
+      description: |-
+        Serializer for creating and updating MmsRoomLoc (room location) instances.
+        This serializer handles the validation and transformation of input data
+        for the 'location' field, ensuring it's one of the predefined valid types.
+      properties:
+        location:
+          type: string
+          minLength: 1
+          maxLength: 50
+      required:
+      - location
+    MmsRoomLocList:
+      type: object
+      description: |-
+        Serializer for listing MmsRoomLoc instances. This serializer will
+        serialize all fields of MmsRoomLoc, including related fields like
+        foreign keys if present.
+      properties:
+        locid:
+          type: integer
+          readOnly: true
+        location:
+          type: string
+          maxLength: 50
+      required:
+      - location
+      - locid
+    MmsRoomTypeCreateUpdateRequest:
+      type: object
+      description: |-
+        Serializer for creating and updating MmsRoomType instances.
+        It validates fields such as stateroom type, room size, number of beds/baths, and descriptions.
+      properties:
+        stateroomtype:
+          type: string
+          minLength: 1
+          maxLength: 20
+        roomsize:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        numberofbeds:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        numberofbaths:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,1})?$
+        numberofbalconies:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        roomtypedescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - numberofbalconies
+      - numberofbaths
+      - numberofbeds
+      - roomsize
+      - roomtypedescription
+      - stateroomtype
+    MmsRoomsCreateRequest:
+      type: object
+      description: |-
+        Serializer for creating multiple room entries.
+        It allows for both nested room data and CSV file uploads as input.
+        The validation ensures that either `rooms` data or a `csv_file` is provided, but not both.
+      properties:
+        rooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/MmsRoomBaseRequest'
+        csv_file:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+    MmsShipCreateRequest:
+      type: object
+      description: |-
+        Serializer for creating ships along with related activities, restaurants, and rooms.
+        This serializer allows creating a ship and associating it with multiple activities, restaurants, and rooms.
+      properties:
+        shipname:
+          type: string
+          minLength: 1
+          maxLength: 45
+        description:
+          type: string
+          minLength: 1
+          maxLength: 150
+        capacity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        activities:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        restaurants:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        rooms:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - capacity
+      - description
+      - shipname
+    MmsShipList:
+      type: object
+      description: |-
+        Serializer for listing ships and retrieving their full details.
+        This serializer is used to serialize the list of ships, providing all the details from the MmsShip model.
+      properties:
+        shipid:
+          type: integer
+          readOnly: true
+        shipname:
+          type: string
+          maxLength: 45
+        description:
+          type: string
+          maxLength: 150
+        capacity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - capacity
+      - description
+      - shipid
+      - shipname
+    MmsTripCreateRequest:
+      type: object
+      description: |-
+        Serializer for creating and validating new trips.
+        It includes validation for required fields like trip dates, cost, capacity, and associated stops and packages.
+      properties:
+        tripname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        startdate:
+          type: string
+          format: date
+        enddate:
+          type: string
+          format: date
+        tripcostperperson:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        tripstatus:
+          type: string
+          minLength: 1
+          maxLength: 20
+        tripcapacity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        cancellationpolicy:
+          type: string
+          minLength: 1
+          maxLength: 300
+        tripdescription:
+          type: string
+          minLength: 1
+          maxLength: 300
+        finalbookingdate:
+          type: string
+          format: date
+        shipid:
+          type: integer
+        stops:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        packages:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - cancellationpolicy
+      - enddate
+      - finalbookingdate
+      - shipid
+      - startdate
+      - tripcapacity
+      - tripcostperperson
+      - tripdescription
+      - tripname
+      - tripstatus
+    MmsTripList:
+      type: object
+      properties:
+        tripid:
+          type: integer
+          readOnly: true
+        tripname:
+          type: string
+          maxLength: 50
+        startdate:
+          type: string
+          format: date
+        enddate:
+          type: string
+          format: date
+        tripcostperperson:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        port_stops:
+          type: string
+          readOnly: true
+      required:
+      - enddate
+      - port_stops
+      - startdate
+      - tripcostperperson
+      - tripid
+      - tripname
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+      required:
+      - id
+      - username
+    UserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        confirm_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        profile:
+          $ref: '#/components/schemas/UserProfileRequest'
+      required:
+      - confirm_password
+      - password
+      - username
+    UserProfile:
+      type: object
+      properties:
+        phonenumber:
+          type: string
+          nullable: true
+          maxLength: 15
+        dateofbirth:
+          type: string
+          format: date
+          nullable: true
+    UserProfileRequest:
+      type: object
+      properties:
+        phonenumber:
+          type: string
+          nullable: true
+          maxLength: 15
+        dateofbirth:
+          type: string
+          format: date
+          nullable: true
+    UserUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        profile:
+          $ref: '#/components/schemas/UserProfileRequest'
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
