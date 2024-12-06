@@ -1,5 +1,7 @@
+import queue
 from . import models
 from django.http import Http404
+from django.db.models import Count
 from . import filters, serializers
 from django.core.mail import send_mail
 from . permissions import IsAdminOrStaff
@@ -8,14 +10,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import mixins, generics, status
 from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.filters import SearchFilter, OrderingFilter
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
 
 
 '''class MmsTripListAPIView(APIView):
@@ -1951,22 +1955,105 @@ class MmsTripAddView(generics.GenericAPIView, mixins.CreateModelMixin):
     def post(self, request, *args, **kwargs):
         """Handle trip creation."""
         return self.create(request=request, *args, **kwargs)
-                   
-class MmsTripListView(generics.ListAPIView):
+
+class MmsRoomSummaryListView(generics.ListAPIView): 
+    """
+    API view to retrieve a list of rooms grouped by room type and location.
+    Supports filtering, searching, and ordering of room data.
+    Only authenticated users with staff or admin permissions can access this list.
+    """
+    
+    queryset = models.MmsRoom.objects.select_related('stateroomtypeid', 'locid').all()
+    serializer_class = serializers.MmsRoomSummarySerializer  # Use the summary serializer here
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]  # Ensure the user is authenticated and has required permissions
+    filter_backends = [DjangoFilterBackend, SearchFilter]  # Enable filtering, searching
+    filterset_class = filters.RoomFilter  # Apply custom filterset
+    search_fields = ['roomnumber']  # Enable search by room number
+    
+    def get_queryset(self):
+        """
+        Group rooms by room type and location, and annotate with count and base price.
+        """
+        room_details = models.MmsRoom.objects.select_related('stateroomtypeid', 'locid')
+        
+        # Group by room type and location, and fetch base price from room type
+        room_summary = room_details.values(
+            'stateroomtypeid__stateroomtype',  # Group by room type
+            'stateroomtypeid__baseprice',     # Fetch room type price
+            'locid__location'                 # Group by location
+        ).annotate(
+            roomtypecount=Count('roomnumber'),  # Count of rooms for each room type
+            locationcount=Count('roomnumber')  # Count of rooms for each location
+        )
+        
+        return room_summary
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Handle the GET request to list rooms grouped by room type and location.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        if not queryset.exists():
+            return Response({"detail": "No rooms found matching the filters."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Pass the queryset (which is a list of dictionaries) to the serializer
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class MmsTripRoomPriceUpdateView(generics.GenericAPIView):
+    """
+    View to handle price updates for rooms in MmsTripRoom.
+    Supports updating prices based on room type or location.
+    """
+    queryset = models.MmsTripRoom.objects.all()
+    serializer_class = serializers.MmsTripRoomPriceUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    lookup_field = "tripid"
+
+    def put(self, request, *args, **kwargs):
+        """
+        Handle updating the dynamic price for rooms based on roomtype or location.
+        """
+        # Validate the incoming data using the serializer
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Extract the filters and dynamic price from validated data
+        roomtype = serializer.validated_data.get('roomtype')
+        location = serializer.validated_data.get('location')
+        dynamicprice = serializer.validated_data.get('dynamicprice')
+
+        # Fetch rooms based on the filters
+        queryset = models.MmsTripRoom.objects.filter(tripid=kwargs['tripid'])
+
+        if roomtype:
+            queryset = queryset.filter(roomtype=roomtype)
+        if location:
+            queryset = queryset.filter(location=location)
+
+        # Update the dynamic price for all matching rooms
+        updated_count = queryset.update(dynamicprice=dynamicprice)
+
+        if updated_count > 0:
+            return Response({"detail": f"{updated_count} room(s) updated successfully."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "No rooms updated, please check your filters."}, status=status.HTTP_404_NOT_FOUND)
+       
+class MmsAdminTripListView(generics.ListAPIView):
     """
     API view to list all trips.
     Staff or admin can view all trips, while regular users can only view upcoming trips.
     """
     queryset = models.MmsTrip.objects.all()
-    serializer_class = serializers.MmsTripListSerializer
-    permission_classes = [AllowAny]
+    serializer_class = serializers.MmsAdminTripListSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = filters.TripFilter
+    filterset_class = filters.AdminTripFilter
     ordering_fields = ['startdate', 'enddate', 'tripcostperperson', 'duration', 'tripname']
     ordering = ['startdate']  # Default ordering (earliest trips first)
 
     @extend_schema(
-        description="Retrieve a list of trips. Admins/staff can view all trips; regular users only view upcoming trips.",
+        description="Retrieve a list of trips. Admins/staff can view all trips.",
         responses={
             200: OpenApiResponse(
                 description="Successfully retrieved the list of trips.",
@@ -2005,17 +2092,7 @@ class MmsTripListView(generics.ListAPIView):
         },
         tags=["Trip Management"]
     )
-    def get_queryset(self):
-        """
-        Customize the queryset to return all trips for staff/admin users,
-        or only upcoming trips for regular users.
-        """
-        user = self.request.user
-        base_queryset = models.MmsTrip.objects.prefetch_related('portstop__portid')  # Optimize port stop queries
-        if user.is_staff or user.is_superuser:
-            return base_queryset
-        return base_queryset.filter(tripstatus__iexact='upcoming')
-
+    
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         if not queryset.exists():
@@ -2073,6 +2150,41 @@ class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+class MmsTripDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
+    """
+    API View to delete a trip from the system. 
+    Uses DRF's DestroyModelMixin to perform deletion operations.
+    """
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripCreateSerializer
+    lookup_field = 'tripid'  # Field used to lookup the trip in the URL
+
+    @extend_schema(
+        operation_id="delete_trip",
+        summary="Delete a trip",
+        description="Deletes a trip identified by its `tripid`. This action is irreversible. Ensure no dependent entities exist before deletion.",
+        responses={
+            204: OpenApiResponse(description="Trip deleted successfully."),
+            400: OpenApiResponse(description="Invalid trip ID or request."),
+            404: OpenApiResponse(description="Trip not found.")
+        }
+    )
+    def delete(self, request, *args, **kwargs):
+        """
+        Delete a trip by its ID.
+        Validates if the trip exists before performing deletion.
+        """
+        try:
+            # Fetch the object
+            trip = self.get_object()
+        except models.MmsTrip.DoesNotExist:
+            raise serializers.ValidationError({"detail": "Trip not found."}, code=status.HTTP_404_NOT_FOUND)
+
+        # Perform deletion
+        self.perform_destroy(trip)
+
+        return Response({"detail": "Trip deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
 class UserCreateView(generics.CreateAPIView):
     """
     User Registration View that handles the creation of a new user.
@@ -2292,3 +2404,74 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     def post(self, request, *args, **kwargs):
         """Handle the reset of the user's password."""
         return super().post(request, *args, **kwargs)
+
+class MmsTripListView(generics.ListAPIView):
+    """
+    API view to list all trips.
+    Staff or admin can view all trips, while regular users can only view upcoming trips.
+    """
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripListSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.TripFilter
+    ordering_fields = ['startdate', 'enddate', 'tripcostperperson', 'duration', 'tripname']
+    ordering = ['startdate']  # Default ordering (earliest trips first)
+
+    @extend_schema(
+        description="Retrieve a list of trips. Admins/staff can view all trips; regular users only view upcoming trips.",
+        responses={
+            200: OpenApiResponse(
+                description="Successfully retrieved the list of trips.",
+                examples={
+                    "application/json": {
+                        "example": [
+                            {
+                                "tripid": 1,
+                                "tripname": "Caribbean Adventure",
+                                "startdate": "2024-06-01",
+                                "enddate": "2024-06-15",
+                                "tripcostperperson": "799.99",
+                                "tripstatus": "upcoming",
+                                "tripcapacity": 200,
+                                "cancellationpolicy": "Full refund 30 days before trip",
+                                "tripdescription": "An exciting trip to the Caribbean!",
+                                "finalbookingdate": "2024-05-01",
+                                "shipid": 1,
+                                "stops": [1, 2],
+                                "packages": [1, 2]
+                            }
+                        ]
+                    }
+                }
+            ),
+            404: OpenApiResponse(
+                description="No trips found matching the filters.",
+                examples={
+                    "application/json": {
+                        "example": {
+                            "message": "No trips found matching the specified filters."
+                        }
+                    }
+                }
+            ),
+        },
+        tags=["Trip Management"]
+    )
+    def get_queryset(self):
+        """
+        Customize the queryset to return all trips for staff/admin users,
+        or only upcoming trips for regular users.
+        """
+        user = self.request.user
+        base_queryset = models.MmsTrip.objects.prefetch_related('portstop__portid')  # Optimize port stop queries
+        if user.is_staff or user.is_superuser:
+            return base_queryset
+        return base_queryset.filter(tripstatus__iexact='upcoming')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if not queryset.exists():
+            return Response({"detail": "No trips found matching the specified filters."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

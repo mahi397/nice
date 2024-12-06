@@ -1,3 +1,4 @@
+
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
@@ -9,7 +10,7 @@ from django.db import models
 
 
 class AuthGroup(models.Model):
-    name = models.CharField(unique=True, max_length=150, db_collation='utf8mb4_0900_ai_ci')
+    name = models.CharField(unique=True, max_length=150)
 
     class Meta:
         managed = False
@@ -28,9 +29,9 @@ class AuthGroupPermissions(models.Model):
 
 
 class AuthPermission(models.Model):
-    name = models.CharField(max_length=255, db_collation='utf8mb4_0900_ai_ci')
+    name = models.CharField(max_length=255)
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
-    codename = models.CharField(max_length=100, db_collation='utf8mb4_0900_ai_ci')
+    codename = models.CharField(max_length=100)
 
     class Meta:
         managed = False
@@ -39,13 +40,13 @@ class AuthPermission(models.Model):
 
 
 class AuthUser(models.Model):
-    password = models.CharField(max_length=128, db_collation='utf8mb4_0900_ai_ci')
+    password = models.CharField(max_length=128)
     last_login = models.DateTimeField(blank=True, null=True)
     is_superuser = models.IntegerField()
-    username = models.CharField(unique=True, max_length=150, db_collation='utf8mb4_0900_ai_ci')
-    first_name = models.CharField(max_length=150, db_collation='utf8mb4_0900_ai_ci')
-    last_name = models.CharField(max_length=150, db_collation='utf8mb4_0900_ai_ci')
-    email = models.CharField(max_length=254, db_collation='utf8mb4_0900_ai_ci')
+    username = models.CharField(unique=True, max_length=150)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    email = models.CharField(max_length=254)
     is_staff = models.IntegerField()
     is_active = models.IntegerField()
     date_joined = models.DateTimeField()
@@ -79,10 +80,10 @@ class AuthUserUserPermissions(models.Model):
 
 class DjangoAdminLog(models.Model):
     action_time = models.DateTimeField()
-    object_id = models.TextField(db_collation='utf8mb4_0900_ai_ci', blank=True, null=True)
-    object_repr = models.CharField(max_length=200, db_collation='utf8mb4_0900_ai_ci')
+    object_id = models.TextField(blank=True, null=True)
+    object_repr = models.CharField(max_length=200)
     action_flag = models.PositiveSmallIntegerField()
-    change_message = models.TextField(db_collation='utf8mb4_0900_ai_ci')
+    change_message = models.TextField()
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(AuthUser, models.DO_NOTHING)
 
@@ -92,8 +93,8 @@ class DjangoAdminLog(models.Model):
 
 
 class DjangoContentType(models.Model):
-    app_label = models.CharField(max_length=100, db_collation='utf8mb4_0900_ai_ci')
-    model = models.CharField(max_length=100, db_collation='utf8mb4_0900_ai_ci')
+    app_label = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
 
     class Meta:
         managed = False
@@ -103,8 +104,8 @@ class DjangoContentType(models.Model):
 
 class DjangoMigrations(models.Model):
     id = models.BigAutoField(primary_key=True)
-    app = models.CharField(max_length=255, db_collation='utf8mb4_0900_ai_ci')
-    name = models.CharField(max_length=255, db_collation='utf8mb4_0900_ai_ci')
+    app = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
     applied = models.DateTimeField()
 
     class Meta:
@@ -113,8 +114,8 @@ class DjangoMigrations(models.Model):
 
 
 class DjangoSession(models.Model):
-    session_key = models.CharField(primary_key=True, max_length=40, db_collation='utf8mb4_0900_ai_ci')
-    session_data = models.TextField(db_collation='utf8mb4_0900_ai_ci')
+    session_key = models.CharField(primary_key=True, max_length=40)
+    session_data = models.TextField()
     expire_date = models.DateTimeField()
 
     class Meta:
@@ -237,8 +238,8 @@ class MmsPort(models.Model):
 
 class MmsPortStop(models.Model):
     itineraryid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every port stop of a trip')
-    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.')
-    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
+    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.', related_name='portstops')
+    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.', related_name='portstops')
     arrivaltime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the ship arrives at the port')
     departuretime = models.DateTimeField(blank=True, null=True, db_comment='Time of departure from the port')
     orderofstop = models.IntegerField(db_comment='The order in which the ship stops at each port')
@@ -269,9 +270,8 @@ class MmsRestaurant(models.Model):
 
 
 class MmsRoom(models.Model):
-    roomnumber = models.AutoField(primary_key=True)
+    roomnumber = models.IntegerField(primary_key=True)
     roomfloor = models.SmallIntegerField(db_comment='Floor number of the room')
-    price = models.DecimalField(max_digits=6, decimal_places=2)
     stateroomtypeid = models.ForeignKey('MmsRoomType', models.DO_NOTHING, db_column='stateroomtypeid', db_comment='Unique identifier of room type')
     locid = models.ForeignKey('MmsRoomLoc', models.DO_NOTHING, db_column='locid')
 
@@ -297,6 +297,7 @@ class MmsRoomType(models.Model):
     numberofbaths = models.DecimalField(max_digits=2, decimal_places=1, db_comment='Number of the bathrooms in the stateroom')
     numberofbalconies = models.SmallIntegerField(db_comment='Number of balconies in the stateroom')
     roomtypedescription = models.CharField(max_length=500)
+    baseprice = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
         managed = False
@@ -333,7 +334,7 @@ class MmsShipRestaurant(models.Model):
 
 
 class MmsShipRoom(models.Model):
-    roomid = models.AutoField(primary_key=True)
+    shiproomid = models.AutoField(primary_key=True)
     shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
     roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
 
@@ -369,6 +370,20 @@ class MmsTripPackage(models.Model):
         db_table = 'mms_trip_package'
 
 
+class MmsTripRoom(models.Model):
+    dynamicprice = models.DecimalField(max_digits=6, decimal_places=2)
+    baseprice = models.DecimalField(max_digits=6, decimal_places=2)
+    isbooked = models.IntegerField()
+    roomtype = models.CharField(max_length=45)
+    location = models.CharField(max_length=45)
+    roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
+    tripid = models.ForeignKey(MmsTrip, models.DO_NOTHING, db_column='tripid')
+
+    class Meta:
+        managed = False
+        db_table = 'mms_trip_room'
+
+
 class MmsUserProfile(models.Model):
     profileid = models.AutoField(primary_key=True)
     phonenumber = models.CharField(max_length=15, db_collation='utf8mb4_0900_ai_ci', blank=True, null=True)
@@ -392,11 +407,11 @@ class TokenBlacklistBlacklistedtoken(models.Model):
 
 class TokenBlacklistOutstandingtoken(models.Model):
     id = models.BigAutoField(primary_key=True)
-    token = models.TextField(db_collation='utf8mb4_0900_ai_ci')
+    token = models.TextField()
     created_at = models.DateTimeField(blank=True, null=True)
     expires_at = models.DateTimeField()
     user = models.ForeignKey(AuthUser, models.DO_NOTHING, blank=True, null=True)
-    jti = models.CharField(unique=True, max_length=255, db_collation='utf8mb4_0900_ai_ci')
+    jti = models.CharField(unique=True, max_length=255)
 
     class Meta:
         managed = False

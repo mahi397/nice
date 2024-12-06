@@ -2,7 +2,7 @@ from dataclasses import field
 from django_filters import rest_framework as filters
 from django.db.models import F
 from datetime import timedelta
-from .models import MmsActivity, MmsRestaurant, MmsRoom, MmsTrip, MmsPortStop, MmsPort
+from .models import MmsActivity, MmsRestaurant, MmsRoom, MmsTrip, MmsPortStop, MmsPort, MmsTripRoom
 
 class TripFilter(filters.FilterSet):
     # Filter trips based on the start date range
@@ -23,7 +23,7 @@ class TripFilter(filters.FilterSet):
     # Filter by regions
     port_city = filters.CharFilter(method='filter_by_port_city', label = "Places to visit")
     port_country = filters.CharFilter(method='filter_by_port_country', label = "Regions")
-
+    
     class Meta:
         model = MmsTrip
         fields = ['startdate_min', 'startdate_max', 'duration_min', 'duration_max', 'tripcostperperson_min', 'tripcostperperson_max', 'start_port_name', 'port_city', 'port_country']
@@ -60,7 +60,20 @@ class TripFilter(filters.FilterSet):
         Filters trips based on the maximum duration (startdate and enddate).
         """
         return queryset.filter(enddate__lt=F('startdate') + timedelta(days=value))
-    
+
+class AdminTripFilter(TripFilter):
+    valid_statuses = ['Scheduled', 'Completed', 'Cancelled', 'Postponed']
+    trip_status = filters.ChoiceFilter(
+        field_name='tripstatus',
+        choices=[(status, status) for status in valid_statuses],  # Reuse valid_statuses
+        label='Trip Status (Admin)',
+        help_text='Filter trips by their status with admin-specific options.'
+    )
+
+    class Meta(TripFilter.Meta):  # Extend Meta from the parent filter
+        model = TripFilter.Meta.model
+        fields = TripFilter.Meta.fields + ['trip_status']  # Include parent fields and any new ones
+        
 class PortFilter(filters.FilterSet):
     
     port_name = filters.CharFilter(field_name='portname', lookup_expr='icontains', label="Port Name (partial match)")
@@ -151,4 +164,40 @@ class RoomFilter(filters.FilterSet):
         room_number_max = self.data.get('room_number_max', None)
         if value and room_number_min and room_number_max:
             return queryset.exclude(roomnumber__gte=room_number_min, roomnumber__lte=room_number_max)
+        return queryset
+    
+class RoomSummaryFilter(filters.FilterSet):
+    
+    # Include and Exclude for Location
+    ship_location = filters.CharFilter(method='filter_by_ship_location', label="Room Location")
+    exclude_ship_location = filters.CharFilter(method='filter_exclude_ship_location', label="Exclude Room Location")
+    
+    # Include and Exclude for Room Type
+    room_type = filters.CharFilter(method='filter_by_room_type', label="Room Type")
+    exclude_room_type = filters.CharFilter(method='filter_exclude_room_type', label="Exclude Room Type")
+    
+    class Meta:
+        model = MmsTripRoom
+        fields = [
+            'ship_location', 'exclude_ship_location','room_type', 'exclude_room_type']
+    
+    # Custom Filters
+    def filter_by_ship_location(self, queryset, name, value):
+        """Filters rooms by location."""
+        return queryset.filter(roomnumber__locid__location__icontains=value)
+    
+    def filter_exclude_ship_location(self, queryset, name, value):
+        """Excludes rooms by location."""
+        if value:
+            return queryset.exclude(roomnumber__locid__location__icontains=value)
+        return queryset
+
+    def filter_by_room_type(self, queryset, name, value):
+        """Filters rooms by room type."""
+        return queryset.filter(roomnumber__stateroomtypeid__stateroomtype__icontains=value)
+    
+    def filter_exclude_room_type(self, queryset, name, value):
+        """Excludes rooms by room type."""
+        if value:
+            return queryset.exclude(roomnumber__stateroomtypeid__stateroomtype__icontains=value)
         return queryset

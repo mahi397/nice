@@ -252,7 +252,7 @@ class MmsRestaurantCreateUpdateSerializer(serializers.ModelSerializer):
             raise ValidationError("Restaurant description must not exceed 300 characters.")
         
         # Ensure description contains only valid characters
-        if not re.match(r'^[a-zA-Z0-9.,!?\-]*$', data):
+        if not re.match(r'^[a-zA-Z0-9.,!? ]*$', data):
             raise ValidationError("Restaurant description contains invalid characters.")
         
         return data
@@ -428,19 +428,21 @@ class MmsRoomLocCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.MmsRoomLoc  # The model to serialize data from
-        fields = ['location']  # Only the 'location' field is included for creation/updating
+        fields = ['locid','location']  # Only the 'location' field is included for creation/updating
     
-    def validate(self, data):
-        """
-        Validate the location field to ensure it is one of the predefined valid types.
-        """
-        location = data.get('location')
+    def validate_location(self, data):
+        if data == '' or not data.strip():
+            raise serializers.ValidationError("Location field cannot be blank.")
+        if models.MmsRoomLoc.objects.filter(location=data).exists():
+            raise serializers.ValidationError("The given room location already exists.")
+        
         valid_types = ['bow', 'stern', 'port side', 'starboard side']  # Valid location types
-        if location.lower() not in valid_types:
+        if data.lower() not in valid_types:
             raise serializers.ValidationError(f"Location must be one of {valid_types}.")
         
         return data
-
+    
+    @transaction.atomic
     def create(self, validated_data):
         """
         Create a new MmsRoomLoc instance using the validated data.
@@ -475,7 +477,7 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.MmsRoomType
-        fields = ['stateroomtype', 'roomsize', 'numberofbeds', 'numberofbaths', 'numberofbalconies', 'roomtypedescription']
+        fields = ['stateroomtype', 'roomsize', 'numberofbeds', 'numberofbaths', 'numberofbalconies', 'roomtypedescription', 'baseprice']
     
     def validate_stateroomtype(self, data):
         """
@@ -484,6 +486,9 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
         if not data.strip():
             raise serializers.ValidationError("Stateroom type cannot be empty or whitespace.")
         
+        if models.MmsRoomType.objects.filter(stateroomtype=data).exists():
+            raise serializers.ValidationError("The given room type already exists.")
+        pass
         valid_types = ['the haven suite', 'club balcony suite', 'family large balcony', 'family balcony', 'oceanview window', 'inside stateroom', 'studio stateroom']
         
         if data.lower() not in valid_types:
@@ -545,6 +550,19 @@ class MmsRoomTypeCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Room type description contains invalid characters.")
         
         return data
+    
+    def validate_basepirce(self, data):
+        """
+        Validates the room price.
+        Ensures that the price is a positive value and does not exceed a high limit (1000 in this case).
+        """
+        if data <= 0:
+            raise serializers.ValidationError("Room type price cannot be zero or a negative number.")  
+        
+        if data > 1000:
+            raise serializers.ValidationError("Room price seems unrealistically high.")
+        
+        return data
         
     def create(self, validated_data):
         """
@@ -575,7 +593,7 @@ class MmsRoomBaseSerializer(serializers.ModelSerializer):
     """
     Serializer for handling room details.
     This serializer expects IDs to be passed for stateroom type, location, and ship.
-    It validates the room number, floor, price, and ensures the associated stateroom type and location IDs are valid.
+    It validates the room number, floor, and ensures the associated stateroom type and location IDs are valid.
     """
     
     # Expecting IDs to be passed for stateroom type, location, and ship
@@ -584,7 +602,7 @@ class MmsRoomBaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.MmsRoom
-        fields = ['roomnumber', 'roomfloor', 'price', 'stateroomtypeid', 'locid']
+        fields = ['roomnumber', 'roomfloor', 'stateroomtypeid', 'locid']
     
     def validate_roomnumber(self, data):
         """
@@ -609,18 +627,6 @@ class MmsRoomBaseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Floor number cannot be negative.")
         if data > 20:
             raise serializers.ValidationError("Floor number cannot be more than 20.")
-        
-        return data
-    
-    def validate_price(self, data):
-        """
-        Validates the room price.
-        Ensures that the price is a positive value and does not exceed a high limit (1000 in this case).
-        """
-        if data < 0:
-            raise serializers.ValidationError("Room price cannot be negative.")
-        if data > 1000:
-            raise serializers.ValidationError("Room price seems unrealistically high.")
         
         return data
             
@@ -749,11 +755,12 @@ class MmsRoomsCreateSerializer(serializers.ModelSerializer):
         """
         rooms_data = validated_data.get('rooms', [])
         csv_file = validated_data.get('csv_file', None)
+        created_rooms = []
 
         if rooms_data:
             # If room data is provided, create rooms from the nested data
             for room_data in rooms_data:
-                models.MmsRoom.objects.create(**room_data)
+                created_rooms.append(models.MmsRoom.objects.create(**room_data))
 
         elif csv_file:
             # If a CSV file is provided, process it using the MmsRoomCSVUploadSerializer
@@ -763,9 +770,11 @@ class MmsRoomsCreateSerializer(serializers.ModelSerializer):
                 validated_rows = csv_serializer.validated_data['file']
                 # Create rooms from each row in the CSV file
                 for row in validated_rows:
-                    models.MmsRoom.objects.create(**row)
+                    created_rooms.append(models.MmsRoom.objects.create(**row))
 
-        return {"message": "Rooms added successfully."}
+        # Serialize the created rooms before returning
+        #room_serializer = MmsRoomBaseSerializer(created_rooms, many=True)
+        return created_rooms
         
 class MmsRoomListSerializer(serializers.ModelSerializer):
     """
@@ -778,10 +787,10 @@ class MmsRoomListSerializer(serializers.ModelSerializer):
     
     # Custom method field for retrieving the location based on the related location data.
     location = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = models.MmsRoom
-        fields = ['roomnumber', 'roomfloor', 'price', 'roomtype', 'location']
+        fields = ['roomnumber', 'roomfloor','roomtype', 'location']
         
     def get_roomtype(self, obj):
         """
@@ -808,13 +817,24 @@ class MmsShipActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MmsShipActivity
         fields = ['shipid', 'activityid']
+    
+    def validate_activityid(self, data):
+        """
+        Validate that the activity exists.
+        """
         
+        if not models.MmsActivity.objects.filter(activityid=data):
+            raise serializers.ValidationError(f"Actvity you are trying to add to ship doesn't exist.")
+        
+        return data
+            
     def validate(self, data):
         """
         Validate that the combination of ship and activity is unique.
         Ensures that an activity is not assigned to the same ship more than once.
         If the combination of `shipid` and `activityid` already exists, a validation error is raised.
         """
+        
         if models.MmsShipActivity.objects.filter(shipid=data['shipid'], activityid=data['activityid']).exists():
             raise serializers.ValidationError(
                 f"Activity {data['activityid'].activityname} already exists for ship {data['shipid'].shipname}."
@@ -837,6 +857,11 @@ class MmsShipRestaurantSerializer(serializers.ModelSerializer):
         Ensures that a restaurant is not assigned to the same ship more than once.
         If the combination of `shipid` and `restaurantid` already exists, a validation error is raised.
         """
+        
+        if not models.MmsRestaurant.objects.filter(restaurantid=data['restaurantid']):
+            raise serializers.ValidationError(f"Restaurant you are trying to add to ship {data['shipname']} doesn't exist.")
+
+        
         if models.MmsShipRestaurant.objects.filter(shipid=data['shipid'], restaurantid=data['restaurantid']).exists():
             raise serializers.ValidationError(
                 f"Restaurant {data['restaurantid'].restaurantname} already exists for ship {data['shipid'].shipname}."
@@ -1218,6 +1243,18 @@ class MmsTrippackageSerializer(serializers.ModelSerializer):
             )
         
         return data
+
+class MmsTripRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.MmsTripRoom
+        fields = [
+            'tripid',  
+            'roomnumber', 
+            'baseprice', 
+            'isbooked', 
+            'dynamicprice'
+        ]
+        read_only_fields = ['tripid', 'roomnumber', 'baseprice', 'dynamicprice', 'isbooked', 'roomtype', 'location']
            
 class MmsTripCreateSerializer(serializers.ModelSerializer):
     """
@@ -1230,7 +1267,7 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MmsTrip
         fields = [
-            'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'tripcapacity', 
+            'tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripstatus', 'tripcapacity', 
             'cancellationpolicy', 'tripdescription', 'finalbookingdate', 'shipid', 'stops', 'packages'
         ]
 
@@ -1301,28 +1338,20 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
             raise ValidationError("Final booking date must be before the trip start date.")
         return data
 
-    # Validate that there are no overlapping trips with the same name and dates
-    def validate_tripname_and_dates(self, data):
+    def validate(self, data):
         tripname = data.get('tripname')
-        startdate = data.get('startdate')
-        enddate = data.get('enddate')
-
-        overlapping_trips = models.MmsTrip.objects.filter(
-            tripname=tripname,
-            startdate__lt=enddate,
-            enddate__gt=startdate
-        )
-
-        if overlapping_trips.exists():
-            raise ValidationError(f"There's already an existing trip named '{tripname}' with overlapping dates.")
-        return data
-
-    # Validate that a trip has both start and end ports
-    def validate_trip_start_and_end_dates(self, data):
         startdate = data.get('startdate')
         enddate = data.get('enddate')
         stops = data.get('stops', [])
 
+        overlapping_trips = models.MmsTrip.objects.filter(tripname=tripname,startdate=startdate,enddate=enddate)
+        overlapping_start_date = models.MmsTrip.objects.filter(tripname=tripname,startdate=startdate)
+        overlapping_end_date = models.MmsTrip.objects.filter(tripname=tripname,enddate=enddate)
+        
+
+        if overlapping_trips.exists() or overlapping_end_date.exists() or overlapping_start_date.exists():
+            raise ValidationError(f"There's already an existing trip named '{tripname}' with overlapping dates.")
+        
         start_port = next((stop for stop in stops if stop.get('isstartport') == 1), None)
         end_port = next((stop for stop in stops if stop.get('isendport') == 1), None)
 
@@ -1342,8 +1371,9 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
             end_arrival = datetime.strptime(end_port['arrivaltime'], "%Y-%m-%dT%H:%M:%SZ").date()
             if enddate != end_arrival:
                 raise ValidationError(f"End date must match the arrival date of the end port ({end_arrival}).")
+        
         return data
-
+    
     # Create the trip stops from validated data
     def create_trip_stops(self, trip, stops):
         if stops:
@@ -1365,6 +1395,31 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
                     package_instance = models.MmsPackage.objects.get(packageid=package_id)
                     models.MmsTripPackage.objects.create(tripid=trip, packageid=package_instance)
 
+    # Automatically populate trip rooms
+    def populate_trip_rooms(self, trip):
+        """
+        Populates TripRoom table based on rooms linked to the ship.
+        """
+        # Fetch rooms linked to the ship
+        ship_rooms = models.MmsShipRoom.objects.filter(shipid=trip.shipid)
+
+        # Create TripRoom entries
+        trip_rooms = []
+        for room in ship_rooms:
+            trip_rooms.append(
+                models.MmsTripRoom(
+                    tripid=trip,
+                    roomnumber=room.roomnumber,
+                    isbooked=False,
+                    dynamicprice=room.roomnumber.stateroomtypeid.baseprice,
+                    baseprice=room.roomnumber.stateroomtypeid.baseprice,
+                    roomtype=room.roomnumber.stateroomtypeid.stateroomtype,
+                    location=room.roomnumber.locid.location
+                )
+            )
+        # Bulk create TripRoom entries for efficiency
+        models.MmsTripRoom.objects.bulk_create(trip_rooms)
+        
     # Create the trip and its related stops and packages within a transaction
     @transaction.atomic
     def create(self, validated_data): 
@@ -1374,23 +1429,94 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
         trip = models.MmsTrip.objects.create(**validated_data)
         self.create_trip_stops(trip, stops)
         self.create_trip_packages(trip, packages)
+        self.populate_trip_rooms(trip)
 
         return trip
+
+class MmsRoomSummarySerializer(serializers.Serializer):
+    """
+    Serializer to handle the grouped room data, splitting roomtype and location details into separate dictionaries.
+    """
+    roomtype = serializers.DictField()  # Dictionary for roomtype data
+    location = serializers.DictField()  # Dictionary for location data
+
+    def to_representation(self, instance):
+        """
+        Map the grouped dictionary to the required structure.
+        """
+        return {
+            "roomtype": {
+                "name": instance.get("stateroomtypeid__stateroomtype"),
+                "price": instance.get("stateroomtypeid__baseprice"),
+                "count": instance.get("roomtypecount"),
+            },
+            "location": {
+                "name": instance.get("locid__location"),
+                "count": instance.get("locationcount"),
+            }
+        }
+
+class MmsTripRoomPriceUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer to handle updates to dynamic pricing for rooms in MmsTripRoom.
+    Supports updating prices for specific room types or locations.
+    """
+    roomtype = serializers.CharField(required=False, write_only=True)
+    location = serializers.CharField(required=False, write_only=True)
+    dynamicprice = serializers.DecimalField(max_digits=6, decimal_places=2, required=True, write_only=True)
+
+    class Meta:
+        model = models.MmsTripRoom
+        fields = ['roomtype', 'location', 'dynamicprice']
+
+    def validate(self, attrs):
+        """
+        Validate the input for dynamic price updates.
+        Ensures that at least one filter (roomtype or location) is provided, and checks for conflicts.
+        """
+        roomtype = attrs.get('roomtype')
+        location = attrs.get('location')
+        dynamicprice = attrs.get('dynamicprice')
+
+        # Ensure dynamic price is within acceptable range
+        if dynamicprice < 150 or dynamicprice > 5000:  # Example price range validation
+            raise serializers.ValidationError("Dynamic price must be between $150 and $5,000.")
+
+        # Ensure that only one of roomtype or location is provided
+        if not roomtype and not location:
+            raise serializers.ValidationError("Provide either 'roomtype' or 'location' to update prices.")
+
+        # Handle conflicting updates (both room type and location provided)
+        if roomtype and location:
+            raise serializers.ValidationError(
+                "Cannot update price for both room type and location simultaneously. Choose one filter."
+            )
+
+        return attrs
 
 class MmsTripListSerializer(serializers.ModelSerializer):
     # Nested serializer for related start port (via MmsPortStop and MmsPort)
     port_stops = serializers.SerializerMethodField()
+    shipname = serializers.SerializerMethodField()
 
     class Meta:
         model = models.MmsTrip
-        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'port_stops']
+        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripdescription', 'shipname', 'port_stops']
+    
+    
+    def get_shipname(self, obj):
+        """
+        Fetch the name of the ship assigned for this trip
+
+        """  
+        return obj.shipid.shipname if obj.shipid else None
     
     def get_port_stops(self, obj):
         """
         Fetch all port stops with their details and order them.
         Optimized using `select_related` to avoid multiple queries for `MmsPort` data.
         """
-        port_stops = obj.portstop.select_related('portid').order_by('orderofstop')
+        port_stops = obj.portstops.select_related('portid').order_by('orderofstop')
         
         port_stop_details = []
         for stop in port_stops:
@@ -1402,94 +1528,17 @@ class MmsTripListSerializer(serializers.ModelSerializer):
                 "city": port_data.portcity if port_data else None,
                 "country": port_data.portcountry if port_data else None,
                 "order_of_stop": stop.orderofstop,
-                "is_start_port": stop.isstartport == "Y",
-                "is_end_port": stop.isendport == "Y",
+                "is_start_port": stop.isstartport == True,
+                "is_end_port": stop.isendport == True,
             })
         
         return port_stop_details
            
-class MmsTripDetailSerializer(MmsTripListSerializer):
-    # Nested serializer for related start port (via MmsPortStop and MmsPort)
-    # Additional fields for trip description, cancellation policy, additional fees, etc.
-    trip_description = serializers.CharField(source='description', read_only=True)
-    cancellation_policy = serializers.CharField(source='cancellationpolicy', read_only=True)
-    additional_fees = serializers.DecimalField(source='additionalfees', max_digits=10, decimal_places=2, read_only=True)
-    port_times = serializers.SerializerMethodField()  # Method to fetch port arrival and departure times
-    restaurants = serializers.SerializerMethodField()  # Method to fetch restaurant details
-    activities = serializers.SerializerMethodField()  # Method to fetch activity details
-
-    class Meta(MmsTripListSerializer.Meta):
-        # Include the fields from MmsTripListSerializer and the new detailed fields
-        fields = MmsTripListSerializer.Meta.fields + [
-            'trip_description', 
-            'cancellation_policy',  
-            'additional_fees', 
-            'port_stops',
-            'port_times',
-            'restaurants',
-            'activities'
-        ]
-    
-    def get_port_times(self, obj):
-        """
-        Get arrival and departure times for each port in the trip.
-        - This method collects the details of each port stop for the given trip,
-        - including the port name, arrival time, and departure time.
-        """
-        port_times = []  # List to hold port time data
-        
-        # Iterate through the port stops for the current trip, ordered by the order of stop
-        for port_stop in obj.portstops.all().order_by('orderofstop'):
-            port = port_stop.portid  # Fetch the port related to the current port stop
-            port_time_data = {
-                "port_name": port.portname if port else None,  # Get the port name
-                "arrival_time": port_stop.arrivaltime,  # Get the arrival time for the port stop
-                "departure_time": port_stop.departuretime,  # Get the departure time for the port stop
-            }
-            # Append the port time data to the list
-            port_times.append(port_time_data)
-        
-        # If no port times were found, return an empty list
-        return port_times if port_times else []
-
-    def get_restaurants(self, obj):
-        """
-        Fetch restaurant details related to the trip.
-        - This method collects restaurant information linked to the trip.
-        - It checks if each restaurant is associated with the trip and returns its details.
-        """
-        restaurants = obj.mmstriprestaurant_set.all()  # Fetch all restaurants related to the trip
-        
-        # Return a list of restaurant data with relevant details (name, meal options, alcohol availability)
-        return [
-            {
-                "restaurant_name": restaurant.restaurantid.restaurantname if restaurant.restaurantid else None,
-                "breakfast": restaurant.servesbreakfast if restaurant.servesbreakfast else None,
-                "lunch": restaurant.serveslunch if restaurant.serveslunch else None,
-                "dinner": restaurant.servesdinner if restaurant.servesdinner else None,
-                "alcohol": restaurant.servesalcohol if restaurant.servesalcohol else None
-            }
-            for restaurant in restaurants  # Iterate through all restaurants related to the trip
-        ] or []  # If no restaurants are found, return an empty list
-
-    def get_activities(self, obj):
-        """
-        Fetch activity details related to the trip.
-        - This method collects activities associated with the trip.
-        - It checks if each activity is related to the trip and returns its details.
-        """
-        activities = obj.mmstripactivity_set.all()  # Fetch all activities related to the trip
-        
-        # Return a list of activity data with relevant details (activity name, type, and capacity)
-        return [
-            {
-                "activity_name": activity.activityid.activityname if activity.activityid else None,
-                "activity_type": activity.activityid.activitytype if activity.activityid else None,
-                "capacity": activity.activityid.capacity if activity.activityid else None
-            }
-            for activity in activities  # Iterate through all activities related to the trip
-        ] or []  # If no activities are found, return an empty list
-       
+class MmsAdminTripListSerializer(MmsTripListSerializer):  
+    class Meta(MmsTripListSerializer.Meta):  # Extend Meta from the parent filter
+        model = MmsTripListSerializer.Meta.model
+        fields = MmsTripListSerializer.Meta.fields + ['tripstatus']  # Include parent fields and any new ones
+                     
 # User related features
 class UserProfileSerializer(serializers.ModelSerializer):
 
@@ -1699,33 +1748,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
         return representation
 
-'''class LoginSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        # Check if the username exists
-        username = attrs.get('username')
-        password = attrs.get('password')
-        user = None
-
-        try:
-            # Try fetching the user by username
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            # If the user doesn't exist, raise an appropriate error
-            raise AuthenticationFailed('No account found with that username.')
-        
-        # Check if the password is correct
-        if not user.check_password(password):
-            raise AuthenticationFailed('Incorrect password.')
-        
-        # If everything is fine, call the parent class's validate method
-        data = super().validate(attrs)
-        
-        # Add custom claims (username and email) to the token payload
-        data['username'] = user.username
-        data['email'] = user.email
-        
-        return data'''
-
 class LoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         """
@@ -1793,4 +1815,91 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             # Raise an error if no user is found with this email
             raise serializers.ValidationError("No user found with this email address.")
         return value
-         
+
+class MmsTripDetailSerializer(MmsTripListSerializer):
+    # Nested serializer for related start port (via MmsPortStop and MmsPort)
+    # Additional fields for trip description, cancellation policy, additional fees, etc.
+    port_times = serializers.SerializerMethodField()  # Method to fetch port arrival and departure times
+    restaurants = serializers.SerializerMethodField()  # Method to fetch restaurant details
+    activities = serializers.SerializerMethodField()  # Method to fetch activity details
+
+    class Meta(MmsTripListSerializer.Meta):
+        # Include the fields from MmsTripListSerializer and the new detailed fields
+        fields = MmsTripListSerializer.Meta.fields + [
+            'tripdescription', 
+            'cancellationpolicy',
+            'finalbookingdate',   
+            'port_times',
+            'restaurants',
+            'activities'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove the `port_stops` field inherited from the parent serializer
+        self.fields.pop('port_stops', None)
+        
+    def get_port_times(self, obj):
+        """
+        Get arrival and departure times for each port in the trip.
+        - This method collects the details of each port stop for the given trip,
+        - including the port name, arrival time, and departure time.
+        """
+        port_times = []  # List to hold port time data
+        
+        # Iterate through the port stops for the current trip, ordered by the order of stop
+        for port_stop in obj.portstops.all().order_by('orderofstop'):
+            port = port_stop.portid  # Fetch the port related to the current port stop
+            port_time_data = {
+                "port_name": port.portname if port else None,  # Get the port name
+                "port_city": port.portcity,
+                "arrival_time": port_stop.arrivaltime,  # Get the arrival time for the port stop
+                "departure_time": port_stop.departuretime,  # Get the departure time for the port stop
+            }
+            # Append the port time data to the list
+            port_times.append(port_time_data)
+        
+        # If no port times were found, return an empty list
+        return port_times if port_times else []
+
+    def get_restaurants(self, obj):
+        """
+        Fetch detailed restaurant information linked to the ship associated with this trip.
+        """
+        # Ensure the ship is linked to the trip
+        if not obj.shipid:
+            return []
+
+        # Use `select_related` to prefetch restaurant details efficiently
+        ship_restaurants = models.MmsShipRestaurant.objects.filter(shipid=obj.shipid).select_related('restaurantid')
+
+        # Prepare the response with relevant details
+        return [
+            {
+                "restaurant_name": restaurant.restaurantid.restaurantname,
+                "breakfast": restaurant.restaurantid.servesbreakfast,
+                "lunch": restaurant.restaurantid.serveslunch,
+                "dinner": restaurant.restaurantid.servesdinner,
+                "alcohol": restaurant.restaurantid.servesalcohol,
+            }
+            for restaurant in ship_restaurants
+        ]
+
+    def get_activities(self, obj):
+        """
+        Fetch detailed activity information linked to the ship associated with this trip.
+        """
+        if not obj.shipid:
+            return []
+
+        ship_activities = models.MmsShipActivity.objects.filter(shipid=obj.shipid).select_related('activityid')
+
+        return [
+            {
+                "activity_name": activity.activityid.activityname,
+                "description": activity.activityid.activitydescription,
+                "capacity": activity.activityid.capacity,
+            }
+            for activity in ship_activities
+        ]
+    
