@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS `auth_group`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `auth_group` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(150) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
@@ -60,13 +60,13 @@ DROP TABLE IF EXISTS `auth_permission`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `auth_permission` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(255) NOT NULL,
   `content_type_id` int NOT NULL,
-  `codename` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `codename` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `auth_permission_content_type_id_codename_01ab375a_uniq` (`content_type_id`,`codename`),
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=185 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=165 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -78,13 +78,13 @@ DROP TABLE IF EXISTS `auth_user`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `auth_user` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `password` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `password` varchar(128) NOT NULL,
   `last_login` datetime(6) DEFAULT NULL,
   `is_superuser` tinyint(1) NOT NULL,
-  `username` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `first_name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `last_name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `email` varchar(254) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `username` varchar(150) NOT NULL,
+  `first_name` varchar(150) NOT NULL,
+  `last_name` varchar(150) NOT NULL,
+  `email` varchar(254) NOT NULL,
   `is_staff` tinyint(1) NOT NULL,
   `is_active` tinyint(1) NOT NULL,
   `date_joined` datetime(6) NOT NULL,
@@ -141,10 +141,10 @@ DROP TABLE IF EXISTS `django_admin_log`;
 CREATE TABLE `django_admin_log` (
   `id` int NOT NULL AUTO_INCREMENT,
   `action_time` datetime(6) NOT NULL,
-  `object_id` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
-  `object_repr` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `object_id` longtext,
+  `object_repr` varchar(200) NOT NULL,
   `action_flag` smallint unsigned NOT NULL,
-  `change_message` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `change_message` longtext NOT NULL,
   `content_type_id` int DEFAULT NULL,
   `user_id` int NOT NULL,
   PRIMARY KEY (`id`),
@@ -165,11 +165,11 @@ DROP TABLE IF EXISTS `django_content_type`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `django_content_type` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `app_label` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `app_label` varchar(100) NOT NULL,
+  `model` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -181,11 +181,11 @@ DROP TABLE IF EXISTS `django_migrations`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `django_migrations` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `app` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `app` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -196,8 +196,8 @@ DROP TABLE IF EXISTS `django_session`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `django_session` (
-  `session_key` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `session_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `session_key` varchar(40) NOT NULL,
+  `session_data` longtext NOT NULL,
   `expire_date` datetime(6) NOT NULL,
   PRIMARY KEY (`session_key`),
   KEY `django_session_expire_date_a5c62663` (`expire_date`)
@@ -219,7 +219,7 @@ CREATE TABLE `mms_activity` (
   `floor` smallint NOT NULL COMMENT 'Floor at which the activity or entertainment is located',
   `capacity` int NOT NULL COMMENT 'Capacity of the activity/ entertainment',
   PRIMARY KEY (`activityid`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -240,10 +240,29 @@ CREATE TABLE `mms_booking` (
   PRIMARY KEY (`bookingid`),
   KEY `mms_booking_mms_group_fk` (`groupid`),
   KEY `mms_booking_mms_trip_fk` (`tripid`),
-  KEY `fk_user_id` (`userid`),
-  CONSTRAINT `fk_user_id` FOREIGN KEY (`userid`) REFERENCES `auth_user` (`id`),
+  KEY `mms_booking_mms_user_fk_idx` (`userid`),
   CONSTRAINT `mms_booking_mms_group_fk` FOREIGN KEY (`groupid`) REFERENCES `mms_group` (`groupid`),
-  CONSTRAINT `mms_booking_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`)
+  CONSTRAINT `mms_booking_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`),
+  CONSTRAINT `mms_booking_mms_user_fk` FOREIGN KEY (`userid`) REFERENCES `auth_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mms_booking_package`
+--
+
+DROP TABLE IF EXISTS `mms_booking_package`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mms_booking_package` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `bookingid` bigint NOT NULL,
+  `packageid` smallint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `mms_booking_package_booking_fk_idx` (`bookingid`),
+  KEY `mms_booking_package_mms_package_fk_idx` (`packageid`),
+  CONSTRAINT `mms_booking_package_mms_booking_fk` FOREIGN KEY (`bookingid`) REFERENCES `mms_booking` (`bookingid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `mms_booking_package_mms_package_fk` FOREIGN KEY (`packageid`) REFERENCES `mms_package` (`packageid`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -257,6 +276,7 @@ DROP TABLE IF EXISTS `mms_group`;
 CREATE TABLE `mms_group` (
   `groupid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unqiue identifier for every group',
   `groupname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Name of the group',
+  `count` int NOT NULL,
   PRIMARY KEY (`groupid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -294,7 +314,7 @@ CREATE TABLE `mms_package` (
   `base_price` decimal(5,2) NOT NULL COMMENT 'Price of the package per person per night',
   `packagedetails` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Details of the package',
   PRIMARY KEY (`packageid`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -365,7 +385,7 @@ CREATE TABLE `mms_port` (
   `nearestairport` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Name of the nearest airport to the port',
   `parkingspots` int NOT NULL COMMENT 'Number of parking spots available at the port',
   PRIMARY KEY (`portid`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -389,8 +409,8 @@ CREATE TABLE `mms_port_stop` (
   KEY `mms_port_stop_mms_port_fk` (`portid`),
   KEY `mms_port_stop_mms_trip_fk` (`tripid`),
   CONSTRAINT `mms_port_stop_mms_port_fk` FOREIGN KEY (`portid`) REFERENCES `mms_port` (`portid`),
-  CONSTRAINT `mms_port_stop_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb3;
+  CONSTRAINT `mms_port_stop_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -412,7 +432,7 @@ CREATE TABLE `mms_restaurant` (
   `servesalcohol` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Value to specify if the restaurant serves alcohol or not. For e.g., ''Y'' for yes and ''N'' for no',
   `restaurant_description` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Description of the cuisine served with the restaurant.',
   PRIMARY KEY (`restaurantid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -423,9 +443,8 @@ DROP TABLE IF EXISTS `mms_room`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_room` (
-  `roomnumber` int NOT NULL AUTO_INCREMENT,
+  `roomnumber` int NOT NULL,
   `roomfloor` smallint NOT NULL COMMENT 'Floor number of the room',
-  `price` decimal(6,2) NOT NULL,
   `stateroomtypeid` smallint NOT NULL COMMENT 'Unique identifier of room type',
   `locid` smallint NOT NULL,
   PRIMARY KEY (`roomnumber`),
@@ -433,7 +452,7 @@ CREATE TABLE `mms_room` (
   KEY `mms_room_mms_room_loc_fk` (`locid`),
   CONSTRAINT `mms_room_mms_room_loc_fk` FOREIGN KEY (`locid`) REFERENCES `mms_room_loc` (`locid`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `mms_room_mms_room_type_fk` FOREIGN KEY (`stateroomtypeid`) REFERENCES `mms_room_type` (`stateroomtypeid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -447,7 +466,7 @@ CREATE TABLE `mms_room_loc` (
   `locid` smallint NOT NULL AUTO_INCREMENT COMMENT 'Unique ID of the location in the ship',
   `location` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Name of the location in the ship',
   PRIMARY KEY (`locid`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -465,8 +484,9 @@ CREATE TABLE `mms_room_type` (
   `numberofbaths` decimal(2,1) NOT NULL COMMENT 'Number of the bathrooms in the stateroom',
   `numberofbalconies` smallint NOT NULL COMMENT 'Number of balconies in the stateroom',
   `roomtypedescription` varchar(500) NOT NULL,
+  `baseprice` decimal(6,2) NOT NULL,
   PRIMARY KEY (`stateroomtypeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -482,7 +502,7 @@ CREATE TABLE `mms_ship` (
   `description` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `capacity` int NOT NULL,
   PRIMARY KEY (`shipid`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -501,7 +521,7 @@ CREATE TABLE `mms_ship_activity` (
   KEY `mms_activity_fk_idx` (`activityid`),
   CONSTRAINT `mms_activity_fk` FOREIGN KEY (`activityid`) REFERENCES `mms_activity` (`activityid`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `mms_ship_fk` FOREIGN KEY (`shipid`) REFERENCES `mms_ship` (`shipid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -520,7 +540,7 @@ CREATE TABLE `mms_ship_restaurant` (
   KEY `mms_restaurant_fk_idx` (`restaurantid`),
   CONSTRAINT `mms_restaurant_ship_fk` FOREIGN KEY (`restaurantid`) REFERENCES `mms_restaurant` (`restaurantid`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `mms_ship_restaurant_fk` FOREIGN KEY (`shipid`) REFERENCES `mms_ship` (`shipid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -531,15 +551,15 @@ DROP TABLE IF EXISTS `mms_ship_room`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mms_ship_room` (
-  `roomid` int NOT NULL AUTO_INCREMENT,
+  `shiproomid` int NOT NULL AUTO_INCREMENT,
   `shipid` int NOT NULL,
   `roomnumber` int NOT NULL,
-  PRIMARY KEY (`roomid`),
+  PRIMARY KEY (`shiproomid`),
   KEY `mms_ship_fk_idx` (`shipid`),
-  KEY `mms_room_fk_idx` (`roomnumber`),
-  CONSTRAINT `mms_room_mms_shiproom_fk` FOREIGN KEY (`roomnumber`) REFERENCES `mms_room` (`roomnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `mms_ship_mms_room_fk` FOREIGN KEY (`shipid`) REFERENCES `mms_ship` (`shipid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
+  KEY `mms_ship_room_mms_room_fk_idx` (`roomnumber`),
+  CONSTRAINT `mms_ship_mms_room_fk` FOREIGN KEY (`shipid`) REFERENCES `mms_ship` (`shipid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `mms_ship_room_mms_room_fk` FOREIGN KEY (`roomnumber`) REFERENCES `mms_room` (`roomnumber`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -564,7 +584,7 @@ CREATE TABLE `mms_trip` (
   PRIMARY KEY (`tripid`),
   KEY `mms_ship_mms_trip_fk` (`shipid`),
   CONSTRAINT `mms_ship_mms_trip_fk` FOREIGN KEY (`shipid`) REFERENCES `mms_ship` (`shipid`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -582,8 +602,32 @@ CREATE TABLE `mms_trip_package` (
   KEY `mms_trip_package_trip_fk` (`tripid`),
   KEY `mms_trip_package_package_fk` (`packageid`),
   CONSTRAINT `mms_trip_package_package_fk` FOREIGN KEY (`packageid`) REFERENCES `mms_package` (`packageid`),
-  CONSTRAINT `mms_trip_package_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
+  CONSTRAINT `mms_trip_package_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mms_trip_room`
+--
+
+DROP TABLE IF EXISTS `mms_trip_room`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mms_trip_room` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `dynamicprice` decimal(6,2) NOT NULL,
+  `baseprice` decimal(6,2) NOT NULL,
+  `isbooked` tinyint NOT NULL DEFAULT '0',
+  `roomtype` varchar(45) NOT NULL,
+  `location` varchar(45) NOT NULL,
+  `roomnumber` int NOT NULL,
+  `tripid` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `mms_trip_room_mms_trip_fk_idx` (`tripid`),
+  KEY `mms_trip_room_mms_room_fk_idx` (`roomnumber`),
+  CONSTRAINT `mms_trip_room_mms_room_fk` FOREIGN KEY (`roomnumber`) REFERENCES `mms_room` (`roomnumber`),
+  CONSTRAINT `mms_trip_room_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -600,7 +644,7 @@ CREATE TABLE `mms_user_profile` (
   `userid` int NOT NULL,
   PRIMARY KEY (`profileid`),
   KEY `fk_mms_user_profile_auth_user` (`userid`),
-  CONSTRAINT `fk_mms_user_profile_auth_user` FOREIGN KEY (`userid`) REFERENCES `auth_user` (`id`)
+  CONSTRAINT `mms_user_profile_userid_fk` FOREIGN KEY (`userid`) REFERENCES `auth_user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -618,7 +662,7 @@ CREATE TABLE `token_blacklist_blacklistedtoken` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `token_id` (`token_id`),
   CONSTRAINT `token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -630,16 +674,16 @@ DROP TABLE IF EXISTS `token_blacklist_outstandingtoken`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `token_blacklist_outstandingtoken` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `token` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `token` longtext NOT NULL,
   `created_at` datetime(6) DEFAULT NULL,
   `expires_at` datetime(6) NOT NULL,
   `user_id` int DEFAULT NULL,
-  `jti` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `jti` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq` (`jti`),
   KEY `token_blacklist_outs_user_id_83bc629a_fk_auth_user` (`user_id`),
   CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_auth_user` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=80 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -651,4 +695,4 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-12-05 13:14:52
+-- Dump completed on 2024-12-06 18:38:39
