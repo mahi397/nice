@@ -410,7 +410,7 @@ CREATE TABLE `mms_port_stop` (
   KEY `mms_port_stop_mms_trip_fk` (`tripid`),
   CONSTRAINT `mms_port_stop_mms_port_fk` FOREIGN KEY (`portid`) REFERENCES `mms_port` (`portid`),
   CONSTRAINT `mms_port_stop_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -581,11 +581,14 @@ CREATE TABLE `mms_trip` (
   `tripdescription` varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Description of the trip booked.',
   `finalbookingdate` date NOT NULL,
   `tripcapacityremaining` int NOT NULL,
+  `tempcapacityreserved` tinyint NOT NULL DEFAULT '0',
+  `tempreservationtimestamp` timestamp(1) NULL DEFAULT NULL,
+  `tempcapacitynumber` int NOT NULL DEFAULT '0',
   `shipid` int NOT NULL,
   PRIMARY KEY (`tripid`),
   KEY `mms_ship_mms_trip_fk` (`shipid`),
   CONSTRAINT `mms_ship_mms_trip_fk` FOREIGN KEY (`shipid`) REFERENCES `mms_ship` (`shipid`)
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -604,7 +607,7 @@ CREATE TABLE `mms_trip_package` (
   KEY `mms_trip_package_package_fk` (`packageid`),
   CONSTRAINT `mms_trip_package_package_fk` FOREIGN KEY (`packageid`) REFERENCES `mms_package` (`packageid`),
   CONSTRAINT `mms_trip_package_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -621,8 +624,6 @@ CREATE TABLE `mms_trip_room` (
   `isbooked` tinyint NOT NULL DEFAULT '0',
   `roomtype` varchar(20) NOT NULL,
   `location` varchar(50) NOT NULL,
-  `islocked` tinyint NOT NULL DEFAULT '0',
-  `versionnumber` int NOT NULL DEFAULT '0',
   `roomnumber` int NOT NULL,
   `tripid` bigint NOT NULL,
   PRIMARY KEY (`id`),
@@ -630,7 +631,7 @@ CREATE TABLE `mms_trip_room` (
   KEY `mms_trip_room_mms_room_fk_idx` (`roomnumber`),
   CONSTRAINT `mms_trip_room_mms_room_fk` FOREIGN KEY (`roomnumber`) REFERENCES `mms_room` (`roomnumber`),
   CONSTRAINT `mms_trip_room_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -686,7 +687,7 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
   UNIQUE KEY `token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq` (`jti`),
   KEY `token_blacklist_outs_user_id_83bc629a_fk_auth_user` (`user_id`),
   CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_auth_user` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -698,4 +699,4 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-12-07  1:09:28
+-- Dump completed on 2024-12-07 12:37:32

@@ -1,13 +1,14 @@
 import re
 import csv
 from . import models
+from django.utils import timezone
 from rest_framework import status
 from django.db import transaction
-from datetime import date, datetime
 from rest_framework import serializers 
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
+from datetime import date, datetime, timedelta
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
 
@@ -1259,15 +1260,15 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
             'cancellationpolicy', 'tripdescription', 'finalbookingdate', 'shipid', 'stops', 'packages'
         ]
 
-    def validate_stops(self, data):
+    '''def validate_stops(self, data):
         stop_serializer = MmsItinerarySerializer(data, many=True)
-        stop_serializer.is_valid(raise_exception=True)
-        return data
+        #stop_serializer.is_valid(raise_exception=True)
+        return stop_serializer
     
     def validate_packages(self, data): 
         package_serializer = MmsTripPackageSerializer(data, many=True)
-        package_serializer.is_valid(raise_exception=True)
-        return data
+        #package_serializer.is_valid(raise_exception=True)
+        return package_serializer'''
     
     # Validate that tripname is not empty or too long
     def validate_tripname(self, data):
@@ -1424,6 +1425,7 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
         packages = validated_data.pop('packages', [])
         stops = validated_data.pop('stops', [])
         validated_data['tripcapacityremaining'] = validated_data['tripcapacity']
+        validated_data['tempcapacityreserved'] = False
         trip = models.MmsTrip.objects.create(**validated_data)
         self.create_trip_stops(trip, stops)
         self.create_trip_packages(trip, packages)
@@ -2017,3 +2019,69 @@ class StartBookingSerializer(serializers.Serializer):
             "available_room_categories": self.get_available_room_categories(instance),
             "available_packages": self.get_available_packages(instance),
         }
+
+class TemporaryCapacityReservationSerializer(serializers.Serializer):
+    """
+    Serializer to handle temporary capacity reservation for trip bookings.
+    The temporary capacity reservation occurs before actual room selection.
+    """
+    number_of_rooms = serializers.IntegerField(min_value=1, max_value=3)  # Max 3 rooms per user
+    number_of_people_per_room = serializers.IntegerField(min_value=1, max_value=4)  # Max 4 people per room
+
+    def validate(self, data):
+        """
+        Validates the number of rooms and people per room.
+        """
+        trip = self.context['trip']  # Access the trip instance from the context
+        number_of_rooms = data['number_of_rooms']
+        number_of_people_per_room = data['number_of_people_per_room']
+
+        # Check if enough capacity is available for the number of people
+        total_people = number_of_rooms * number_of_people_per_room
+        if trip.tripcapacityremaining < total_people:
+            raise serializers.ValidationError("Not enough capacity available for the selected rooms.")
+
+        return data
+
+    def reduce_trip_capacity(self, trip, number_of_rooms, number_of_people_per_room):
+        """
+        Temporarily reduce the trip's capacity by the total number of people.
+        This function is for preventing concurrency issues and ensuring
+        that no other users can book the same rooms before the user finalizes their booking.
+        """
+
+        # Step 1: Check if remaining capacity falls below a threshold
+        threshold_percentage = 0.10  # For example, if remaining capacity falls below 10%
+        if trip.tripcapacityremaining <= trip.tripcapacity * threshold_percentage:
+            # Step 2: Check if the capacity is already temporarily reserved
+            with transaction.atomic():
+                # Lock the trip row for update to prevent other transactions from modifying it concurrently
+                trip = models.MmsTrip.objects.select_for_update().get(tripid=trip.tripid)
+
+                if trip.temp_capacity_reserved:
+                    # Step 3: Check if the previous reservation has expired
+                    time_since_reservation = timezone.now() - trip.tempreservationtimestamp
+                    if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration time
+                        # Reservation expired, release the temporary capacity
+                        trip.tripcapacityremaining += trip.tempcapacitynumber
+                        trip.tempcapacityreserved = False
+                        trip.tempreservationtimestamp = None
+                        trip.save()
+                    else:
+                        # Another reservation is still active, reject this one
+                        raise serializers.ValidationError("Capacity is temporarily reserved by another user.")
+
+                # Proceed to temporarily reduce the capacity
+                total_people = number_of_rooms * number_of_people_per_room
+
+                # Lock the trip row and temporarily reduce the remaining capacity
+                trip.tripcapacityremaining -= total_people
+                trip.tempcapacityreserved = True  # Mark the capacity as temporarily reserved
+                trip.tempreservationtimestamp = timezone.now()  # Mark the timestamp for the reservation
+                trip.tempcapacitynumber = total_people  # Store the number of people reserved temporarily
+                trip.save()
+
+                return trip
+        else:
+            # If the remaining capacity is still above threshold, don't lock the capacity
+            return trip

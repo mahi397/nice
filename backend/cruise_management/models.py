@@ -247,8 +247,8 @@ class MmsPort(models.Model):
 
 class MmsPortStop(models.Model):
     itineraryid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every port stop of a trip')
-    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.')
-    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
+    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.', related_name='portstops')
+    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.', related_name='portstops')
     arrivaltime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the ship arrives at the port')
     departuretime = models.DateTimeField(blank=True, null=True, db_comment='Time of departure from the port')
     orderofstop = models.IntegerField(db_comment='The order in which the ship stops at each port')
@@ -364,6 +364,9 @@ class MmsTrip(models.Model):
     tripdescription = models.CharField(max_length=300, db_collation='utf8mb4_unicode_ci', db_comment='Description of the trip booked.')
     finalbookingdate = models.DateField()
     tripcapacityremaining = models.IntegerField()
+    tempcapacityreserved = models.IntegerField()
+    tempreservationtimestamp = models.DateTimeField(blank=True)
+    tempcapacitynumber = models.IntegerField(default=0)
     shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
 
     class Meta:
@@ -386,8 +389,6 @@ class MmsTripRoom(models.Model):
     isbooked = models.IntegerField()
     roomtype = models.CharField(max_length=20)
     location = models.CharField(max_length=50)
-    islocked = models.IntegerField()
-    versionnumber = models.IntegerField()
     roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
     tripid = models.ForeignKey(MmsTrip, models.DO_NOTHING, db_column='tripid')
 

@@ -108,5 +108,5 @@ urlpatterns = [
     path('trips/list',views.MmsTripListView.as_view(),name = 'trip-list-view'),
     path('trips/list/<int:tripid>', views.MmsTripDetailView.as_view(), name='trip-detail'),
     path('trips/list/<int:tripid>/start-booking/', views.MmsStartBookingView.as_view(), name='start-booking'),
-    
+    path('trips/<int:tripid>/reserve-temporary-capacity/', views.TemporaryCapacityReservationView.as_view(), name='reserve-temporary-capacity'),
 ]

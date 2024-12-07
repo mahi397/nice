@@ -2879,3 +2879,49 @@ class MmsStartBookingView(generics.RetrieveAPIView):
         trip = self.get_object()
         serializer = self.get_serializer(instance=trip)
         return Response(serializer.data)
+    
+    
+class TemporaryCapacityReservationView(generics.GenericAPIView):
+    """
+    API view to temporarily reserve capacity for a trip. 
+    This ensures that no other users can book the same capacity while the user is in the process of selecting rooms.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.TemporaryCapacityReservationSerializer
+
+    def get_trip(self, tripid):
+        """
+        Helper method to retrieve the trip based on the tripid.
+        """
+        try:
+            trip = models.MmsTrip.objects.get(tripid=tripid)
+            return trip
+        except models.MmsTrip.DoesNotExist:
+            raise serializers.ValidationError("Trip not found.")
+
+    def patch(self, request, *args, **kwargs):
+        """
+        Handle PATCH request to temporarily reserve capacity for a trip.
+        This method will reduce the trip's remaining capacity based on the user's room and people selection.
+        """
+        tripid = self.kwargs.get('tripid')  # Get the tripid from the URL
+        trip = self.get_trip(tripid)  # Retrieve the trip object
+        serializer = self.get_serializer(data=request.data, context={'trip': trip})
+
+        # Validate the input data and reduce trip capacity if validation passes
+        if serializer.is_valid():
+            number_of_rooms = serializer.validated_data['number_of_rooms']
+            number_of_people_per_room = serializer.validated_data['number_of_people_per_room']
+            
+            # Reduce the trip capacity by temporarily marking it
+            trip = serializer.reduce_trip_capacity(trip, number_of_rooms, number_of_people_per_room)
+
+            # Return the updated trip details
+            return Response({
+                "message": "Capacity temporarily reserved.",
+                "trip_capacity_remaining": trip.tripcapacityremaining,
+                "temporary_reserved": trip.tempcapacityreserved,
+                "reservation_timestamp": trip.tempreservationtimestamp
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
