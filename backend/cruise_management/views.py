@@ -2411,14 +2411,14 @@ class MmsAdminTripListView(generics.ListAPIView):
     ],
     tags=["Trip Management"]
 )
-class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
+class MmsAdminTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     """
     API view to retrieve details of a specific trip.
     Accessible to all users, regardless of permissions.
     """
     queryset = models.MmsTrip.objects.all()
     serializer_class = serializers.MmsTripDetailSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
     lookup_field = 'tripid'
 
     def get(self, request, *args, **kwargs):
@@ -2686,7 +2686,7 @@ class MmsTripListView(generics.ListAPIView):
     """
     queryset = models.MmsTrip.objects.all()
     serializer_class = serializers.MmsTripListSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.TripFilter
     ordering_fields = ['startdate', 'enddate', 'tripcostperperson', 'duration', 'tripname']
@@ -2749,6 +2749,7 @@ class MmsTripListView(generics.ListAPIView):
             return Response({"detail": "No trips found matching the specified filters."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
 
 class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     """
@@ -2801,6 +2802,64 @@ class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+
+@extend_schema(
+        description="Retrieve trip details along with available rooms, room categories, and packages for booking.",
+        responses={
+            200: OpenApiResponse(
+                description="Successfully retrieved trip booking details.",
+                examples={
+                    "application/json": {
+                        "trip_details": {
+                            "tripid": 1,
+                            "tripname": "Caribbean Adventure",
+                            "startdate": "2024-06-01",
+                            "enddate": "2024-06-15",
+                            "tripcostperperson": "799.99",
+                            "tripcapacityremaining": 150
+                        },
+                        "available_rooms": [
+                            {
+                                "roomnumber": "A101",
+                                "isbooked": False,
+                                "dynamicprice": "100.00",
+                                "roomtype": "Deluxe",
+                                "location": "Deck 1"
+                            },
+                            {
+                                "roomnumber": "A102",
+                                "isbooked": False,
+                                "dynamicprice": "120.00",
+                                "roomtype": "Suite",
+                                "location": "Deck 1"
+                            }
+                        ],
+                        "available_room_categories": ["Deluxe", "Suite"],
+                        "available_packages": [
+                            {
+                                "packageid": 1,
+                                "tripid": 1,
+                                "package_details": {
+                                    "package_name": "Luxury Package",
+                                    "price": "499.99",
+                                    "description": "Includes premium meals and excursions."
+                                }
+                            }
+                        ]
+                    }
+                }
+            ),
+            404: OpenApiResponse(
+                description="Trip not found for the given trip ID.",
+                examples={
+                    "application/json": {
+                        "detail": "Trip with the given ID does not exist."
+                    }
+                }
+            ),
+        },
+        tags=["Booking Management"]
+    )
 class MmsStartBookingView(generics.RetrieveAPIView):
     queryset = models.MmsTrip.objects.all()
     serializer_class = serializers.StartBookingSerializer

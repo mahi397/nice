@@ -1961,7 +1961,6 @@ class MmsPackageSerializer(serializers.ModelSerializer):
             'price': package.base_price,
             'description': package.packagedetails
         }
-
         
 class StartBookingSerializer(serializers.Serializer):
     """
