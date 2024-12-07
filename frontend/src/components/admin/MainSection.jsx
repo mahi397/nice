@@ -1,8 +1,10 @@
 // src/components/Dashboard.js
 import React, { useState, useEffect } from "react";
 import EditableTable from "./EditableTable";
-import { getTrips, getPorts, getUsers, getActivities, getRestaurants } from "./api.js";
+import { getEntity } from "./api.js";
 import Overview from "./Overview";
+import ManageShips from "./ManageShips.jsx";
+
 
 const MainSection = ({ selected }) => {
   const [data, setData] = useState([]);
@@ -13,19 +15,24 @@ const MainSection = ({ selected }) => {
       setLoading(true);
       let result = [];
       try {
-        if (selected === "users") {
-          result = await getUsers();
-        } else if (selected === "trips") {
-            result = await getTrips();
-        } else if (selected === "ships") {
-          result = await getShips();
-        } else if (selected === "ports") {
-          result = await getPorts();
-        } else if (selected === "restaurants") {
-          result = await getRestaurants();
-        } else if (selected === "activities") {
-          result = await getActivities();
+        if(selected !== 'overview') {
+            result = await getEntity(selected);
         }
+        // if (selected === "users") {
+        //   result = await getEntity("users");
+        // } else if (selected === "trips") {
+        //     result = await getEntity("trips");
+        // } else if (selected === "ships") {
+        //   result = await getShips();
+        // } else if (selected === "ports") {
+        //   result = await getPorts();
+        // } else if (selected === "restaurants") {
+        //   result = await getRestaurants();
+        // } else if (selected === "activities") {
+        //   result = await getActivities();
+        // } else if (selected === "packages") {
+        //     result = await getPackages();
+        // }
         setData(result); // Update the state with fetched data
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -46,7 +53,12 @@ const MainSection = ({ selected }) => {
         return (
             <Overview />
         )
-    } else {
+    } else if(selected === 'ships') {
+        return (
+            <ManageShips data={data}/>
+        )
+    }
+     else {
         return (
             <EditableTable data={data} entity={selected} />
         )
