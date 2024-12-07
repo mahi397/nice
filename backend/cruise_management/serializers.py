@@ -2085,3 +2085,116 @@ class TemporaryCapacityReservationSerializer(serializers.Serializer):
         else:
             # If the remaining capacity is still above threshold, don't lock the capacity
             return trip
+        
+class RoomCategorySelectionSerializer(serializers.Serializer):
+    trip_id = serializers.IntegerField()
+    room_selections = serializers.ListField(
+        child=serializers.DictField(
+            required=False
+        )
+    )
+
+    def validate(self, data):
+        """
+        Validates if the rooms are available, not temporarily reserved, and checks if the timestamp has expired.
+        """
+        trip = self.context['trip']  # Access the trip instance from the context
+        room_selections = data['room_selections']
+
+        # Check each room selection (room_type, number_of_rooms)
+        for room_selection in room_selections:
+            room_type = room_selection['room_type']
+            number_of_rooms = room_selection['number_of_rooms']
+
+            # Get available rooms of the selected room type that are not booked yet
+            available_rooms = models.MmsTripRoom.objects.filter(
+                tripid=trip,
+                roomtype=room_type,
+                tempreserved=True,  # Ensure the rooms are not already temporarily reserved
+                isbooked=False  # Ensure the rooms are not booked yet
+            )
+
+            if len(available_rooms) < number_of_rooms:
+                raise serializers.ValidationError(f"Not enough rooms available in the '{room_type}' category.")
+
+            # Check if any of the rooms are temporarily reserved and if the reservation has expired
+            for room in available_rooms[:number_of_rooms]:  # Consider only the required number of rooms
+                if room.tempreserved:
+                    # Check if the reservation has expired
+                    time_since_reservation = timezone.now() - room.tempreservationtimestamp
+                    if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration time
+                        # Release the expired lock
+                        room.tempreserved = False
+                        room.tempreservationtimestamp = None
+                        room.tempreservationuser = None
+                        room.save()
+                    else:
+                        raise serializers.ValidationError(f"Room {room.roomnumber} of type '{room_type}' is temporarily reserved. Please try again after some time.")
+        
+        return data
+
+    def reserve_rooms(self, trip, room_selections, user_id, previous_room_ids=None):
+        """
+        Temporarily reserve rooms for the user. This function updates the room availability and locks the rooms.
+        """
+        reserved_rooms = []
+
+        # Release previously reserved rooms (if any)
+        if previous_room_ids:
+            previous_rooms = models.MmsTripRoom.objects.filter(id__in=previous_room_ids, )
+            for room in previous_rooms:
+                room.tempreserved = False
+                room.tempreservationtimestamp = None
+                room.tempreservationuser = None
+                room.save()
+
+        # Loop through each room selection and reserve the rooms
+        for room_selection in room_selections:
+            room_type = room_selection['room_type']
+            number_of_rooms = room_selection['number_of_rooms']
+
+            # Begin a transaction to handle concurrency
+            with transaction.atomic():
+                # Lock the rooms that are available and have not been reserved
+                available_rooms = models.MmsTripRoom.objects.select_for_update().filter(
+                    tripid=trip,
+                    roomtype=room_type,
+                    tempreserved=True,  # Ensure the rooms are not already temporarily reserved
+                    isbooked=False  # Ensure the rooms are not booked yet
+                )
+
+                if len(available_rooms) < number_of_rooms:
+                    raise serializers.ValidationError(f"Not enough rooms available in the '{room_type}' category.")
+
+                # Reserve the rooms
+                for room in available_rooms[:number_of_rooms]:
+                    # If room is temporarily reserved and the lock expired, release it
+                    if room.tempreserved:
+                        time_since_reservation = timezone.now() - room.tempreservationtimestamp
+                        if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration time
+                            room.tempreserved = False
+                            room.tempreservationtimestamp = None
+                            room.tempreservationuser = None
+                            room.save()
+                        else:
+                            raise serializers.ValidationError(f"Room {room.roomnumber} of type '{room_type}' is temporarily reserved. Please try again after some time.")
+
+                    # Now lock and reserve the room
+                    room.tempreserved = True  # Temporarily lock the room
+                    room.tempreservationtimestamp = timezone.now()  # Set the timestamp for temporary lock
+                    room.tempreservationuser = user_id  # Store the user ID for the reservation
+                    room.save()
+                    reserved_rooms.append(room)
+
+        # Return the reserved rooms information in the response
+        response_data = [
+            {
+                'roomnumber': room.roomnumber.roomnumber,  # Room number
+                'dynamicprice': room.dynamicprice,  # Dynamic price
+                'location': room.location,  # Room location
+                'roomtype': room.roomtype  # Room type
+            }
+            for room in reserved_rooms
+        ]
+
+        return response_data

@@ -365,8 +365,8 @@ class MmsTrip(models.Model):
     finalbookingdate = models.DateField()
     tripcapacityremaining = models.IntegerField()
     tempcapacityreserved = models.IntegerField()
-    tempreservationtimestamp = models.DateTimeField(blank=True)
-    tempcapacitynumber = models.IntegerField(default=0)
+    tempreservationtimestamp = models.DateTimeField(blank=True, null=True)
+    tempcapacitynumber = models.IntegerField()
     shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
 
     class Meta:
@@ -391,6 +391,9 @@ class MmsTripRoom(models.Model):
     location = models.CharField(max_length=50)
     roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
     tripid = models.ForeignKey(MmsTrip, models.DO_NOTHING, db_column='tripid')
+    tempreserved = models.IntegerField(blank=True, null=True)
+    tempreservationtimestamp = models.DateTimeField(blank=True, null=True)
+    tempreservationuser = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

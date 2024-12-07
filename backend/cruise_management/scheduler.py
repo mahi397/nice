@@ -9,15 +9,14 @@ def release_expired_reservations():
     now = timezone.now()
 
     expired_trips = MmsTrip.objects.filter(
-        temp_capacity_reserved=True,
-        temp_reservation_timestamp__lte=now - expiration_time
+        tempcapacityreserved=True,
+        tempreservationtimestamp__lte=now - expiration_time
     )
 
     for trip in expired_trips:
-        trip.tripcapacityremaining += trip.temp_capacity_reserved_people
-        trip.temp_capacity_reserved = False
-        trip.temp_reservation_timestamp = None
-        trip.temp_capacity_reserved_people = 0
+        trip.tripcapacityremaining += trip.tempcapacitynumber
+        trip.tempreservationtimestamp = None
+        trip.tempcapacitynumber = 0
         trip.save()
 
     print(f"Released {len(expired_trips)} expired temporary reservations.")
