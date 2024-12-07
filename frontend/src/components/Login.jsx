@@ -55,6 +55,11 @@ const Login = () => {
               Don't have an account? <Link to="/nice/register">Register</Link>
             </p>
           </div>
+          <div className="register-link">
+            <p>
+              <Link to="/nice/reset">Forgot Password?</Link>
+            </p>
+          </div>
         </form>
         {error && <div style={{ color: "red" }}>{error}</div>}
       </div>
