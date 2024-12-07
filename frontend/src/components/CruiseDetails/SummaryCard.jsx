@@ -1,29 +1,32 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
-export default function SummaryCard() {
+export default function SummaryCard({ data }) {
+  console.log("SummaryCard data", data);
   return (
     <div className="trip-card">
       <div className="card-content">
-        <h2>{trip.name}</h2>
-        <p>Start: {trip.startPort} `&gt;` </p>
-        <p>End: {trip.endPort}</p>
+        <h2>{data.headline}</h2>
         <p>
-          {trip.startDate} - {trip.endDate}
+          Start: {data.startPort} &gt; Celebration Key &gt; Nassau &gt;
+          Half Moon Cay &gt; End: {data.endPort}
+        </p>
+        <p>
+          {data.startDate} - {data.endDate}
         </p>
       </div>
 
-      <div>
-      <p>Price: {trip.tripCostPerPerson}</p>
-      <button>
-        <Link
-          to={`nice/trips/${trip.id}`}
-          style={{ textDecoration: "none", color: "inherit" }}
-        >
-          START BOOKING
-        </Link>
-      </button>  
+      <div className="card-price">
+        <p>Price: {data.description}</p>
+        <button>
+          <Link
+            to={`nice/trips/${data.id}`}
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            START BOOKING
+          </Link>
+        </button>
       </div>
-      
     </div>
   );
 }

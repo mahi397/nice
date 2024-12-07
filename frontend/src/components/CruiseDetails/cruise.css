@@ -1,0 +1,47 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.cruise-details {
+  height: 100%;
+  width: 100vw;
+  /* display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  margin: auto; */
+  background-color: #fff;
+  color: black;
+}
+
+.cruise-heading {
+  margin-left: 20px;
+  margin-top: 40px;
+}
+
+.day-card {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 15px;
+  text-align: center;
+  color: black;
+  width: 90vw;
+  height: 35vh;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevent cards from shrinking */
+  /* scroll-snap-align: start; Align cards to the left */
+  /* transition: transform 0.3s ease; */
+}
+
+.day-card-content {
+  width: 50%;
+}
+
+.day-card img {
+  width: 50%;
+}
