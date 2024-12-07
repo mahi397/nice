@@ -81,7 +81,7 @@ urlpatterns = [
     path('admin/trips/add', views.MmsTripAddView.as_view(), name='add-trips'),
     path('admin/trips/<int:tripid>/update', views.MmsTripAddView.as_view(), name='update-trips'),
     path('admin/trips/list',views.MmsAdminTripListView.as_view(),name = 'trip-list-view'),
-    path('admin/trips/list/<int:pk>', views.MmsTripDetailView.as_view(), name='trip-detail'),
+    path('admin/trips/list/<int:tripid>', views.MmsTripDetailView.as_view(), name='trip-detail'),
     path('admin/trips/<int:tripid>/delete', views.MmsTripDeleteView.as_view(), name='trip-delete'),
     path('admin/trips/<int:tripid>/rooms', views.MmsRoomSummaryListView.as_view(), name='room-summary-view'),
     path('admin/trips/<int:tripid>/rooms/set-price', views.MmsTripRoomPriceUpdateView.as_view(), name='set-room-price'),
@@ -105,5 +105,8 @@ urlpatterns = [
     ), name='password_reset_complete'),
     path('user/<int:id>/update', views.UserUpdateView.as_view(), name='user-update'),
     path('user/delete', views.UserDeleteView.as_view(), name='self-delete-user'),
+    path('trips/list',views.MmsTripListView.as_view(),name = 'trip-list-view'),
+    path('trips/list/<int:tripid>', views.MmsTripDetailView.as_view(), name='trip-detail'),
+    path('trips/list/<int:tripid>/start-booking/', views.MmsStartBookingView.as_view(), name='start-booking'),
     
 ]

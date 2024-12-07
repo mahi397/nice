@@ -17,8 +17,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.filters import SearchFilter, OrderingFilter
-from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 
 
@@ -1227,32 +1227,109 @@ class MmsRoomTypeCreateUpdateView(generics.GenericAPIView, mixins.CreateModelMix
         """
         return self.update(request=request, *args, **kwargs)
     
+@extend_schema(
+    operation_id="list_room_types",
+    summary="List all room types (stateroom types)",
+    description="Retrieve a list of all room types in the system. Only accessible by authenticated users with staff or admin permissions.",
+    responses={
+        200: OpenApiResponse(
+            description="List of room types successfully retrieved.",
+            examples={"application/json": {"example": [{"stateroomtypeid": 1, "name": "Deluxe", "description": "A luxurious room type."}]}},
+        ),
+        404: OpenApiResponse(
+            description="No room types found.",
+            examples={"application/json": {"example": {"message": "No room types found."}}}
+        ),
+    },
+    parameters=[
+        OpenApiParameter(
+            name="room_floor",
+            description="Filter rooms by floor number (exact match).",
+            required=False,
+            type=str,
+            examples=["1", "2", "3"]
+        ),
+        OpenApiParameter(
+            name="room_base_price_min",
+            description="Filter rooms by minimum base price.",
+            required=False,
+            type=int,
+            examples=[100, 200, 300]
+        ),
+        OpenApiParameter(
+            name="room_base_price_max",
+            description="Filter rooms by maximum base price.",
+            required=False,
+            type=int,
+            examples=[500, 1000]
+        ),
+        OpenApiParameter(
+            name="ship_location",
+            description="Filter rooms by ship location (case-insensitive).",
+            required=False,
+            type=str,
+            examples=["Deck A", "Deck B"]
+        ),
+        OpenApiParameter(
+            name="exclude_ship_location",
+            description="Exclude rooms from a specific ship location.",
+            required=False,
+            type=str,
+            examples=["Deck C"]
+        ),
+        OpenApiParameter(
+            name="room_type",
+            description="Filter rooms by room type (case-insensitive).",
+            required=False,
+            type=str,
+            examples=["Deluxe Suite", "Economy Cabin"]
+        ),
+        OpenApiParameter(
+            name="exclude_room_type",
+            description="Exclude rooms from a specific room type.",
+            required=False,
+            type=str,
+            examples=["Luxury Suite", "Standard Cabin"]
+        ),
+        OpenApiParameter(
+            name="room_number_min",
+            description="Filter rooms by minimum room number.",
+            required=False,
+            type=int,
+            examples=[1, 101, 202]
+        ),
+        OpenApiParameter(
+            name="room_number_max",
+            description="Filter rooms by maximum room number.",
+            required=False,
+            type=int,
+            examples=[100, 200, 300]
+        ),
+        OpenApiParameter(
+            name="exclude_room_range",
+            description="Exclude rooms within a specified number range.",
+            required=False,
+            type=bool,
+            examples=[True, False]
+        ),
+    ],
+    tags=["Room Type Management"]
+)
 class MmsRoomTypeListView(generics.GenericAPIView, mixins.ListModelMixin):
     """
     View to list all room types (stateroom types) in the system.
-    This view fetches all the room types and allows authenticated users with admin or staff permissions
-    to access the list. If no room types are found, it returns a 404 error with a message.
     """
-    
     queryset = models.MmsRoomType.objects.all()
     serializer_class = serializers.MmsRoomTypeListSerializer
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    
+
     def list(self, request, *args, **kwargs):
         """
-        Retrieve the list of room types (stateroom types) from the database.
-        If no room types are found, return a 404 status with an appropriate message.
+        Retrieve the list of room types (stateroom types).
         """
-        queryset = self.filter_queryset(self.get_queryset())  # Apply any filters defined in the view
-        
-        # If no room types are found, return a custom 404 response
+        queryset = self.filter_queryset(self.get_queryset())  # Apply filters
         if not queryset.exists():
-            return Response(
-                {"message": "No room types found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Serialize the queryset into the desired response format
+            return Response({"message": "No room types found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -1261,21 +1338,17 @@ class MmsRoomTypeListView(generics.GenericAPIView, mixins.ListModelMixin):
         responses={
             200: OpenApiResponse(
                 description="List of room types successfully retrieved.",
-                examples={"application/json": {"example": [{"stateroomtypeid": 1, "name": "Deluxe", "description": "A luxurious room type."}]}}
+                examples={"application/json": {"example": [{"stateroomtypeid": 1, "name": "Deluxe", "description": "A luxurious room type."}]}},
             ),
-            404: OpenApiResponse(
-                description="No room types found.",
-                examples={"application/json": {"example": {"message": "No room types found."}}}
-            ),
+            404: OpenApiResponse(description="No room types found."),
         },
         tags=["Room Type Management"]
     )
     def get(self, request, *args, **kwargs):
         """
-        Handle the GET request to retrieve the list of room types.
-        This method uses the `list` method to fetch the data and return the response.
+        Handle GET request to retrieve room types.
         """
-        return self.list(request=request, *args, **kwargs)   
+        return self.list(request=request, *args, **kwargs)
 
 class MmsRoomTypeDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     """
@@ -1956,6 +2029,94 @@ class MmsTripAddView(generics.GenericAPIView, mixins.CreateModelMixin):
         """Handle trip creation."""
         return self.create(request=request, *args, **kwargs)
 
+@extend_schema(
+    operation_id="list_room_summary",
+    summary="List Room Summaries",
+    description=(
+        "Retrieve a list of rooms grouped by room type and location. "
+        "Supports filtering by room type and location with options to include or exclude specific values. "
+        "Accessible only to authenticated staff or admin users."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="ship_location",
+            description="Filter rooms by a specific ship location (case-insensitive match).",
+            required=False,
+            type=str,
+            examples=["Deck A", "Deck B"]
+        ),
+        OpenApiParameter(
+            name="exclude_ship_location",
+            description="Exclude rooms from a specific ship location (case-insensitive match).",
+            required=False,
+            type=str,
+            examples=["Deck A", "Deck C"]
+        ),
+        OpenApiParameter(
+            name="room_type",
+            description="Filter rooms by room type (case-insensitive match).",
+            required=False,
+            type=str,
+            examples=["Deluxe Suite", "Economy Cabin"]
+        ),
+        OpenApiParameter(
+            name="exclude_room_type",
+            description="Exclude rooms from a specific room type (case-insensitive match).",
+            required=False,
+            type=str,
+            examples=["Luxury Suite", "Standard Cabin"]
+        ),
+        OpenApiParameter(
+            name="ordering",
+            description=(
+                "Specify ordering of results. Use `stateroomtypeid__stateroomtype` "
+                "for room type or `locid__location` for location."
+            ),
+            required=False,
+            type=str,
+            examples=["stateroomtypeid__stateroomtype", "-locid__location"]
+        ),
+        OpenApiParameter(
+            name="roomnumber",
+            description="Search rooms by room number.",
+            required=False,
+            type=str,
+            examples=["101", "A2"]
+        ),
+    ],
+    responses={
+        200: OpenApiResponse(
+            description="Successful response with grouped room summaries.",
+            examples=[
+                {
+                    "roomtype": {
+                        "name": "Deluxe Suite",
+                        "price": "250.00",
+                        "count": 5
+                    },
+                    "location": {
+                        "name": "Deck A",
+                        "count": 3
+                    }
+                },
+                {
+                    "roomtype": {
+                        "name": "Economy Cabin",
+                        "price": "100.00",
+                        "count": 10
+                    },
+                    "location": {
+                        "name": "Deck B",
+                        "count": 7
+                    }
+                }
+            ],
+        ),
+        404: OpenApiResponse(description="No rooms found matching the filters."),
+        403: OpenApiResponse(description="Permission denied."),
+    },
+    tags=["Room Management"],
+)
 class MmsRoomSummaryListView(generics.ListAPIView): 
     """
     API view to retrieve a list of rooms grouped by room type and location.
@@ -2000,6 +2161,46 @@ class MmsRoomSummaryListView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+@extend_schema(
+    operation_id="update_trip_room_price",
+    summary="Update Trip Room Prices",
+    description=(
+        "Update the dynamic price for rooms in a trip based on room type or location. "
+        "At least one filter ('roomtype' or 'location') is required. "
+        "Accessible only to authenticated staff or admin users."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="tripid",
+            description="The ID of the trip for which prices are being updated.",
+            required=True,
+            type=str,
+        )
+    ],
+    request=serializers.MmsTripRoomPriceUpdateSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="Dynamic prices updated successfully.",
+            examples={
+                "detail": "5 room(s) updated successfully."
+            }
+        ),
+        404: OpenApiResponse(
+            description="No rooms updated, or no rooms found matching the filters.",
+            examples={
+                "detail": "No rooms updated, please check your filters."
+            }
+        ),
+        400: OpenApiResponse(
+            description="Invalid request due to missing or invalid filters.",
+            examples={
+                "detail": "Provide either 'roomtype' or 'location' to update prices."
+            }
+        ),
+        403: OpenApiResponse(description="Permission denied."),
+    },
+    tags=["Room Management"],
+)
 class MmsTripRoomPriceUpdateView(generics.GenericAPIView):
     """
     View to handle price updates for rooms in MmsTripRoom.
@@ -2039,84 +2240,17 @@ class MmsTripRoomPriceUpdateView(generics.GenericAPIView):
         else:
             return Response({"detail": "No rooms updated, please check your filters."}, status=status.HTTP_404_NOT_FOUND)
        
-class MmsAdminTripListView(generics.ListAPIView):
-    """
-    API view to list all trips.
-    Staff or admin can view all trips, while regular users can only view upcoming trips.
-    """
-    queryset = models.MmsTrip.objects.all()
-    serializer_class = serializers.MmsAdminTripListSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = filters.AdminTripFilter
-    ordering_fields = ['startdate', 'enddate', 'tripcostperperson', 'duration', 'tripname']
-    ordering = ['startdate']  # Default ordering (earliest trips first)
-
-    @extend_schema(
-        description="Retrieve a list of trips. Admins/staff can view all trips.",
-        responses={
-            200: OpenApiResponse(
-                description="Successfully retrieved the list of trips.",
-                examples={
-                    "application/json": {
-                        "example": [
-                            {
-                                "tripid": 1,
-                                "tripname": "Caribbean Adventure",
-                                "startdate": "2024-06-01",
-                                "enddate": "2024-06-15",
-                                "tripcostperperson": "799.99",
-                                "tripstatus": "upcoming",
-                                "tripcapacity": 200,
-                                "cancellationpolicy": "Full refund 30 days before trip",
-                                "tripdescription": "An exciting trip to the Caribbean!",
-                                "finalbookingdate": "2024-05-01",
-                                "shipid": 1,
-                                "stops": [1, 2],
-                                "packages": [1, 2]
-                            }
-                        ]
-                    }
-                }
-            ),
-            404: OpenApiResponse(
-                description="No trips found matching the filters.",
-                examples={
-                    "application/json": {
-                        "example": {
-                            "message": "No trips found matching the specified filters."
-                        }
-                    }
-                }
-            ),
-        },
-        tags=["Trip Management"]
-    )
-    
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        if not queryset.exists():
-            return Response({"detail": "No trips found matching the specified filters."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
-    """
-    API view to retrieve details of a specific trip.
-    Accessible to all users, regardless of permissions.
-    """
-    queryset = models.MmsTrip.objects.all()
-    serializer_class = serializers.MmsTripDetailSerializer
-    permission_classes = [AllowAny]
-
-    @extend_schema(
-        description="Retrieve details of a specific trip by 'tripid'.",
-        responses={
-            200: OpenApiResponse(
-                description="Successfully retrieved trip details.",
-                examples={
-                    "application/json": {
-                        "example": {
+@extend_schema(
+    operation_id="list_trips",
+    summary="List all trips for Admin/Staff or only upcoming trips for regular users.",
+    description="Retrieve a list of trips. Admins and staff can view all trips, while regular users can only view upcoming trips.",
+    responses={
+        200: OpenApiResponse(
+            description="Successfully retrieved the list of trips.",
+            examples={ 
+                "application/json": {
+                    "example": [
+                        {
                             "tripid": 1,
                             "tripname": "Caribbean Adventure",
                             "startdate": "2024-06-01",
@@ -2131,22 +2265,162 @@ class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
                             "stops": [1, 2],
                             "packages": [1, 2]
                         }
+                    ]
+                }
+            }
+        ),
+        404: OpenApiResponse(
+            description="No trips found matching the specified filters.",
+            examples={
+                "application/json": {
+                    "example": {
+                        "message": "No trips found matching the specified filters."
                     }
                 }
-            ),
-            404: OpenApiResponse(
-                description="Trip not found.",
-                examples={
-                    "application/json": {
-                        "example": {
-                            "message": "Trip not found."
+            }
+        ),
+    },
+    parameters=[
+        OpenApiParameter(
+            name="startdate_min",
+            description="Filter trips by the start date (greater than or equal).",
+            required=False,
+            type=str,
+            examples=["2024-06-01"]
+        ),
+        OpenApiParameter(
+            name="startdate_max",
+            description="Filter trips by the start date (less than or equal).",
+            required=False,
+            type=str,
+            examples=["2024-12-31"]
+        ),
+        OpenApiParameter(
+            name="tripcostperperson_min",
+            description="Filter trips by minimum cost per person.",
+            required=False,
+            type=int,
+            examples=[100, 200]
+        ),
+        OpenApiParameter(
+            name="tripcostperperson_max",
+            description="Filter trips by maximum cost per person.",
+            required=False,
+            type=int,
+            examples=[1000, 1500]
+        ),
+        OpenApiParameter(
+            name="trip_status",
+            description="Filter trips by their status.",
+            required=False,
+            type=str,
+            examples=["Scheduled", "Completed", "Cancelled"]
+        ),
+    ],
+    tags=["Trip Management"]
+)
+class MmsAdminTripListView(generics.ListAPIView):
+    """
+    API view to list all trips.
+    Staff or admin can view all trips, while regular users can only view upcoming trips.
+    """
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsAdminTripListSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.AdminTripFilter
+    ordering_fields = ['startdate', 'enddate', 'tripcostperperson', 'duration', 'tripname']
+    ordering = ['startdate']  # Default ordering (earliest trips first)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if not queryset.exists():
+            return Response({"detail": "No trips found matching the specified filters."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+@extend_schema(
+    operation_id="list_trips",
+    summary="List all trips for regular users.",
+    description="Retrieve details of a specific trip by 'tripid'.",
+    responses={
+        200: OpenApiResponse(
+            description="Successfully retrieved the list of trips.",
+            examples={ 
+                "application/json": {
+                    "example": [
+                        {
+                            "tripid": 1,
+                            "tripname": "Caribbean Adventure",
+                            "startdate": "2024-06-01",
+                            "enddate": "2024-06-15",
+                            "tripcostperperson": "799.99",
+                            "tripstatus": "upcoming",
+                            "tripcapacity": 200,
+                            "cancellationpolicy": "Full refund 30 days before trip",
+                            "tripdescription": "An exciting trip to the Caribbean!",
+                            "finalbookingdate": "2024-05-01",
+                            "shipid": 1,
+                            "stops": [1, 2],
+                            "packages": [1, 2]
                         }
+                    ]
+                }
+            }
+        ),
+        404: OpenApiResponse(
+            description="No trips found matching the specified filters.",
+            examples={
+                "application/json": {
+                    "example": {
+                        "message": "No trips found matching the specified filters."
                     }
                 }
-            ),
-        },
-        tags=["Trip Management"]
-    )
+            }
+        ),
+    },
+    parameters=[
+        OpenApiParameter(
+            name="startdate_min",
+            description="Filter trips by the start date (greater than or equal).",
+            required=False,
+            type=str,
+            examples=["2024-06-01"]
+        ),
+        OpenApiParameter(
+            name="startdate_max",
+            description="Filter trips by the start date (less than or equal).",
+            required=False,
+            type=str,
+            examples=["2024-12-31"]
+        ),
+        OpenApiParameter(
+            name="tripcostperperson_min",
+            description="Filter trips by minimum cost per person.",
+            required=False,
+            type=int,
+            examples=[100, 200]
+        ),
+        OpenApiParameter(
+            name="tripcostperperson_max",
+            description="Filter trips by maximum cost per person.",
+            required=False,
+            type=int,
+            examples=[1000, 1500]
+        ),
+    ],
+    tags=["Trip Management"]
+)
+class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
+    """
+    API view to retrieve details of a specific trip.
+    Accessible to all users, regardless of permissions.
+    """
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'tripid'
+
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -2474,4 +2748,75 @@ class MmsTripListView(generics.ListAPIView):
         if not queryset.exists():
             return Response({"detail": "No trips found matching the specified filters."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
+    """
+    API view to retrieve details of a specific trip.
+    Accessible to all users, regardless of permissions.
+    """
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.MmsTripDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'tripid'
+
+    @extend_schema(
+        description="Retrieve details of a specific trip by 'tripid'.",
+        responses={
+            200: OpenApiResponse(
+                description="Successfully retrieved trip details.",
+                examples={
+                    "application/json": {
+                        "example": {
+                            "tripid": 1,
+                            "tripname": "Caribbean Adventure",
+                            "startdate": "2024-06-01",
+                            "enddate": "2024-06-15",
+                            "tripcostperperson": "799.99",
+                            "tripstatus": "upcoming",
+                            "tripcapacity": 200,
+                            "cancellationpolicy": "Full refund 30 days before trip",
+                            "tripdescription": "An exciting trip to the Caribbean!",
+                            "finalbookingdate": "2024-05-01",
+                            "shipid": 1,
+                            "stops": [1, 2],
+                            "packages": [1, 2]
+                        }
+                    }
+                }
+            ),
+            404: OpenApiResponse(
+                description="Trip not found.",
+                examples={
+                    "application/json": {
+                        "example": {
+                            "message": "Trip not found."
+                        }
+                    }
+                }
+            ),
+        },
+        tags=["Trip Management"]
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+class MmsStartBookingView(generics.RetrieveAPIView):
+    queryset = models.MmsTrip.objects.all()
+    serializer_class = serializers.StartBookingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """
+        Get the trip instance based on the URL parameter.
+        """
+        tripid = self.kwargs['tripid']
+        return models.MmsTrip.objects.get(tripid=tripid)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Override GET to ensure context is correctly passed.
+        """
+        trip = self.get_object()
+        serializer = self.get_serializer(instance=trip)
         return Response(serializer.data)

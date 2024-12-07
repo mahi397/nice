@@ -1210,7 +1210,7 @@ class MmsItinerarySerializer(serializers.ModelSerializer):
         if not end_ports.exists():
             raise serializers.ValidationError(f"Trip {tripid} must have an end port.")
     
-class MmsTrippackageSerializer(serializers.ModelSerializer):
+class MmsTripPackageSerializer(serializers.ModelSerializer):
     """
     Serializer for managing and validating trip-package relationships.
     This serializer ensures that a specific trip can be associated with a valid package,
@@ -1243,18 +1243,6 @@ class MmsTrippackageSerializer(serializers.ModelSerializer):
             )
         
         return data
-
-class MmsTripRoomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.MmsTripRoom
-        fields = [
-            'tripid',  
-            'roomnumber', 
-            'baseprice', 
-            'isbooked', 
-            'dynamicprice'
-        ]
-        read_only_fields = ['tripid', 'roomnumber', 'baseprice', 'dynamicprice', 'isbooked', 'roomtype', 'location']
            
 class MmsTripCreateSerializer(serializers.ModelSerializer):
     """
@@ -1271,6 +1259,16 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
             'cancellationpolicy', 'tripdescription', 'finalbookingdate', 'shipid', 'stops', 'packages'
         ]
 
+    def validate_stops(self, data):
+        stop_serializer = MmsItinerarySerializer(data, many=True)
+        stop_serializer.is_valid(raise_exception=True)
+        return data
+    
+    def validate_packages(self, data): 
+        package_serializer = MmsTripPackageSerializer(data, many=True)
+        package_serializer.is_valid(raise_exception=True)
+        return data
+    
     # Validate that tripname is not empty or too long
     def validate_tripname(self, data):
         if not data or data.strip() == "":
@@ -1425,7 +1423,7 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data): 
         packages = validated_data.pop('packages', [])
         stops = validated_data.pop('stops', [])
-
+        validated_data['tripcapacityremaining'] = validated_data['tripcapacity']
         trip = models.MmsTrip.objects.create(**validated_data)
         self.create_trip_stops(trip, stops)
         self.create_trip_packages(trip, packages)
@@ -1817,14 +1815,20 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         return value
 
 class MmsTripDetailSerializer(MmsTripListSerializer):
-    # Nested serializer for related start port (via MmsPortStop and MmsPort)
-    # Additional fields for trip description, cancellation policy, additional fees, etc.
-    port_times = serializers.SerializerMethodField()  # Method to fetch port arrival and departure times
-    restaurants = serializers.SerializerMethodField()  # Method to fetch restaurant details
-    activities = serializers.SerializerMethodField()  # Method to fetch activity details
+    """
+    Serializer for providing detailed trip information.
+    Extends the `MmsTripListSerializer` by adding extra fields such as:
+    - Trip description, cancellation policy, and final booking date.
+    - Port times, restaurants, and activities linked to the trip.
+    """
+
+    # Custom fields added to the detailed serializer
+    port_times = serializers.SerializerMethodField()  # Fetch port arrival and departure times
+    restaurants = serializers.SerializerMethodField()  # Fetch details of restaurants on the trip's ship
+    activities = serializers.SerializerMethodField()  # Fetch details of activities on the trip's ship
 
     class Meta(MmsTripListSerializer.Meta):
-        # Include the fields from MmsTripListSerializer and the new detailed fields
+        # Extend the parent serializer fields with detailed fields
         fields = MmsTripListSerializer.Meta.fields + [
             'tripdescription', 
             'cancellationpolicy',
@@ -1835,45 +1839,47 @@ class MmsTripDetailSerializer(MmsTripListSerializer):
         ]
     
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the serializer and remove unnecessary fields.
+        Specifically removes `port_stops` inherited from the parent serializer.
+        """
         super().__init__(*args, **kwargs)
-        # Remove the `port_stops` field inherited from the parent serializer
         self.fields.pop('port_stops', None)
         
     def get_port_times(self, obj):
         """
-        Get arrival and departure times for each port in the trip.
-        - This method collects the details of each port stop for the given trip,
-        - including the port name, arrival time, and departure time.
+        Retrieve arrival and departure times for each port associated with the trip.
+        - Iterates over port stops, ordered by their sequence, and includes:
+          - Port name
+          - City
+          - Arrival and departure times
         """
         port_times = []  # List to hold port time data
-        
-        # Iterate through the port stops for the current trip, ordered by the order of stop
+
+        # Fetch and process each port stop
         for port_stop in obj.portstops.all().order_by('orderofstop'):
-            port = port_stop.portid  # Fetch the port related to the current port stop
+            port = port_stop.portid  # Associated port for the current stop
             port_time_data = {
-                "port_name": port.portname if port else None,  # Get the port name
+                "port_name": port.portname if port else None,
                 "port_city": port.portcity,
-                "arrival_time": port_stop.arrivaltime,  # Get the arrival time for the port stop
-                "departure_time": port_stop.departuretime,  # Get the departure time for the port stop
+                "arrival_time": port_stop.arrivaltime,
+                "departure_time": port_stop.departuretime,
             }
-            # Append the port time data to the list
             port_times.append(port_time_data)
         
-        # If no port times were found, return an empty list
-        return port_times if port_times else []
+        return port_times
 
     def get_restaurants(self, obj):
         """
-        Fetch detailed restaurant information linked to the ship associated with this trip.
+        Fetch restaurant details for the ship associated with the trip.
+        - Includes information about meal services and alcohol availability.
         """
-        # Ensure the ship is linked to the trip
         if not obj.shipid:
             return []
 
-        # Use `select_related` to prefetch restaurant details efficiently
+        # Query ship's restaurants using prefetch optimization
         ship_restaurants = models.MmsShipRestaurant.objects.filter(shipid=obj.shipid).select_related('restaurantid')
 
-        # Prepare the response with relevant details
         return [
             {
                 "restaurant_name": restaurant.restaurantid.restaurantname,
@@ -1887,11 +1893,13 @@ class MmsTripDetailSerializer(MmsTripListSerializer):
 
     def get_activities(self, obj):
         """
-        Fetch detailed activity information linked to the ship associated with this trip.
+        Fetch activity details for the ship associated with the trip.
+        - Includes information about activities' names, descriptions, and capacities.
         """
         if not obj.shipid:
             return []
 
+        # Query ship's activities using prefetch optimization
         ship_activities = models.MmsShipActivity.objects.filter(shipid=obj.shipid).select_related('activityid')
 
         return [
@@ -1902,4 +1910,111 @@ class MmsTripDetailSerializer(MmsTripListSerializer):
             }
             for activity in ship_activities
         ]
-    
+
+class MmsTripRoomSerializer(serializers.ModelSerializer):
+    """
+    Serializer for trip room information.
+    - Fields include room details such as number, booking status, price, type, and location.
+    """
+
+    class Meta:
+        model = models.MmsTripRoom
+        fields = [
+            'roomnumber', 
+            'isbooked', 
+            'dynamicprice',
+            'roomtype',
+            'location'
+        ]
+        
+class MmsTripBookingSerializer(serializers.ModelSerializer):
+    """
+    Serializer for basic trip booking details.
+    - Provides information such as trip ID, name, dates, cost per person, and remaining capacity.
+    """
+
+    class Meta:
+        model = models.MmsTrip
+        fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripcapacityremaining']
+        # Make all fields read-only to avoid updates
+
+class MmsPackageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for trip package details.
+    - Includes fields such as package ID, trip ID, and detailed package information.
+    """
+
+    package_details = serializers.SerializerMethodField()  # Fetch nested package details
+
+    class Meta:
+        model = models.MmsTripPackage
+        fields = ['packageid', 'tripid', 'package_details']
+
+    def get_package_details(self, obj):
+        """
+        Retrieve detailed information about the package, including:
+        - Package name, price, and description.
+        """
+        package = obj.packageid  # Related package instance
+        return {
+            'package_name': package.packagename,
+            'price': package.base_price,
+            'description': package.packagedetails
+        }
+
+        
+class StartBookingSerializer(serializers.Serializer):
+    """
+    Serializer for starting a trip booking.
+    - Includes trip details, available rooms, room categories, and packages.
+    """
+
+    trip_details = serializers.SerializerMethodField()  # Fetch basic trip booking details
+    available_rooms = serializers.SerializerMethodField()  # Fetch list of available rooms
+    available_packages = serializers.SerializerMethodField()  # Fetch list of available packages
+    available_room_categories = serializers.SerializerMethodField()  # Fetch distinct room categories
+
+    def get_trip_details(self, obj):
+        """
+        Retrieve the basic details of the trip.
+        """
+        return MmsTripBookingSerializer(obj).data if obj else {}
+
+    def get_available_rooms(self, obj):
+        """
+        Retrieve a list of rooms available for booking on the trip.
+        """
+        if not obj:
+            return []
+        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid, isbooked=False)
+        return MmsTripRoomSerializer(available_rooms, many=True).data
+
+    def get_available_room_categories(self, obj):
+        """
+        Retrieve a distinct list of room categories available on the trip.
+        """
+        if not obj:
+            return []
+        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid, isbooked=False)
+        available_categories = available_rooms.values_list('roomtype', flat=True).distinct()
+        return list(available_categories)
+
+    def get_available_packages(self, obj):
+        """
+        Retrieve a list of packages available for the trip.
+        """
+        if not obj:
+            return []
+        available_packages = models.MmsTripPackage.objects.filter(tripid=obj.tripid)
+        return MmsPackageSerializer(available_packages, many=True).data
+
+    def to_representation(self, instance):
+        """
+        Customize the serialized response format for booking initialization.
+        """
+        return {
+            "trip_details": self.get_trip_details(instance),
+            "available_rooms": self.get_available_rooms(instance),
+            "available_room_categories": self.get_available_room_categories(instance),
+            "available_packages": self.get_available_packages(instance),
+        }
