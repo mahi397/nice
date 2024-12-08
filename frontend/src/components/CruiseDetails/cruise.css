@@ -7,11 +7,11 @@
 .cruise-details {
   height: 100%;
   width: 100vw;
-  /* display: flex;
+  display: flex;
   flex-direction: column;
-  justify-content: space-around;
-  align-items: center;
-  margin: auto; */
+  /* justify-content: space-around; */
+  /* align-items: center; */
+  margin: auto;
   background-color: #fff;
   color: black;
 }

@@ -42,6 +42,17 @@ const ItineraryCard = () => {
           <p>{mockText}</p>
         </div>
       </div>
+      <div style={styles.card}>
+        <img
+          src={manhImg} // Placeholder image URL
+          alt="Card Image"
+          style={styles.image}
+        />
+        <div style={styles.textContent}>
+          <p>{mockText}</p>
+        </div>
+      </div>
+      
     </>
   );
 };

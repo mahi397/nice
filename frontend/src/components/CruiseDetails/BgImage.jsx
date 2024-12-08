@@ -2,6 +2,7 @@ import React from 'react';
 import bgImg from '../../assets/cover.png';
 
 export default function BgImage() {
+    console.log("BGImage rendered");
   return (
     <div style={style.imgContainer}>
       <img src={bgImg} style={style.img} />

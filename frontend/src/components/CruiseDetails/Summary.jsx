@@ -7,6 +7,7 @@ const WideCard = () => {
   const leftParagraph1 = 'Start: Manhattan, New York City  >  Celebration Key  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City';
   const leftParagraph2 = 'Wed Jul 1, 2026 - Thu Jul 9, 2026';
 
+  console.log('Summary Card rendered');
   return (
     <div style={styles.card}>
       {/* Left Section (80%) */}
@@ -24,7 +25,7 @@ const WideCard = () => {
 
         {/* Book Now Button */}
         <button style={styles.bookNowButton}>
-            <Link to={'/addroom'}>BOOK NOW</Link></button>
+            <Link to={'/booking'}>BOOK NOW</Link></button>
       </div>
     </div>
   );
@@ -109,9 +110,9 @@ const styles = {
     cursor: 'pointer',
     transition: 'background-color 0.3s',
   },
-  bookNowButtonHover: {
-    backgroundColor: '#0056b3', // Darker shade on hover
-  }
+  // bookNowButtonHover: {
+  //   backgroundColor: '#0056b3', // Darker shade on hover
+  // }
 };
 
 export default WideCard;

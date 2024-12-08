@@ -12,6 +12,7 @@ import { API_URL } from "../admin/api";
 import ItineraryCard from "./ItineraryCard";
 import Summary from "./Summary";
 import BgImage from "./BgImage";
+import Header from "../Header";
 
 const CruiseDetails = ({ tripid }) => {
   // const { id } = useParams(); // Get the cruise id from the URL
@@ -93,17 +94,9 @@ const CruiseDetails = ({ tripid }) => {
   ];
 
   return (
-    // <div className="cruise-details">
-    //   <h2>{cruise.name}</h2>
-    //   <img src={cruise.image} alt={cruise.name} />
-    //   <p><strong>Destination:</strong> {cruise.destination}</p>
-    //   <p><strong>Duration:</strong> {cruise.duration} days</p>
-    //   <p><strong>Price:</strong> ${cruise.price}</p>
-    //   <p><strong>Description:</strong> {cruise.description}</p>
-    //   <button>Book Now</button>
-    // </div>
     <div className="cruise-details">
       {/* <SummaryCard data={cruise} /> */}
+      <Header />
       <BgImage />
       <Summary />
       <h2 className="cruise-heading">Cruise Itinerary</h2>

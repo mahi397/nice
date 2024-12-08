@@ -11,7 +11,7 @@ import AdminLogin from "./components/admin/AdminLogin";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import CruiseDetails from "./components/CruiseDetails/CruiseDetails";
-import RoomList from "./components/Booking/RoomList";
+import Booking from "./components/Booking/Booking";
 
 function App() {
   return (
@@ -39,7 +39,7 @@ function App() {
             {/* <Route path="/admin/dashboard" element={<AdminDash />} /> */}
             <Route path="/cruise-details" element={<CruiseDetails tripid={56}/>} />
 
-            <Route path="/addroom" element={<RoomList />} />
+            <Route path="/booking" element={<Booking />} />
           </Routes>
         </Router>
       </div>
