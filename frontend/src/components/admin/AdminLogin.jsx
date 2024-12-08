@@ -14,19 +14,29 @@ const AdminLogin = () => {
     setErrorMessage("");
 
     try {
-      const response = await axios.post("http://localhost:8000/admin-login/", {
+      const response = await axios.post("http://localhost:8000/nice/admin/login", {
         username,
         password,
       });
 
-      // Store token in localStorage
-      localStorage.setItem("authToken", response.data.token);
-      alert(response.data.message);
+      // Log the entire response to inspect it
+      console.log("Response from server:", response);
 
-      // Redirect to the employee dashboard
-      navigate("/admin-dashboard");
+      // Check if access token is present in response
+      if (response.data.access) {
+        // Store access and refresh tokens in localStorage
+        localStorage.setItem("authToken", response.data.access);
+        localStorage.setItem("refreshToken", response.data.refresh);
+        console.log("Access token set in localStorage:", response.data.access);
+
+        // Redirect to the employee dashboard
+        navigate("/admin-dashboard");
+      } else {
+        console.error("Access token not found in response");
+      }
     } catch (error) {
       setErrorMessage(error.response.data.error || "An error occurred");
+      console.error("Error during login:", error);
     }
   };
 

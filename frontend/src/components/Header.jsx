@@ -1,7 +1,13 @@
-import { React, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import logo from '../assets/react.svg';
 import '../style.css';
-import { Link } from 'react-router-dom';
+import './navbar.css';
+import { Link, useNavigate } from 'react-router-dom';
+
+
+const isLoggedIn = () => {
+  return localStorage.getItem('token') ? true : false; // Check if token exists in localStorage
+};
 
 function Header() {
 
@@ -11,9 +17,38 @@ function Header() {
   //   setIsModalVisible(isModalVisible => !isModalVisible);
  // }
 
+ const [isAuthenticated, setIsAuthenticated] = useState(false);
+ const [dropdownOpen, setDropdownOpen] = useState(false); // To control the dropdown visibility
+  
+  const navigate = useNavigate(); // 
+
+  useEffect(() => {
+    setIsAuthenticated(isLoggedIn());
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      // Perform logout on the server (optional for cleanup purposes)
+      await axios.post('/api/logout/'); // Add this endpoint in your Django backend for cleanup, if needed.
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+
+    // Remove token from localStorage and update auth state
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    navigate('/');
+  };
+
+  const toggleDropdown = () => {
+    setDropdownOpen((prevState) => !prevState); // Toggle the dropdown state
+  };
+
+
   return (
     <nav>
         <img src={logo} className='nav--logo'></img>
+
         <ul className='nav--list'>
             <li>
               <Link to="/">Home</Link>
@@ -23,11 +58,30 @@ function Header() {
             <li>About Us</li>
             <li>Contact</li>
         </ul>
-        <button className='nav--button'>
+
+        <div className="navbar-links">
+          {isAuthenticated ? (
+            <div className="profile-dropdown" onClick={toggleDropdown}>
+              <div className="profile-circle">
+                {/* Display user profile image or initials */}
+              </div>
+              {/* Dropdown menu */}
+              {dropdownOpen && (
+                <div className="dropdown-content">
+                  <Link to="/profile">My Profile</Link>
+                  <button onClick={handleLogout}>Logout</button>
+                </div>
+              )}
+            </div>
+          ) : (
+          <button className='nav--button'>
           <Link to="/nice/login" style={{ textDecoration: 'none', color: 'inherit' }}>
             Login/Register
           </Link>
         </button>
+          )}
+        </div>
+        
     </nav>
   )
 }

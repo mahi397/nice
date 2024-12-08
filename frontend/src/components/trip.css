@@ -2,117 +2,115 @@
 
 /* Style for the search bar */
 .search-bar {
-    margin: 20px 20px 20px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    padding: 20px;
-    /* background-color: #858883; */
-    background: transparent;
-    border: 2px solid rgba(172, 172, 172, 0.2);
-    backdrop-filter: blur(20px);
-    border-radius: 8px;
-    color: gray;
-    /* color: darkcyan; */
-  }
-  
-  .search-input {
-    display: flex;
-    flex-direction: column;
-    margin-right: 15px;
-    min-width: 150px;
-  }
-  
-  .search-input label {
-    font-size: 14px;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .search-input select {
-    padding: 8px;
-    font-size: 14px;
-    border-radius: 4px;
-    /* border: 1px solid; */
-    background-color: #a6c4d4;
-  }
-  
-  .search-button {
-    padding: 10px 20px;
-    background-color: rgba(115, 113, 113, 0.2);
-    color: black;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  
-  
-  .search-button:hover {
-    background-color: #2f6684;
-  }
-  
-  /* Style for the trip cards */
-  .trip-cards {
-    display: flex;
-    flex-direction: column;
-    /* flex-wrap: wrap; */
-    justify-content: space-around;
-    gap: 20px;
-    max-width: 100%;  /* Ensure container takes full width */
-    align-items: center;  /* Center the cards horizontally within the container */
-    padding: 15px;
-  }
-  
-  .trip-card {
-    /* width: 250px; */
-    border: 1px solid #ccc;
-    padding: 15px;
-    /* background-color: #fff; */
-    text-align: center;
-    /* border-radius: 8px; */
-    color: black;
-    /* background: transparent; */
-    border: 2px solid rgba(255, 255, 255, .2);
-    /* backdrop-filter: blur(50px); */
-    width: 80vw;  /* Make each card 80% of the screen width */
+  margin: 20px 20px 20px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  /* background-color: #858883; */
+  background: transparent;
+  border: 2px solid rgba(172, 172, 172, 0.2);
+  backdrop-filter: blur(20px);
+  border-radius: 8px;
+  color: gray;
+  /* color: darkcyan; */
+}
+
+.search-input {
+  display: flex;
+  flex-direction: column;
+  margin-right: 15px;
+  min-width: 150px;
+}
+
+.search-input label {
+  font-size: 14px;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.search-input select {
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  /* border: 1px solid; */
+  background-color: #a6c4d4;
+}
+
+.search-button {
+  padding: 10px 20px;
+  background-color: rgba(115, 113, 113, 0.2);
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.search-button:hover {
+  background-color: #2f6684;
+}
+
+/* Style for the trip cards */
+.trip-cards {
+  display: flex;
+  flex-direction: column;
+  /* flex-wrap: wrap; */
+  justify-content: space-around;
+  gap: 20px;
+  max-width: 100%; /* Ensure container takes full width */
+  align-items: center; /* Center the cards horizontally within the container */
+  padding: 15px;
+}
+
+.trip-card {
+  /* width: 250px; */
+  border: 1px solid #ccc;
+  padding: 15px;
+  /* background-color: #fff; */
+  text-align: center;
+  /* border-radius: 8px; */
+  color: black;
+  /* background: transparent; */
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  /* backdrop-filter: blur(50px); */
+  width: 80vw; /* Make each card 80% of the screen width */
   height: 30vh; /* The height will be smaller compared to the width */
   background-color: #fff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   flex-shrink: 0; /* Prevent cards from shrinking */
-  scroll-snap-align: start; /* Align cards to the left */
+  /* scroll-snap-align: start; Align cards to the left */
   transition: transform 0.3s ease;
   display: flex;
   align-items: center;
-  }
+}
 
-  .trip-card:hover {
-    transform: translateY(-5px); /* Slightly lift the card */
-  }
-  
-  .trip-card img {
-    width: 50%;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 4px;
-    
-  }
-  
-  .trip-card h2 {
-    font-size: 18px;
-    margin: 10px 0;
-  }
-  
-  .trip-card p {
-    margin: 5px 0;
-  }
+.trip-card:hover {
+  transform: translateY(-5px); /* Slightly lift the card */
+}
 
-  .trip-card button {
-    height: min-content;
-  }
-  
-  .card-content {
-    margin: auto;
-  }
+.trip-card img {
+  width: 50%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.trip-card h2 {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+.trip-card p {
+  margin: 5px 0;
+}
+
+.trip-card button {
+  height: min-content;
+}
+
+.card-content {
+  margin-right: auto;
+}

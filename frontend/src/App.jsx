@@ -10,6 +10,8 @@ import Dashboard from "./components/user/Dashboard";
 import AdminLogin from "./components/admin/AdminLogin";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+import CruiseDetails from "./components/CruiseDetails/CruiseDetails";
+import RoomList from "./components/Booking/RoomList";
 
 function App() {
   return (
@@ -24,18 +26,21 @@ function App() {
 
             <Route path="/dashboard" element={<Dashboard />} />
 
-            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/nice/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin-dashboard"
               element={
                 // <ProtectedRoute>
-                  <AdminDashboard />
+                <AdminDashboard />
                 // </ProtectedRoute>
               }
             />
 
             {/* <Route path="/admin/dashboard" element={<AdminDash />} /> */}
-            </Routes>
+            <Route path="/cruise-details" element={<CruiseDetails tripid={56}/>} />
+
+            <Route path="/addroom" element={<RoomList />} />
+          </Routes>
         </Router>
       </div>
     </>
