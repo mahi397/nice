@@ -233,7 +233,6 @@ CREATE TABLE `mms_booking` (
   `bookingid` bigint NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for every booking',
   `bookingdate` datetime NOT NULL COMMENT 'Date when the booking was made. Important for scheduling and availability tracking.',
   `bookingstatus` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Status of the booking, e.g., "Confirmed," "Pending," "Canceled." Assists with management tracking.',
-  `estimatedcost` decimal(8,2) NOT NULL COMMENT 'Estimated cost for the trip including base cost, room price and package price exclusing tax and other add ons',
   `groupid` bigint NOT NULL COMMENT 'Unqiue identifier for every group',
   `tripid` bigint NOT NULL COMMENT 'Primary key for each trip. Unique identifier for each trip entry.',
   `userid` int NOT NULL,
@@ -295,6 +294,7 @@ CREATE TABLE `mms_invoice` (
   `paymentstatus` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Indicates whether the invoice is "Paid," "Unpaid," or "Overdue." Tracks financial status.',
   `duedate` datetime NOT NULL COMMENT 'Date by which the payment should be completed. Ensures timely collection.',
   `bookingid` bigint NOT NULL COMMENT 'Unique identifier for every booking',
+  `dueamount` decimal(8,2) NOT NULL,
   PRIMARY KEY (`invoiceid`),
   KEY `mms_invoice_mms_booking_fk` (`bookingid`),
   CONSTRAINT `mms_invoice_mms_booking_fk` FOREIGN KEY (`bookingid`) REFERENCES `mms_booking` (`bookingid`)
@@ -362,7 +362,7 @@ CREATE TABLE `mms_payment_detail` (
   `paymentmethod` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Method of payment (e.g., "Credit Card," "Bank Transfer," "Cash"). Provides context for processing.',
   `transactionid` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Unique ID from the payment provider for reference. Useful for audits and confirmations.',
   `invoiceid` bigint NOT NULL COMMENT 'Primary key for the invoice.',
-  PRIMARY KEY (`paymentid`,`invoiceid`),
+  PRIMARY KEY (`paymentid`),
   KEY `mms_payment_mms_invoice_fk` (`invoiceid`),
   CONSTRAINT `mms_payment_mms_invoice_fk` FOREIGN KEY (`invoiceid`) REFERENCES `mms_invoice` (`invoiceid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
@@ -626,9 +626,15 @@ CREATE TABLE `mms_trip_room` (
   `location` varchar(50) NOT NULL,
   `roomnumber` int NOT NULL,
   `tripid` bigint NOT NULL,
+  `tempreserved` tinyint DEFAULT '0',
+  `tempreservationtimestamp` timestamp(1) NULL DEFAULT NULL,
+  `tempreservationuser` int DEFAULT NULL,
+  `bookingid` bigint DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `mms_trip_room_mms_trip_fk_idx` (`tripid`),
   KEY `mms_trip_room_mms_room_fk_idx` (`roomnumber`),
+  KEY `mms_trip_room_mms_booking_fk_idx` (`bookingid`),
+  CONSTRAINT `mms_trip_room_mms_booking_fk` FOREIGN KEY (`bookingid`) REFERENCES `mms_booking` (`bookingid`),
   CONSTRAINT `mms_trip_room_mms_room_fk` FOREIGN KEY (`roomnumber`) REFERENCES `mms_room` (`roomnumber`),
   CONSTRAINT `mms_trip_room_mms_trip_fk` FOREIGN KEY (`tripid`) REFERENCES `mms_trip` (`tripid`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
@@ -666,7 +672,7 @@ CREATE TABLE `token_blacklist_blacklistedtoken` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `token_id` (`token_id`),
   CONSTRAINT `token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk` FOREIGN KEY (`token_id`) REFERENCES `token_blacklist_outstandingtoken` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -687,7 +693,7 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
   UNIQUE KEY `token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq` (`jti`),
   KEY `token_blacklist_outs_user_id_83bc629a_fk_auth_user` (`user_id`),
   CONSTRAINT `token_blacklist_outs_user_id_83bc629a_fk_auth_user` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -699,4 +705,4 @@ CREATE TABLE `token_blacklist_outstandingtoken` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-12-07 12:37:32
+-- Dump completed on 2024-12-08  2:34:30
