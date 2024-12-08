@@ -1,6 +1,9 @@
-import queue
+import stripe
 from . import models
+from decimal import Decimal
 from django.http import Http404
+from django.conf import settings
+from django.utils import timezone
 from django.db.models import Count
 from . import filters, serializers
 from django.core.mail import send_mail
@@ -10,7 +13,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
-from django.shortcuts import get_object_or_404
 from rest_framework import mixins, generics, status
 from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -18,9 +20,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 '''class MmsTripListAPIView(APIView):
     permission_classes = [AllowAny]  # Or more specific permissions for passenger, staff, and admin
@@ -50,17 +52,17 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParamet
 class AdminLoginView(TokenObtainPairView):
     """
     Custom Token Obtain View to handle login and issue JWT tokens.
-    This view uses the `AdminLoginSerializer` to validate credentials
+    This view uses the `AdminMmsLoginSerializer` to validate credentials
     and generate JWT tokens. Only staff and admin users are allowed to log in.
     """
 
     # Set the serializer class to use for validation and token generation
-    serializer_class = serializers.AdminLoginSerializer
+    serializer_class = serializers.AdminMmsLoginSerializer
 
     @extend_schema(
         description="Endpoint for admin users to log in. It validates the user's credentials "
                     "(email/username and password) and returns JWT tokens for authenticated users.",
-        request=serializers.AdminLoginSerializer,  # Specifies the expected request body format
+        request=serializers.AdminMmsLoginSerializer,  # Specifies the expected request body format
         responses={
             200: {
                 "description": "Successfully logged in. JWT tokens issued.",
@@ -1941,7 +1943,6 @@ class MmsTripAddView(generics.GenericAPIView, mixins.CreateModelMixin):
         """Handle trip creation."""
         return self.create(request=request, *args, **kwargs)
 
-
 class MmsRoomSummaryListView(generics.ListAPIView): 
     """
     API view to retrieve a list of rooms grouped by room type and location.
@@ -1986,7 +1987,6 @@ class MmsRoomSummaryListView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-
 class MmsTripRoomPriceUpdateView(generics.GenericAPIView):
     """
     View to handle price updates for rooms in MmsTripRoom.
@@ -2026,7 +2026,6 @@ class MmsTripRoomPriceUpdateView(generics.GenericAPIView):
         else:
             return Response({"detail": "No rooms updated, please check your filters."}, status=status.HTTP_404_NOT_FOUND)
        
-
 class MmsAdminTripListView(generics.ListAPIView):
     """
     API view to list all trips.
@@ -2046,7 +2045,6 @@ class MmsAdminTripListView(generics.ListAPIView):
             return Response({"detail": "No trips found matching the specified filters."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
 
 class MmsAdminTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     """
@@ -2096,7 +2094,7 @@ class MmsTripDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
 
         return Response({"detail": "Trip deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     
-class UserCreateView(generics.CreateAPIView):
+class MmsUserCreateView(generics.CreateAPIView):
     """
     User Registration View that handles the creation of a new user.
     - Validates input using UserRegistrationSerializer.
@@ -2104,7 +2102,7 @@ class UserCreateView(generics.CreateAPIView):
     """
         
     queryset = User.objects.all()
-    serializer_class = serializers.UserCreateSerializer
+    serializer_class = serializers.MmsUserCreateSerializer
     permission_classes = [AllowAny]
     
     @extend_schema(
@@ -2151,10 +2149,9 @@ class UserCreateView(generics.CreateAPIView):
             fail_silently=True,
         )
 
-
-class UserUpdateView(generics.GenericAPIView, mixins.UpdateModelMixin):
+class MmsUserUpdateView(generics.GenericAPIView, mixins.UpdateModelMixin):
     queryset = User.objects.all()
-    serializer_class = serializers.UserUpdateSerializer
+    serializer_class = serializers.MmsUserUpdateSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = "id"
     
@@ -2193,15 +2190,15 @@ class UserDeleteView(mixins.DestroyModelMixin, generics.GenericAPIView):
 
         return self.destroy(request, *args, **kwargs)
 
-class LoginView(TokenObtainPairView):
+class MmsLoginView(TokenObtainPairView):
     """
     Custom Token Obtain View to handle login and issue JWT tokens.
     Uses the CustomTokenObtainPairSerializer to validate and generate tokens.
     """
-    serializer_class = serializers.LoginSerializer
+    serializer_class = serializers.MmsLoginSerializer
     
     @extend_schema(
-        request=serializers.LoginSerializer,
+        request=serializers.MmsLoginSerializer,
         responses={
             200: OpenApiResponse(
                 description="Login successful. Returns JWT access and refresh tokens.",
@@ -2214,7 +2211,7 @@ class LoginView(TokenObtainPairView):
         """Handle user login and issue JWT tokens."""
         return super().post(request, *args, **kwargs)
     
-class LogoutView(APIView):
+class MmsLogoutView(APIView):
     """
     Logs the user out by blacklisting their refresh token. 
     This effectively invalidates the session and makes the refresh token unusable.
@@ -2240,7 +2237,7 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-class CustomPasswordResetView(auth_views.PasswordResetView):
+class MmsCustomPasswordResetView(auth_views.PasswordResetView):
     """
     Custom view for password reset requests. 
     This view handles the process of requesting a password reset by sending an email to the user with a reset link.
@@ -2249,7 +2246,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     template_name = 'registration/password_reset_form.html'
 
     @extend_schema(
-        request=serializers.PasswordResetRequestSerializer,
+        request=serializers.MmsPasswordResetRequestSerializer,
         responses={
             200: OpenApiResponse(description="Password reset email sent successfully."),
             400: OpenApiResponse(description="Email address not found or error occurred."),
@@ -2259,7 +2256,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
         """Handle password reset request and send email."""
         return super().post(request, *args, **kwargs)
 
-class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+class MmsCustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     """
     Custom view for confirming the password reset. 
     This view allows the user to set a new password after clicking the reset link sent to their email.
@@ -2267,7 +2264,7 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     template_name = 'registration/password_reset_confirm.html'
 
     @extend_schema(
-        request=serializers.PasswordResetRequestSerializer,
+        request=serializers.MmsPasswordResetRequestSerializer,
         responses={
             200: OpenApiResponse(description="Password has been reset successfully."),
             400: OpenApiResponse(description="Invalid reset token or passwords do not match."),
@@ -2336,7 +2333,7 @@ class MmsTripListView(generics.ListAPIView):
         or only upcoming trips for regular users.
         """
         user = self.request.user
-        base_queryset = models.MmsTrip.objects.prefetch_related('portstop__portid')  # Optimize port stop queries
+        base_queryset = models.MmsTrip.objects.prefetch_related('portstops__portid')  # Optimize port stop queries
         if user.is_staff or user.is_superuser:
             return base_queryset
         return base_queryset.filter(tripstatus__iexact='upcoming')
@@ -2458,7 +2455,7 @@ class MmsTripDetailView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     )
 class MmsStartBookingView(generics.RetrieveAPIView):
     queryset = models.MmsTrip.objects.all()
-    serializer_class = serializers.StartBookingSerializer
+    serializer_class = serializers.MmsStartBookingSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
@@ -2474,15 +2471,32 @@ class MmsStartBookingView(generics.RetrieveAPIView):
         """
         trip = self.get_object()
         serializer = self.get_serializer(instance=trip)
+        trip_data = serializer.data
+        # Store relevant data from serializer directly into session
+        request.session['trip_details'] = {
+            'trip_id': trip_data['trip_details']['tripid'],
+            'trip_capacity_remaining': trip_data['trip_details']['tripcapacityremaining'],
+            'trip_cost_per_person': float(trip_data['trip_details']['tripcostperperson']),  # Convert to float for math operations
+            'available_room_categories': list(trip_data['available_room_categories']),  # Ensure it's a proper list
+            'available_packages': [
+                {  # Parse available packages into structured objects
+                    'package_id': pkg['packageid'],
+                    'name': pkg['package_details']['package_name'],
+                    'price': float(pkg['package_details']['price']),
+                    'description': pkg['package_details']['description'],
+                }
+                for pkg in trip_data['available_packages']
+            ],
+        }
         return Response(serializer.data)
         
-class TemporaryCapacityReservationView(generics.GenericAPIView):
+class MmsTemporaryCapacityReservationView(generics.GenericAPIView):
     """
     API view to temporarily reserve capacity for a trip. 
     This ensures that no other users can book the same capacity while the user is in the process of selecting rooms.
     """
     permission_classes = [IsAuthenticated]
-    serializer_class = serializers.TemporaryCapacityReservationSerializer
+    serializer_class = serializers.MmsTemporaryCapacityReservationSerializer
 
     def get_trip(self, tripid):
         """
@@ -2508,6 +2522,13 @@ class TemporaryCapacityReservationView(generics.GenericAPIView):
             number_of_rooms = serializer.validated_data['number_of_rooms']
             number_of_people_per_room = serializer.validated_data['number_of_people_per_room']
             
+            
+            # Store these details in the session (without trip_id as it's already stored)
+            request.session['booking_details'] = {
+            'number_of_rooms': number_of_rooms,
+            'number_of_people_per_room': number_of_people_per_room,
+            'number_of_passengers': number_of_rooms * number_of_people_per_room,
+}
             # Reduce the trip capacity by temporarily marking it
             trip = serializer.reduce_trip_capacity(trip, number_of_rooms, number_of_people_per_room)
 
@@ -2521,25 +2542,422 @@ class TemporaryCapacityReservationView(generics.GenericAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class RoomCategorySelectionView(APIView):
+class MmsRoomCategorySelectionView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = serializers.MmsRoomCategorySelectionSerializer
+    
+    def get_trip(self, tripid):
+        """
+        Helper method to retrieve the trip based on the tripid.
+        """
+        try:
+            trip = models.MmsTrip.objects.get(tripid=tripid)
+            return trip
+        except models.MmsTrip.DoesNotExist:
+            raise serializers.ValidationError("Trip not found.")
 
-    def post(self, request, *args, **kwargs):
-        trip_id = request.data.get('trip_id')
-        room_type = request.data.get('room_type')
-        number_of_rooms = request.data.get('number_of_rooms')
-
-        trip = models.MmsTrip.objects.get(id=trip_id)
+    def patch(self, request, *args, **kwargs):
+        
+        tripid = self.kwargs.get('tripid')  # Get the tripid from the URL
+        trip = self.get_trip(tripid)  # Retrieve the trip object
+        serializer = self.get_serializer(data=request.data, context={'trip': trip})
+        
+        
+        room_selections = request.data.get('room_selections')  # Expecting a list of {room_type, number_of_rooms}
         user_id = request.user.id  # Assuming the user is authenticated
 
+        try:
+            trip = models.MmsTrip.objects.get(tripid=tripid)
+        except models.MmsTrip.DoesNotExist:
+            return Response({"error": "Trip not found."}, status=status.HTTP_404_NOT_FOUND)
+
         # Serialize and validate the input data
-        serializer = serializers.RoomCategorySelectionSerializer(data=request.data, context={'trip': trip})
+        serializer = serializers.MmsRoomCategorySelectionSerializer(
+            data=request.data,
+            context={'trip': trip, 'user_id': user_id}
+        )
 
         if serializer.is_valid():
             # Reserve rooms temporarily
-            serializer.reserve_rooms(trip, room_type, number_of_rooms, user_id)
+            reserved_rooms = serializer.reserve_rooms(trip, room_selections, user_id)
+            
+            # Store the room selection details in the session
+            request.session['room_selection_details'] = {
+                'room_selections': [
+                    {
+                        'room_type': room['room_type'],
+                        'number_of_rooms': room['number_of_rooms'],
+                    }
+                    for room in room_selections
+                ],
+                'reserved_rooms': [
+                    {
+                        'room_number': reserved_room['roomnumber'],
+                        'dynamic_price': float(reserved_room['dynamicprice']),
+                        'location': reserved_room['location'],
+                        'room_type': reserved_room['roomtype'],
+                    }
+                    for reserved_room in reserved_rooms
+                ],
+            }
+            
             return Response({
-                "message": "Rooms temporarily reserved successfully."
+                "message": "Rooms temporarily reserved successfully.",
+                "reserved_rooms": reserved_rooms  # Return details of the reserved rooms
             }, status=status.HTTP_200_OK)
 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class MmsAddPassengerView(APIView):
+    """
+    View to add a passenger's information to the session.
+    This does not store data in the database until booking confirmation.
+    """
+    
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to add passenger details to session.
+        """
+        #print(request.session.items())
+        try:
+            num_passengers = request.session.get('booking_details', {}).get('number_of_passengers')
+            if num_passengers is None:
+                raise KeyError("number_of_passengers key is missing in session.")
+        except (KeyError, TypeError) as e:
+            # Handle session expiration or missing key gracefully
+            num_passengers = 0  # Set default value, or you can redirect to an error page or show a message
+            # Optionally, log the error or notify the user
+            print(f"Error retrieving number_of_passengers from session: {str(e)}")
+        
+        if num_passengers == 0:
+            return Response({"error": "No passengers added yet."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create a list if it doesn't exist in the session
+        if 'passengers' not in request.session:
+            request.session['passengers'] = []
+
+        # Validate the passenger data
+        serializer = serializers.MmsPassengerGetSerializer(data=request.data, context={'num_passengers': num_passengers})
+        if serializer.is_valid():
+            # Add the passenger to the session
+            passenger_data = serializer.validated_data
+            passenger_data = passenger_data['passengers']  # Access the list of passengers
+
+            request.session['passengers'] = [
+                {
+                    'first_name': passenger['firstname'],
+                    'last_name': passenger['lastname'],
+                    'date_of_birth': passenger['dateofbirth'].isoformat(),  # Convert date to ISO format string
+                    'gender': passenger['gender'],
+                    'contact_number': passenger['contactnumber'],
+                    'email_address': passenger['emailaddress'],
+                    'address': {
+                        'street': passenger['streetaddr'],
+                        'city': passenger['city'],
+                        'state': passenger['state'],
+                        'country': passenger['country'],
+                        'zip_code': passenger['zipcode'],
+                    },
+                    'nationality': passenger['nationality'],
+                    'passport_number': passenger['passportnumber'],
+                    'emergency_contact': {
+                        'name': passenger['emergencycontactname'],
+                        'number': passenger['emergencycontactnumber'],
+                    },
+                }
+                for passenger in passenger_data
+            ]
+            request.session.modified = True  # Ensure the session is updated
+            
+            # Update the number of passengers added
+            #request.session['num_passengers'] += 1
+
+            return Response({"message": "Passenger added to session.", "passenger_data": passenger_data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MmsTripPackageListView(generics.GenericAPIView, mixins.ListModelMixin):
+    """
+    API view to list all packages for a specific trip.
+    Only authenticated users with staff or admin permissions can view the list of packages.
+    """
+
+    queryset = models.MmsTripPackage.objects.all()  # Queryset for retrieving packages
+    serializer_class = serializers.MmsTripPackageListSerializer  # Serializer used for listing packages
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated and has required permissions
+    
+    def get_queryset(self):
+        """
+        Override to filter packages by tripid passed in the URL.
+        """
+        tripid = self.kwargs.get('tripid')  # Access tripid from URL kwargs
+        return models.MmsTripPackage.objects.filter(tripid=tripid)  # Filter packages for the specific trip
+
+    @extend_schema(
+        description="List all available packages. The response includes details such as package name, price.",
+        responses={
+            200: OpenApiResponse(
+                description="Successfully retrieved the list of packages.",
+                examples={
+                    "application/json": {
+                        "example": [
+                            {
+                                "packageid": 1,
+                                "packagename": "Water Package",
+                                "base_price": "199.99"
+                            },
+                            {
+                                "packageid": 2,
+                                "packagename": "Economy Cruise",
+                                "base_price": "99.99"
+                            }
+                        ]
+                    }
+                }
+            ),
+            404: OpenApiResponse(
+                description="No packages found for the specified trip.",
+                examples={
+                    "application/json": {
+                        "example": {
+                            "message": "No packages found."
+                        }
+                    }
+                }
+            ),
+        },
+        tags=["Booking Management"]  # API group for package-related operations
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request=request, *args, **kwargs)
+    
+class MmsAddPackageView(APIView):
+    """
+    View to add a passenger's information to the session.
+    This does not store data in the database until booking confirmation.
+    """
+    
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to add package details to session.
+        """
+        #print(request.session.items())
+        try:
+            num_passengers = request.session.get('booking_details', {}).get('number_of_passengers')
+            if num_passengers is None:
+                raise KeyError("number_of_passengers key is missing in session.")
+        except (KeyError, TypeError) as e:
+            # Handle session expiration or missing key gracefully
+            num_passengers = 0  # Set default value, or you can redirect to an error page or show a message
+            print(f"Error retrieving number_of_passengers from session: {str(e)}")
+        
+        if num_passengers == 0:
+            return Response({"error": "No passengers added yet."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create a list if it doesn't exist in the session
+        if 'packages' not in request.session:
+            request.session['packages'] = []
+
+        # Validate the package data
+        serializer = serializers.MmsTripPackageAddSerializer(data=request.data, context={'num_passengers': num_passengers})
+        if serializer.is_valid():
+            # Add the validated package data to the session
+            package_data = serializer.validated_data
+            request.session['packages'].extend([{
+                'package_id': package['packageid'],  # Store the package_id
+                'package_name': package['packagename'],
+                'quantity': package['quantity'],
+            } for package in package_data['packages']])
+            request.session.modified = True  # Ensure the session is updated
+
+            return Response({"message": "Package added to session.", "package_data": package_data}, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class MmsBookingSummaryView(APIView):
+    """
+    View to handle booking confirmation.
+    Retrieves selected details and calculates the total price.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handle GET request to display booking summary.
+        """
+
+        # Retrieve details from session
+        trip_details = request.session.get('trip_details', {})
+        booking_details = request.session.get('booking_details', {})
+        room_selection_details = request.session.get('room_selection_details', {})
+        passengers = request.session.get('passengers', [])
+        package_selections = request.session.get('packages', [])
+
+        # Validate session data existence
+        if not trip_details or not booking_details or not room_selection_details or not passengers:
+            return Response({"error": "Missing essential booking details."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Retrieve room selections and reserved rooms
+        room_selections = room_selection_details.get('room_selections', [])
+        reserved_rooms = room_selection_details.get('reserved_rooms', [])
+
+        # Number of passengers
+        num_passengers = booking_details.get('number_of_passengers', 0)
+
+        if num_passengers == 0:
+            return Response({"error": "No passengers added yet."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate the total price
+        total_price = self.calculate_total_price(room_selections, reserved_rooms, package_selections, trip_details, num_passengers)
+
+        # Store the total price in session for use in payment API
+        request.session['total_price'] = str(total_price)
+        
+        # Prepare the booking summary response
+        summary = {
+            "trip_details": trip_details,
+            "passenger_details": passengers,
+            "room_selections": room_selections,
+            "reserved_rooms": reserved_rooms,
+            "package_selections": package_selections,
+            "total_price": float(total_price),  # Convert to float for JSON serialization
+        }
+
+        return Response(summary, status=status.HTTP_200_OK)
+
+    def calculate_total_price(self, room_selections, reserved_rooms, package_selections, trip_details, num_passengers):
+        """
+        Calculate the total price based on room selections, package selections, and trip details.
+        """
+        total_room_price = Decimal('0.00')
+        total_package_price = Decimal('0.00')
+
+        # Get cost per person from trip details
+        cost_per_person = Decimal(trip_details.get("trip_cost_per_person", 0))
+
+        # Calculate total room price
+        for room in room_selections:
+            room_type = room.get('room_type')
+            num_rooms = room.get('number_of_rooms', 1)
+            matching_room = next((r for r in reserved_rooms if r['room_type'] == room_type), None)
+            if matching_room:
+                room_price = Decimal(matching_room.get('dynamic_price', 0))
+                total_room_price += room_price * num_rooms
+
+        # Calculate total package price
+        available_packages = trip_details.get('available_packages', [])
+        for package in package_selections:
+            package_name = package.get('package_name')
+            quantity = package.get('quantity', 1)
+            package_details = next((pkg for pkg in available_packages if pkg['name'] == package_name), None)
+            if package_details:
+                package_price = Decimal(package_details['price'])
+                total_package_price += package_price * quantity
+
+        # Total cost: room price + package price + per person cost
+        total_price = total_room_price + total_package_price + (cost_per_person * num_passengers)
+
+        return total_price
+    
+class StripePaymentView(APIView):
+    """
+    Handle Stripe Payment Intent creation.
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Handle payment processing when a customer submits the payment request.
+        """
+        try:
+            # Retrieve amount option (either deposit or full)
+            payment_option = request.data.get('payment_option')  # 'deposit' or 'full'
+
+            if payment_option not in ['deposit', 'full']:
+                return Response({'error': 'Invalid payment option'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Retrieve the total amount from the session
+            total_price = Decimal(request.session.get('total_price', 0))
+
+            if total_price == 0:
+                return Response({'error': 'Total price not found in session'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Calculate the amount based on the payment option
+            if payment_option == 'deposit':
+                amount_to_charge = total_price * Decimal('0.50')  # 50% deposit
+            else:
+                amount_to_charge = total_price  # full amount
+
+            # Create a PaymentIntent with the selected amount
+            intent = stripe.PaymentIntent.create(
+                amount=int(amount_to_charge * 100),  # Convert to cents
+                currency='usd',
+                metadata={'integration_check': 'accept_a_payment'},
+            )
+
+            # Return the client secret to the frontend for further processing
+            return Response({'client_secret': intent.client_secret}, status=status.HTTP_200_OK)
+
+        except stripe.error.CardError as e:
+            return Response({'error': e.user_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': 'Something went wrong. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class PaymentStatusView(APIView):
+    """
+    Check the status of the payment using Stripe PaymentIntent ID.
+    """
+
+    def get(self, request, payment_intent_id, *args, **kwargs):
+        try:
+            # Fetch the PaymentIntent from Stripe
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+
+            # Check the payment status
+            if payment_intent.status == 'succeeded':
+                # Store payment details in the session
+                request.session['payment_status'] = 'succeeded'
+                request.session['payment_intent_id'] = payment_intent.id  # Transaction ID
+                request.session['payment_time'] = payment_intent.created  # Payment time in UNIX timestamp
+                request.session['payment_amount'] = payment_intent.amount_received / 100.0  # Convert to dollars
+                request.session['payment_method'] = payment_intent.charges.data[0].payment_method_details.card.brand  # Payment method (Card type)
+                return Response({'status': 'succeeded'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'status': payment_intent.status}, status=status.HTTP_200_OK)
+
+        except stripe.error.StripeError as e:
+            # Handle Stripe errors
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other errors
+            return Response({'error': 'An error occurred while checking payment status'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class BookingView(APIView):
+    """
+    View to handle booking creation.
+    """
+
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to create a booking.
+        This view expects data to be passed as part of the request body,
+        and the session will be used to retrieve additional details for booking creation.
+        """
+        serializer = serializers.MmsBookingConfirmSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            # The serializer handles the creation and transaction inside the create method
+            booking = serializer.save()  # This triggers the create() method in the serializer
+            
+            # Return a successful response with the booking details
+            return Response({
+                "message": "Booking created successfully",
+                "booking_id": booking.bookingid
+            }, status=status.HTTP_201_CREATED)
+        
+        # If validation fails, return an error response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

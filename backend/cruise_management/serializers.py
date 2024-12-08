@@ -1,7 +1,9 @@
 import re
 import csv
 from . import models
+from django.db.models import Q
 from django.utils import timezone
+from django.utils.timezone import now
 from rest_framework import status
 from django.db import transaction
 from rest_framework import serializers 
@@ -15,7 +17,7 @@ from rest_framework.exceptions import ValidationError, AuthenticationFailed
 
 # Admin related features
 
-class AdminLoginSerializer(TokenObtainPairSerializer):
+class AdminMmsLoginSerializer(TokenObtainPairSerializer):
     """
     Custom serializer for admin login.
     Validates login credentials (email or username) and generates JWT tokens for authenticated users.
@@ -1540,7 +1542,7 @@ class MmsAdminTripListSerializer(MmsTripListSerializer):
         fields = MmsTripListSerializer.Meta.fields + ['tripstatus']  # Include parent fields and any new ones
                      
 # User related features
-class UserProfileSerializer(serializers.ModelSerializer):
+class MmsUserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.MmsUserProfile
@@ -1578,9 +1580,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         
         return value
 
-class UserCreateSerializer(serializers.ModelSerializer):
+class MmsUserCreateSerializer(serializers.ModelSerializer):
     # Nested serializer for user profile, it's optional (required=False)
-    profile = UserProfileSerializer(required=False)
+    profile = MmsUserProfileSerializer(required=False)
 
     # Password and confirm password fields are required, should be written in 'password' input type
     password = serializers.CharField(write_only=True, required=True, min_length=8, style={'input_type': 'password'})
@@ -1689,9 +1691,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-class UserUpdateSerializer(serializers.ModelSerializer):
+class MmsUserUpdateSerializer(serializers.ModelSerializer):
     # Nested serializer for the user profile, optional (required=False)
-    profile = UserProfileSerializer(required=False)
+    profile = MmsUserProfileSerializer(required=False)
 
     class Meta:
         model = User
@@ -1741,14 +1743,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             # Fetch the user's profile instance
             profile_instance = models.MmsUserProfile.objects.get(user_id=instance.id)
             # Serialize the profile and add it to the output representation
-            representation['profile'] = UserProfileSerializer(profile_instance).data
+            representation['profile'] = MmsUserProfileSerializer(profile_instance).data
         except models.MmsUserProfile.DoesNotExist:
             # If the profile does not exist, set 'profile' to None in the output
             representation['profile'] = None
 
         return representation
 
-class LoginSerializer(TokenObtainPairSerializer):
+class MmsLoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         """
         Validate the login credentials (either username or email) and authenticate the user.
@@ -1799,7 +1801,7 @@ class LoginSerializer(TokenObtainPairSerializer):
 
         return data
 
-class PasswordResetRequestSerializer(serializers.Serializer):
+class MmsPasswordResetRequestSerializer(serializers.Serializer):
     # Email field for password reset request
     email = serializers.EmailField()
 
@@ -1964,31 +1966,55 @@ class MmsPackageSerializer(serializers.ModelSerializer):
             'description': package.packagedetails
         }
         
-class StartBookingSerializer(serializers.Serializer):
+class MmsStartBookingSerializer(serializers.Serializer):
     """
     Serializer for starting a trip booking.
     - Includes trip details, available rooms, room categories, and packages.
     """
 
-    trip_details = serializers.SerializerMethodField()  # Fetch basic trip booking details
-    available_rooms = serializers.SerializerMethodField()  # Fetch list of available rooms
-    available_packages = serializers.SerializerMethodField()  # Fetch list of available packages
-    available_room_categories = serializers.SerializerMethodField()  # Fetch distinct room categories
+    trip_details = serializers.SerializerMethodField()
+    available_rooms = serializers.SerializerMethodField()
+    available_packages = serializers.SerializerMethodField()
+    available_room_categories = serializers.SerializerMethodField()
 
-    def get_trip_details(self, obj):
+    def clear_expired_locks(self, available_rooms):
         """
-        Retrieve the basic details of the trip.
+        Clear expired temporary locks on rooms and return a filtered queryset.
         """
-        return MmsTripBookingSerializer(obj).data if obj else {}
+        # Filter out expired locked rooms
+        valid_rooms = available_rooms.filter(
+            Q(tempreserved=False) | 
+            Q(tempreserved=True, tempreservationtimestamp__gt=now() - timedelta(minutes=5))
+        )
+        
+        # Ensure that expired rooms are released in the process
+        with transaction.atomic():  # Ensure thread safety
+            for room in valid_rooms:
+                if room.tempreserved:
+                    time_since_reservation = now() - room.tempreservationtimestamp
+                    if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration
+                        # Release the expired lock
+                        room.tempreserved = False
+                        room.tempreservationtimestamp = None
+                        room.tempreservationuser = None
+                        room.save()
 
-    def get_available_rooms(self, obj):
+        # Return the filtered queryset
+        return valid_rooms
+
+    '''def get_available_rooms(self, obj):
         """
         Retrieve a list of rooms available for booking on the trip.
         """
         if not obj:
             return []
-        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid, isbooked=False)
-        return MmsTripRoomSerializer(available_rooms, many=True).data
+        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid)
+        # Clear expired locks and fetch valid rooms
+        valid_rooms = self.clear_expired_locks(available_rooms)
+        return MmsTripRoomSerializer(valid_rooms, many=True).data'''
+
+    def get_trip_details(self, obj):
+        return MmsTripBookingSerializer(obj).data if obj else {}
 
     def get_available_room_categories(self, obj):
         """
@@ -1996,8 +2022,9 @@ class StartBookingSerializer(serializers.Serializer):
         """
         if not obj:
             return []
-        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid, isbooked=False)
-        available_categories = available_rooms.values_list('roomtype', flat=True).distinct()
+        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid)
+        valid_rooms = self.clear_expired_locks(available_rooms)
+        available_categories = valid_rooms.values_list('roomtype', flat=True).distinct()
         return list(available_categories)
 
     def get_available_packages(self, obj):
@@ -2015,12 +2042,11 @@ class StartBookingSerializer(serializers.Serializer):
         """
         return {
             "trip_details": self.get_trip_details(instance),
-            "available_rooms": self.get_available_rooms(instance),
             "available_room_categories": self.get_available_room_categories(instance),
             "available_packages": self.get_available_packages(instance),
         }
 
-class TemporaryCapacityReservationSerializer(serializers.Serializer):
+class MmsTemporaryCapacityReservationSerializer(serializers.Serializer):
     """
     Serializer to handle temporary capacity reservation for trip bookings.
     The temporary capacity reservation occurs before actual room selection.
@@ -2056,7 +2082,7 @@ class TemporaryCapacityReservationSerializer(serializers.Serializer):
             # Step 2: Check if the capacity is already temporarily reserved
             with transaction.atomic():
                 # Lock the trip row for update to prevent other transactions from modifying it concurrently
-                trip = models.MmsTrip.objects.select_for_update().get(tripid=trip.tripid)
+                trip = models.MmsTrip.objects.select_for_update(skip_locked=True).get(tripid=trip.tripid)
 
                 if trip.temp_capacity_reserved:
                     # Step 3: Check if the previous reservation has expired
@@ -2086,107 +2112,121 @@ class TemporaryCapacityReservationSerializer(serializers.Serializer):
             # If the remaining capacity is still above threshold, don't lock the capacity
             return trip
         
-class RoomCategorySelectionSerializer(serializers.Serializer):
+class MmsRoomSelectionSerializer(serializers.Serializer):
+    room_type = serializers.CharField()
+    number_of_rooms = serializers.IntegerField(min_value=1)  # At least 1 room per selection
+        
+class MmsRoomCategorySelectionSerializer(serializers.Serializer):
     trip_id = serializers.IntegerField()
     room_selections = serializers.ListField(
-        child=serializers.DictField(
-            required=False
-        )
+        child=MmsRoomSelectionSerializer()  # Use the serializer for room selections
     )
 
     def validate(self, data):
         """
-        Validates if the rooms are available, not temporarily reserved, and checks if the timestamp has expired.
+        Validates if the rooms are available for the selected categories.
         """
         trip = self.context['trip']  # Access the trip instance from the context
         room_selections = data['room_selections']
 
-        # Check each room selection (room_type, number_of_rooms)
         for room_selection in room_selections:
             room_type = room_selection['room_type']
             number_of_rooms = room_selection['number_of_rooms']
 
-            # Get available rooms of the selected room type that are not booked yet
+            # Get all available rooms for this room type
             available_rooms = models.MmsTripRoom.objects.filter(
                 tripid=trip,
                 roomtype=room_type,
-                tempreserved=True,  # Ensure the rooms are not already temporarily reserved
-                isbooked=False  # Ensure the rooms are not booked yet
+                isbooked=False  # Ensure the rooms are not booked
             )
+            
+            #print(available_rooms)
 
-            if len(available_rooms) < number_of_rooms:
-                raise serializers.ValidationError(f"Not enough rooms available in the '{room_type}' category.")
-
-            # Check if any of the rooms are temporarily reserved and if the reservation has expired
-            for room in available_rooms[:number_of_rooms]:  # Consider only the required number of rooms
+            # Filter out rooms that are temporarily reserved
+            #valid_rooms = available_rooms.exclude(tempreserved=True)
+            
+            valid_rooms = []
+            for room in available_rooms:
                 if room.tempreserved:
-                    # Check if the reservation has expired
-                    time_since_reservation = timezone.now() - room.tempreservationtimestamp
+                    # Check if the temporary reservation has expired
+                    time_since_reservation = now() - room.tempreservationtimestamp
                     if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration time
                         # Release the expired lock
                         room.tempreserved = False
                         room.tempreservationtimestamp = None
                         room.tempreservationuser = None
                         room.save()
+                        valid_rooms.append(room)  # Add to valid pool
                     else:
-                        raise serializers.ValidationError(f"Room {room.roomnumber} of type '{room_type}' is temporarily reserved. Please try again after some time.")
-        
+                        continue  # Skip actively reserved rooms
+                else:
+                    valid_rooms.append(room)  # Add unreserved rooms to valid pool
+            
+            # Ensure enough rooms are available
+            if len(valid_rooms) < number_of_rooms:
+                raise serializers.ValidationError(f"Not enough rooms available in the '{room_type}' category.")
+
         return data
 
     def reserve_rooms(self, trip, room_selections, user_id, previous_room_ids=None):
         """
-        Temporarily reserve rooms for the user. This function updates the room availability and locks the rooms.
+        Reserves rooms for the user while ensuring concurrency and locking.
         """
         reserved_rooms = []
 
-        # Release previously reserved rooms (if any)
+        # Release previously reserved rooms, if any
         if previous_room_ids:
-            previous_rooms = models.MmsTripRoom.objects.filter(id__in=previous_room_ids, )
+            previous_rooms = models.MmsTripRoom.objects.filter(id__in=previous_room_ids)
             for room in previous_rooms:
                 room.tempreserved = False
                 room.tempreservationtimestamp = None
                 room.tempreservationuser = None
                 room.save()
 
-        # Loop through each room selection and reserve the rooms
+        # Loop through each room selection and reserve rooms
         for room_selection in room_selections:
             room_type = room_selection['room_type']
             number_of_rooms = room_selection['number_of_rooms']
 
-            # Begin a transaction to handle concurrency
             with transaction.atomic():
-                # Lock the rooms that are available and have not been reserved
-                available_rooms = models.MmsTripRoom.objects.select_for_update().filter(
+                # Get all available rooms, including locked ones
+                available_rooms = models.MmsTripRoom.objects.filter(
                     tripid=trip,
                     roomtype=room_type,
-                    tempreserved=True,  # Ensure the rooms are not already temporarily reserved
-                    isbooked=False  # Ensure the rooms are not booked yet
-                )
+                    isbooked=False  # Ensure the rooms are not booked
+                ).select_for_update(skip_locked=True)
 
-                if len(available_rooms) < number_of_rooms:
-                    raise serializers.ValidationError(f"Not enough rooms available in the '{room_type}' category.")
-
-                # Reserve the rooms
-                for room in available_rooms[:number_of_rooms]:
-                    # If room is temporarily reserved and the lock expired, release it
+                valid_rooms = []
+                for room in available_rooms:
                     if room.tempreserved:
-                        time_since_reservation = timezone.now() - room.tempreservationtimestamp
+                        # Check if the temporary reservation has expired
+                        time_since_reservation = now() - room.tempreservationtimestamp
                         if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration time
+                            # Release the expired lock
                             room.tempreserved = False
                             room.tempreservationtimestamp = None
                             room.tempreservationuser = None
                             room.save()
+                            valid_rooms.append(room)  # Add to valid pool
                         else:
-                            raise serializers.ValidationError(f"Room {room.roomnumber} of type '{room_type}' is temporarily reserved. Please try again after some time.")
+                            continue  # Skip actively reserved rooms
+                    else:
+                        valid_rooms.append(room)  # Add unreserved rooms to valid pool
 
-                    # Now lock and reserve the room
-                    room.tempreserved = True  # Temporarily lock the room
-                    room.tempreservationtimestamp = timezone.now()  # Set the timestamp for temporary lock
-                    room.tempreservationuser = user_id  # Store the user ID for the reservation
+                # Ensure enough rooms are available
+                if len(valid_rooms) < number_of_rooms:
+                    raise serializers.ValidationError(f"Not enough rooms available in the '{room_type}' category.")
+
+                # Reserve the required number of rooms
+                reserved_rooms_subset = valid_rooms[:number_of_rooms]
+                for room in reserved_rooms_subset:
+                    room.tempreserved = True
+                    room.tempreservationtimestamp = timezone.localtime(timezone.now())
+                    room.tempreservationuser = user_id
                     room.save()
                     reserved_rooms.append(room)
 
-        # Return the reserved rooms information in the response
+        # Return reserved rooms information
         response_data = [
             {
                 'roomnumber': room.roomnumber.roomnumber,  # Room number
@@ -2198,3 +2238,307 @@ class RoomCategorySelectionSerializer(serializers.Serializer):
         ]
 
         return response_data
+    
+class MmsPassengerSessionStorageSerializer(serializers.Serializer):
+    
+    firstname = serializers.CharField(max_length=50)
+    lastname = serializers.CharField(max_length=50)
+    dateofbirth = serializers.DateField()  # Use DateField to handle dates
+    gender = serializers.CharField(max_length=1)
+    contactnumber = serializers.CharField(max_length=15)
+    emailaddress = serializers.EmailField()
+    streetaddr = serializers.CharField(max_length=50)
+    city = serializers.CharField(max_length=50)
+    state = serializers.CharField(max_length=50)
+    country = serializers.CharField(max_length=50)
+    zipcode = serializers.CharField(max_length=5)
+    nationality = serializers.CharField(max_length=50)
+    passportnumber = serializers.CharField(max_length=20)
+    emergencycontactname = serializers.CharField(max_length=50)
+    emergencycontactnumber = serializers.CharField(max_length=15)
+    
+    # Custom validation for gender
+    def validate_gender(self, value):
+        """Ensure gender is 'M', 'F', or 'O'"""
+        if value not in ['M', 'F', 'O']:
+            raise serializers.ValidationError("Gender must be 'M', 'F', or 'O'.")
+        return value
+    
+    # Validate contact number - only digits and correct length
+    def validate_contactnumber(self, value):
+        """Ensure contact number is 10 digits"""
+        if not re.fullmatch(r'\+?[1-9]\d{1,14}', value):  # E.164 format: starting with an optional '+' followed by digits
+            raise ValidationError("Phone number must be valid and follow international standards.")
+        return value
+
+    # Validate emergency contact number
+    def validate_emergencycontactnumber(self, value):
+        """Ensure emergency contact number is 10 digits"""
+        if not re.fullmatch(r'\+?[1-9]\d{1,14}', value):  # E.164 format: starting with an optional '+' followed by digits
+            raise ValidationError("Phone number must be valid and follow international standards.")
+        return value
+
+    # Validate date of birth - passenger must be at least 18 years old
+    def validate_dateofbirth(self, value):
+        """Ensure passenger is at least 18 years old"""
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 0 or age > 100:
+            raise serializers.ValidationError("Enter a valid date of birth.")
+        return value
+
+    # Validate email format - already validated by serializers.EmailField, but you can add custom checks if needed
+    def validate_emailaddress(self, value):
+        """Ensure email format is correct"""
+        if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', value):
+            raise serializers.ValidationError("Email address format is invalid.")
+        return value
+
+    # Validate passport number - Check for a valid passport number format (example for US)
+    def validate_passportnumber(self, value):
+        """Ensure passport number is valid (US format for example)"""
+        if not re.match(r'^[A-Z0-9]{6,9}$', value):
+            raise serializers.ValidationError("Passport number must be between 6 and 9 characters and only alphanumeric.")
+        return value
+
+    # Validate Zip code - Ensure it is exactly 5 digits (for US, you can adapt as needed)
+    def validate_zipcode(self, value):
+        """Ensure zipcode is exactly 5 digits"""
+        if not re.match(r'^\d{5}$', value):
+            raise serializers.ValidationError("Zipcode must be exactly 5 digits.")
+        return value
+
+    # Additional validation checks can be added as needed, e.g. for nationality or address fields
+    def validate_nationality(self, value):
+        """Ensure nationality is not empty"""
+        if not value:
+            raise serializers.ValidationError("Nationality cannot be empty.")
+        return value
+
+    def validate(self, data):
+        """Custom validation across multiple fields"""
+        # Check if emergency contact name is provided if emergency contact number is provided
+        if data.get('emergencycontactname') and not data.get('emergencycontactnumber'):
+            raise serializers.ValidationError("Emergency contact number is required if emergency contact name is provided.")
+        if not data.get('emergencycontactname') and data.get('emergencycontactnumber'):
+            raise serializers.ValidationError("Emergency contact name is required if emergency contact number is provided.")
+        
+        return data
+    
+    def to_representation(self, instance):
+        """Custom representation to ensure date fields are serialized as strings."""
+        representation = super().to_representation(instance)
+        if representation.get('dateofbirth'):
+            representation['dateofbirth'] = representation['dateofbirth'].strftime('%Y-%m-%d')
+            
+        return representation
+    
+class MmsPassengerGetSerializer(serializers.Serializer):
+    passengers = MmsPassengerSessionStorageSerializer(many=True)
+
+    def validate(self, data):
+        """Custom validation for the list of passengers."""
+        
+        num_passengers = self.context.get('num_passengers', 0)
+        current_passenger_count = len(data.get('passengers', []))  # or retrieve this value based on existing session data
+        if current_passenger_count > num_passengers:
+            raise serializers.ValidationError(f"Cannot add more than {num_passengers} passengers.")
+        
+        # Validate at least one passenger is provided
+        if not data.get('passengers') or len(data['passengers']) == 0:
+            raise serializers.ValidationError("At least one passenger must be provided.")
+        
+        return data
+    
+class MmsTripPackageListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for managing and validating trip-package relationships.
+    This serializer ensures that a specific trip can be associated with a valid package
+    and checks for duplicate trip-package combinations.
+    """
+    packagename = serializers.SerializerMethodField()
+    packageprice = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.MmsTripPackage
+        fields = ['packagename', 'packageprice']
+
+    def get_packagename(self, obj):
+        """
+        Retrieve the name of the package associated with the trip-package relationship.
+        """
+        return obj.packageid.packagename if obj.packageid else None
+
+    def get_packageprice(self, obj):
+        """
+        Retrieve the price of the package associated with the trip-package relationship.
+        """
+        return obj.packageid.base_price if obj.packageid else None
+
+    def validate(self, data):
+        """
+        Validate that the trip-package combination is unique.
+        """
+        tripid = data.get('tripid')
+        packageid = data.get('packageid')
+
+        if models.MmsTripPackage.objects.filter(tripid=tripid, packageid=packageid).exists():
+            raise serializers.ValidationError("This trip-package combination already exists.")
+
+        return data
+
+    def to_representation(self, instance):
+        """
+        Customize the serialized response format for trip-package relationships.
+        """
+        representation = super().to_representation(instance)
+        return {
+            "package_name": representation.get('packagename'),
+            "package_price": representation.get('packageprice'),
+        }
+
+class MmsTripPackageSessionValidationSerializer(serializers.Serializer):
+    """
+    Serializer for handling the package selection and validating the package count.
+    """
+    packageid = serializers.IntegerField()
+    packagename = serializers.CharField()
+    quantity = serializers.IntegerField(min_value=1)  # Ensure at least 1 package is selected
+    
+    def validate(self, data):
+        """
+        Validate that the quantity of each package does not exceed the number of passengers.
+        """
+        num_passengers = self.context.get('num_passengers', 0)
+        if num_passengers == 0:
+            raise serializers.ValidationError("Number of passengers is not available.")
+        if data['quantity'] > num_passengers:
+            raise serializers.ValidationError(f"Cannot add more than {num_passengers} of this package.")
+        return data
+    
+class MmsTripPackageAddSerializer(serializers.Serializer):
+    packages = MmsTripPackageSessionValidationSerializer(many=True)
+    
+    
+    def validate(self, data):
+        """Custom validation for the list of packages."""
+        # Validate at least one package is provided
+        if not data.get('packages') or len(data['packages']) == 0:
+            raise serializers.ValidationError("At least one package must be selected.")
+        return data
+    
+from django.db import transaction
+
+class MmsBookingConfirmSerializer(serializers.ModelSerializer):
+    """
+    Serializer for handling booking creation including group, booking, room, passenger, and payment details.
+    """
+
+    class Meta:
+        model = models.MmsBooking
+        fields = ['bookingid', 'bookingdate', 'bookingstatus', 'groupid', 'tripid', 'userid']
+
+    def create(self, validated_data):
+        """
+        Create a booking record and related group, rooms, passengers, and payment details.
+        """
+        # Fetch necessary data from session
+        user = self.context['request'].user  # Assuming the user is logged in
+        session_data = self.context['request'].session  # Fetch session data
+
+        # Extract session details
+        trip_id = session_data.get('trip_details', {}).get('trip_id')
+        available_packages = session_data.get('trip_details', {}).get('available_packages', [])
+        reserved_rooms = session_data.get('room_selection_details', {}).get('reserved_rooms', [])
+        passengers_data = session_data.get('passengers', [])
+        number_of_passengers = session_data.get('booking_details', {}).get('number_of_passengers')
+        total_price = session_data.get('total_price')
+
+        # Payment-related session data
+        payment_status = session_data.get('payment_status')
+        payment_intent_id = session_data.get('payment_intent_id')
+        payment_time = session_data.get('payment_time')
+        payment_amount = session_data.get('payment_amount')
+        payment_method = session_data.get('payment_method')
+
+        # Ensure group exists (create new group if not exists)
+        group = models.MmsGroup.objects.create(count=number_of_passengers)
+
+        try:
+            # Start the transaction block
+            with transaction.atomic():
+                # Create the booking record
+                booking = models.MmsBooking.objects.create(
+                    bookingdate=timezone.now(),
+                    bookingstatus='Confirmed',  # Assume confirmed after payment success
+                    groupid=group,
+                    tripid=trip_id,
+                    userid=user,
+                )
+
+                # Add the reserved rooms to MmsTripRoom and link bookingid
+                for reserved_room in reserved_rooms:
+                    # Find the corresponding room in MmsTripRoom
+                    room = models.MmsTripRoom.objects.filter(
+                        tripid=trip_id, 
+                        room_number=reserved_room['room_number']
+                    ).first()
+
+                    if room:
+                        # Update the MmsTripRoom with the bookingid
+                        room.bookingid = booking
+                        room.save()
+
+                # Add booking packages (if any)
+                for package in available_packages:
+                    models.MmsBookingPackage.objects.create(bookingid=booking, packageid=package['package_id'])
+
+                # Create passengers and associate them with the group and booking
+                for passenger in passengers_data:
+                    models.MmsPassenger.objects.create(
+                        groupid=group,
+                        firstname=passenger['first_name'],
+                        lastname=passenger['last_name'],
+                        dateofbirth=passenger['date_of_birth'],
+                        gender=passenger['gender'],
+                        contactnumber=passenger['contact_number'],
+                        emailaddress=passenger['email_address'],
+                        streetaddr=passenger['address']['street'],
+                        city=passenger['address']['city'],
+                        state=passenger['address']['state'],
+                        country=passenger['address']['country'],
+                        zipcode=passenger['address']['zip_code'],
+                        nationality=passenger['nationality'],
+                        passportnumber=passenger['passport_number'],
+                        emergencycontactname=passenger['emergency_contact']['name'],
+                        emergencycontactnumber=passenger['emergency_contact']['number'],
+                    )
+
+                # Handle payment and invoice creation (only if payment was successful)
+                if payment_status == 'succeeded':
+                    total_amount = payment_amount
+
+                    # Create an invoice for the booking
+                    invoice = models.MmsInvoice.objects.create(
+                        invoicedate=timezone.now(),
+                        totalamount=total_price,
+                        paymentstatus='Paid',  # Since payment is succeeded
+                        duedate=timezone.now() + timezone.timedelta(days=15),  # Assuming due date is 15 days after partial payment
+                        bookingid=booking,
+                        dueamount=total_price-total_amount,
+                    )
+
+                    # Create a payment detail record
+                    models.MmsPaymentDetail.objects.create(
+                        paymentdate=payment_time,
+                        paymentamount=payment_amount,
+                        paymentmethod=payment_method,
+                        transactionid=payment_intent_id,  # Using payment_intent_id from session
+                        invoiceid=invoice,
+                    )
+
+                return booking
+        except Exception as e:
+            # In case of any exception, transaction will be rolled back
+            print(f"Error occurred during booking creation: {str(e)}")
+            raise serializers.ValidationError("An error occurred while processing the booking.")

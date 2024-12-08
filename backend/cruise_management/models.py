@@ -139,7 +139,6 @@ class MmsBooking(models.Model):
     bookingid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every booking')
     bookingdate = models.DateTimeField(db_comment='Date when the booking was made. Important for scheduling and availability tracking.')
     bookingstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Status of the booking, e.g., "Confirmed," "Pending," "Canceled." Assists with management tracking.')
-    estimatedcost = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Estimated cost for the trip including base cost, room price and package price exclusing tax and other add ons')
     groupid = models.ForeignKey('MmsGroup', models.DO_NOTHING, db_column='groupid', db_comment='Unqiue identifier for every group')
     tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
     userid = models.ForeignKey(AuthUser, models.DO_NOTHING, db_column='userid')
@@ -175,6 +174,7 @@ class MmsInvoice(models.Model):
     paymentstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Indicates whether the invoice is "Paid," "Unpaid," or "Overdue." Tracks financial status.')
     duedate = models.DateTimeField(db_comment='Date by which the payment should be completed. Ensures timely collection.')
     bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid', db_comment='Unique identifier for every booking')
+    dueamount = models.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:
         managed = False
@@ -217,7 +217,7 @@ class MmsPassenger(models.Model):
 
 
 class MmsPaymentDetail(models.Model):
-    paymentid = models.BigAutoField(primary_key=True, db_comment='Primary key for each payment record.')  # The composite primary key (paymentid, invoiceid) found, that is not supported. The first column is selected.
+    paymentid = models.BigAutoField(primary_key=True, db_comment='Primary key for each payment record.')
     paymentdate = models.DateTimeField(db_comment='Date when the payment was made. Important for financial records.')
     paymentamount = models.DecimalField(max_digits=6, decimal_places=2, db_comment='Amount paid during the transaction. Helps track partial or full payments.')
     paymentmethod = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Method of payment (e.g., "Credit Card," "Bank Transfer," "Cash"). Provides context for processing.')
@@ -227,7 +227,6 @@ class MmsPaymentDetail(models.Model):
     class Meta:
         managed = False
         db_table = 'mms_payment_detail'
-        unique_together = (('paymentid', 'invoiceid'),)
 
 
 class MmsPort(models.Model):
@@ -394,6 +393,7 @@ class MmsTripRoom(models.Model):
     tempreserved = models.IntegerField(blank=True, null=True)
     tempreservationtimestamp = models.DateTimeField(blank=True, null=True)
     tempreservationuser = models.IntegerField(blank=True, null=True)
+    bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid', blank=True, null=True)
 
     class Meta:
         managed = False

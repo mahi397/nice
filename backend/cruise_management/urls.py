@@ -85,10 +85,10 @@ urlpatterns = [
     path('admin/trips/<int:tripid>/delete', views.MmsTripDeleteView.as_view(), name='trip-delete'),
     path('admin/trips/<int:tripid>/rooms', views.MmsRoomSummaryListView.as_view(), name='room-summary-view'),
     path('admin/trips/<int:tripid>/rooms/set-price', views.MmsTripRoomPriceUpdateView.as_view(), name='set-room-price'),
-    path('register', views.UserCreateView.as_view(), name='user-register'),
-    path('login', views.LoginView.as_view(), name='login'),
+    path('register', views.MmsUserCreateView.as_view(), name='user-register'),
+    path('login', views.MmsLoginView.as_view(), name='login'),
     path('refresh', TokenRefreshView.as_view(), name='token-refresh'),
-    path('logout', views.LogoutView.as_view(), name = 'logout'),
+    path('logout', views.MmsLogoutView.as_view(), name = 'logout'),
     path('password-reset/', auth_views.PasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
         email_template_name='registration/password_reset_email.html',
@@ -103,10 +103,19 @@ urlpatterns = [
     path('reset/done', auth_views.PasswordResetCompleteView.as_view(
         template_name='registration/password_reset_complete.html'
     ), name='password_reset_complete'),
-    path('user/<int:id>/update', views.UserUpdateView.as_view(), name='user-update'),
+    path('user/<int:id>/update', views.MmsUserUpdateView.as_view(), name='user-update'),
     path('user/delete', views.UserDeleteView.as_view(), name='self-delete-user'),
     path('trips/list',views.MmsTripListView.as_view(),name = 'trip-list-view'),
     path('trips/list/<int:tripid>', views.MmsTripDetailView.as_view(), name='trip-detail'),
     path('trips/list/<int:tripid>/start-booking/', views.MmsStartBookingView.as_view(), name='start-booking'),
-    path('trips/<int:tripid>/reserve-temporary-capacity/', views.TemporaryCapacityReservationView.as_view(), name='reserve-temporary-capacity'),
+    path('trips/<int:tripid>/reserve-temporary-capacity/', views.MmsTemporaryCapacityReservationView.as_view(), name='reserve-temporary-capacity'),
+    path('trips/<int:tripid>/reserve-temporary-rooms/', views.MmsRoomCategorySelectionView.as_view(), name='temporarily-reserve-rooms'),
+    path('trips/<int:tripid>/add-passenger-details/', views.MmsAddPassengerView.as_view(), name='add-passenger-details'),
+    path('trips/<int:tripid>/package-details/', views.MmsTripPackageListView.as_view(), name='list-package-details'),
+    path('trips/<int:tripid>/add-package/', views.MmsAddPackageView.as_view(), name='add-package'),
+    path('trips/<int:tripid>/booking-summary/', views.MmsBookingSummaryView.as_view(), name='booking-summary'),
+    path('payment/create/', views.StripePaymentView.as_view(), name='create-payment'),
+    path('payment/status/<str:payment_intent_id>/', views.PaymentStatusView.as_view(), name='payment-status'),
+    path('create-booking/', views.BookingView.as_view(), name='create-booking'),
+    
 ]
