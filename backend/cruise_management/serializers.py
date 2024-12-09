@@ -2427,8 +2427,6 @@ class MmsTripPackageAddSerializer(serializers.Serializer):
             raise serializers.ValidationError("At least one package must be selected.")
         return data
     
-from django.db import transaction
-
 class MmsBookingConfirmSerializer(serializers.ModelSerializer):
     """
     Serializer for handling booking creation including group, booking, room, passenger, and payment details.

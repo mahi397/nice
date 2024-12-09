@@ -22,32 +22,6 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
-
-'''class MmsTripListAPIView(APIView):
-    permission_classes = [AllowAny]  # Or more specific permissions for passenger, staff, and admin
-
-    def get(self, request, *args, **kwargs):
-        # Get the user role
-        user = self.request.user
-        
-        # Filter trips based on user role
-        if user.is_staff or user.is_superuser:
-            # Staff and admin see all trips
-            queryset = MmsTrip.objects.all()
-        else:
-            # Passengers only see upcoming trips
-            #queryset = MmsTrip.objects.filter(startdate__gte=now())  # Filter for upcoming trips
-            queryset = MmsTrip.objects.all()
-        
-        # Apply the filters if any (using CruiseFilter)
-        filtered_queryset = CruiseFilter(request.GET, queryset=queryset).qs
-        
-        # Serialize the filtered queryset
-        serializer = MmsTripListSerializer(filtered_queryset, many=True)
-        
-        return Response(serializer.data)
-'''
 
 class AdminLoginView(TokenObtainPairView):
     """
@@ -1489,57 +1463,6 @@ class MmsRoomDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
             {"message": f"Room {instance.roomnumber} deleted successfully."},
             status=status.HTTP_200_OK  # 200 for success, can also use 204 for no examples
         )                
-'''
-
-class MmsRoomBulkCSVCreateView(generics.CreateAPIView):
-    serializer_class = serializers.MmsRoomCSVUploadSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrStaff]
-
-    def post(self, request, *args, **kwargs):
-        # Handle CSV file upload and room creation
-        file = request.FILES.get('file')
-        if not file:
-            return Response({"detail": "File is required."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer = self.get_serializer(data={'file': file})
-        if serializer.is_valid():
-            # Bulk create rooms from CSV
-            created_rooms = serializer.create(serializer.validated_data)
-            return Response({"detail": f"{len(created_rooms)} rooms created successfully."}, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class MmsRoomBulkUpdateView(generics.GenericAPIView):
-    serializer_class = serializers.MmsRoomBulkUpdateSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrStaff]
-    lookup_field = 'roomnumber'  # Use URL to identify the resource
-
-    def patch(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        print(serializer)
-        if serializer.is_valid():
-            room_numbers = [room['roomnumber'] for room in serializer.validated_data]
-            instances = models.MmsRoom.objects.filter(roomnumber__in=room_numbers)
-
-            # Ensure all rooms exist
-            existing_room_numbers = {room.roomnumber for room in instances}
-            missing_room_numbers = set(room_numbers) - existing_room_numbers
-            if missing_room_numbers:
-                return Response(
-                    {"detail": f"Rooms with room numbers {missing_room_numbers} do not exist."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Perform the bulk update
-            updated_rooms = serializer.partial_update(instances, serializer.validated_data)
-            return Response(
-                {"detail": f"{len(updated_rooms)} rooms updated successfully."}, 
-                status=status.HTTP_200_OK
-            )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-'''    
    
 class MmsShipCreateView(generics.CreateAPIView):
     """
@@ -2863,7 +2786,7 @@ class MmsBookingSummaryView(APIView):
 
         return total_price
     
-class StripePaymentView(APIView):
+'''class StripePaymentView(APIView):
     """
     Handle Stripe Payment Intent creation.
     """
@@ -2933,7 +2856,7 @@ class PaymentStatusView(APIView):
         except Exception as e:
             # Handle other errors
             return Response({'error': 'An error occurred while checking payment status'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+        '''
 class BookingView(APIView):
     """
     View to handle booking creation.

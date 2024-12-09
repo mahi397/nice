@@ -114,8 +114,6 @@ urlpatterns = [
     path('trips/<int:tripid>/package-details/', views.MmsTripPackageListView.as_view(), name='list-package-details'),
     path('trips/<int:tripid>/add-package/', views.MmsAddPackageView.as_view(), name='add-package'),
     path('trips/<int:tripid>/booking-summary/', views.MmsBookingSummaryView.as_view(), name='booking-summary'),
-    path('payment/create/', views.StripePaymentView.as_view(), name='create-payment'),
-    path('payment/status/<str:payment_intent_id>/', views.PaymentStatusView.as_view(), name='payment-status'),
     path('create-booking/', views.BookingView.as_view(), name='create-booking'),
     
 ]

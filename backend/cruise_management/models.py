@@ -142,6 +142,7 @@ class MmsBooking(models.Model):
     groupid = models.ForeignKey('MmsGroup', models.DO_NOTHING, db_column='groupid', db_comment='Unqiue identifier for every group')
     tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
     userid = models.ForeignKey(AuthUser, models.DO_NOTHING, db_column='userid')
+    cancellationdate = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
