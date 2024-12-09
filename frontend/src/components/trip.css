@@ -114,3 +114,12 @@
 .card-content {
   margin-right: auto;
 }
+
+.trip-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 15px;
+  margin: 100px auto;
+  /* margin: auto; */
+}

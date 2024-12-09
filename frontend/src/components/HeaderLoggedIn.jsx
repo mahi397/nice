@@ -4,7 +4,7 @@ import '../style.css';
 import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import cruiselogo from '../assets/cruiselogo.png';
-// import cruiselogo from '../assets/white-ship-2.png';
+
 
 const isLoggedIn = () => {
   return localStorage.getItem('token') ? true : false; // Check if token exists in localStorage
@@ -12,16 +12,10 @@ const isLoggedIn = () => {
 
 function Header() {
 
-  // const [isModalVisible, setIsModalVisible] = useState(false);
-
-  // const toggleModal = () => {
-  //   setIsModalVisible(isModalVisible => !isModalVisible);
- // }
-
  const [isAuthenticated, setIsAuthenticated] = useState(false);
  const [dropdownOpen, setDropdownOpen] = useState(false); // To control the dropdown visibility
   
-  const navigate = useNavigate(); // 
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     setIsAuthenticated(isLoggedIn());
@@ -77,7 +71,7 @@ function Header() {
           ) : (
           <button className='nav--button'>
           <Link to="/nice/login" style={{ textDecoration: 'none', color: 'inherit' }}>
-            Login/Register
+            Logout
           </Link>
         </button>
           )}

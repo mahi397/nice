@@ -2,6 +2,9 @@ import React, { act } from "react";
 import activityImg from "../../assets/waterworks-tile.webp";
 import { FaCheckCircle, FaDollarSign, FaArrowCircleRight } from "react-icons/fa";
 import { IoIosArrowDropright } from "react-icons/io";
+import activity1 from '../../assets/activity1.png';
+import activity2 from '../../assets/activity2.png';
+import activity3 from '../../assets/activity10.png';
 
 const ActivityCard = () => {
   const headline = "Water activities";
@@ -16,7 +19,7 @@ const ActivityCard = () => {
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Water sports</h3>
           <h5 style={styles.subtitle}>
             <FaCheckCircle style={styles.icon} /> {subtitle}
           </h5>
@@ -28,12 +31,12 @@ const ActivityCard = () => {
       
       <div style={styles.card}>
         <img
-          src={activityImg} // Placeholder image URL
+          src={activity1} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Gymnasium</h3>
           <h5 style={styles.subtitle}>
             <FaCheckCircle style={styles.icon} /> {subtitle}
           </h5>
@@ -42,12 +45,12 @@ const ActivityCard = () => {
 
       <div style={styles.card}>
         <img
-          src={activityImg} // Placeholder image URL
+          src={activity2} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Indoor Pool</h3>
           <h5 style={styles.subtitle}>
             <FaCheckCircle style={styles.icon} /> {subtitle}
           </h5>
@@ -56,12 +59,12 @@ const ActivityCard = () => {
 
       <div style={styles.card}>
         <img
-          src={activityImg} // Placeholder image URL
+          src={activity3} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Casino</h3>
           <h5 style={styles.subtitle}>
             <FaCheckCircle style={styles.icon} /> {subtitle}
           </h5>
