@@ -3,6 +3,7 @@ import logo from '../assets/react.svg';
 import '../style.css';
 import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
+import cruiselogo from '../assets/cruiselogo.png';
 
 
 const isLoggedIn = () => {
@@ -41,7 +42,7 @@ function Header() {
 
   return (
     <nav>
-        <img src={logo} className='nav--logo'></img>
+        <img src={cruiselogo} className='nav--logo'></img>
 
         <ul className='nav--list'>
             <li>

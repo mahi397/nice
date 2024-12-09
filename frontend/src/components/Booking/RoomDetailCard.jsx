@@ -1,4 +1,5 @@
 import React from 'react';
+import './booking.css';
 
 const RoomCard = ({ room }) => {
   if (!room) return null;

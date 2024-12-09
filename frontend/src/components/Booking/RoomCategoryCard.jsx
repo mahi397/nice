@@ -1,6 +1,10 @@
 import React from "react";
 import manhImg from "../../assets/manhattan.avif";
 import "./booking.css";
+import room1 from '../../assets/room1.png';
+import room2 from '../../assets/room2.png';
+import room3 from '../../assets/room8.png';
+import room4 from '../../assets/room10.png';
 
 const ItineraryCard = ({ category, isSelected, onSelect }) => {
   const handleClick = () => onSelect(category.id);
@@ -18,13 +22,25 @@ const ItineraryCard = ({ category, isSelected, onSelect }) => {
     </>
   );
 
+  function calcImg() {
+    if (category.id === 1) {
+      return room1;
+    } else if (category.id === 2) {
+      return room2;
+    } else if (category.id === 3) {
+      return room3;
+    } else if (category.id === 4) {
+      return room4;
+    }
+  }
+
   return (
     <div onClick={handleClick}>
       <div
         // style={styles.card}
         className={`room-category-card ${isSelected ? "selected" : ""}`}
       >
-        <img src={manhImg} alt="Card Image" style={styles.image} />
+        <img src={calcImg()} alt="Card Image" style={styles.image} />
         <div style={styles.textContent}>
           <p>{mockText}</p>
         </div>

@@ -8,7 +8,9 @@ export default function Booking() {
     <div className='room-list-container'>
       <HeaderLoggedIn />
       <TopSection />
-      <button style={{marginTop: '-30px'}}>CONTINUE</button>
+      {/* <button style={{marginTop: '-30px'}}>CONTINUE</button> */}
+
+      {/* <button>CONTINUE</button> */}
     </div>
   )
 }

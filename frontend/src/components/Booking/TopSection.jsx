@@ -70,7 +70,8 @@ const App = () => {
       </div>
 
       {/* Room Cards */}
-      <div style={styles.container} className="add-room-section">
+
+      {/* <div style={styles.container} className="add-room-section">
         <h2 style={{ marginTop: "50px" }}>ADD ROOMS</h2>
         <p style={{ marginBottom: "20px" }}>
           You can add up to 3 rooms and up to 4 guests per room
@@ -78,6 +79,7 @@ const App = () => {
         {rooms.map((room) => (
           <div key={room.id} style={styles.roomCard}>
             {/* Top Section */}
+            {/*}
             <div style={styles.topOfCard}>
               <div style={styles.leftSection}>
                 <h3 style={styles.roomLabel}>Room {room.id}</h3>
@@ -115,6 +117,7 @@ const App = () => {
             </div>
 
             {/* Bottom Section */}
+            {/*}
             <div style={styles.bottomSection}>
               {rooms.length > 1 && (
                 <button
@@ -132,23 +135,15 @@ const App = () => {
             </div>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* Room Category Section */}
-      {/* <div className="room-category-section">
-        <h2 style={{ marginTop: "50px" }}>Select Room Category</h2>
-        {categories.map((category) => (
-          <div key={category.id}>
-            <RoomCategoryCard category={category} />
-          </div>
-        ))}
-      </div> */}
-      <RoomCategorySection />
+       {/* <RoomCategorySection />  */}
 
       {/* Location Section */}
-      <RoomLocationSection />
+      {/* <RoomLocationSection /> */}
 
-      <RoomNumberSection />
+      {/* <RoomNumberSection /> */}
 
       <PackageSelection />
     </div>

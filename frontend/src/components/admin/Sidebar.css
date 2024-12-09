@@ -17,6 +17,7 @@
   }
   
   .sidebar-item.active {
-    background-color: #1abc9c;
+    /* background-color: #1abc9c; */
+    background-color: rgb(16, 85, 154);
   }
   

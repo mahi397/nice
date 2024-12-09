@@ -31,7 +31,8 @@ export default function RoomLocationSection() {
       {selectedCardId && (
         <div className="bottom-row">
           <SelectLocationCard>
-            <span className="caption" style={{ marginLeft: "20px", fontWeight: 'bold', color: 'maroon' }}>
+            <p style={{marginLeft: '20px'}}>You selected: <strong>{selectedCard.name}</strong></p>
+            <span className="caption" style={{ fontWeight: 'bold', color: 'maroon' }}>
               Available Rooms: {selectedCard.availableRooms}
             </span>
             <button className="action-button" style={{ marginRight: "20px" }}>

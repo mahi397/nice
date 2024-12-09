@@ -13,6 +13,9 @@ import ProtectedRoute from "./components/admin/ProtectedRoute";
 import CruiseDetails from "./components/CruiseDetails/CruiseDetails";
 import Booking from "./components/Booking/Booking";
 
+import BookingSummary from "./components/Booking/BookingSummary";
+import Checkout from './components/Booking/Checkout';
+
 function App() {
   return (
     <>
@@ -40,6 +43,8 @@ function App() {
             <Route path="/cruise-details" element={<CruiseDetails tripid={56}/>} />
 
             <Route path="/booking" element={<Booking />} />
+            <Route path="/booking-summary" element={<BookingSummary />} />
+            <Route path="/payment-page" element={<Checkout />}></Route>
           </Routes>
         </Router>
       </div>

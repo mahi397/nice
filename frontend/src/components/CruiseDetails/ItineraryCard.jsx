@@ -1,8 +1,9 @@
 import React from "react";
 import manhImg from "../../assets/manhattan.avif";
+import bahamas from '../../assets/bahamas.webp';
 
 const ItineraryCard = () => {
-  const mockText = (
+  const mockText1 = (
     <>
       <strong>Day 1: Manhattan, New York City</strong>
       <br />
@@ -20,6 +21,18 @@ const ItineraryCard = () => {
     </>
   );
 
+  const mockText2 = (
+    <>
+      <strong>Day 2: Nassau</strong>
+      <br />
+      <strong>8:00 AM - 4:00 PM</strong>
+      <br />
+      <br />
+      Sightseeing, swimming and soaking up the island flavor — it's all yours for the taking on a cruise to Nassau, Bahamas. Boasting balmy breezes and jumping to a bouncy calypso beat, Nassau promises sizzling fun in the sun. The historic and cultural heart of The Bahamas is one of the world’s most popular cruise destinations — one million travelers board cruises to Nassau every year. Throw in a chance to swim with dolphins, or do a little slipping and sliding at a water park, and it's clear what makes Nassau a top spot for cruisers of all ages. 
+    </>
+  );
+
+
   return (
     <>
       <div style={styles.card}>
@@ -29,7 +42,17 @@ const ItineraryCard = () => {
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <p>{mockText}</p>
+          <p>{mockText1}</p>
+        </div>
+      </div>
+      <div style={styles.card}>
+        <img
+          src={bahamas}
+          alt="Card Image"
+          style={styles.image}
+        />
+        <div style={styles.textContent}>
+          <p>{mockText2}</p>
         </div>
       </div>
       <div style={styles.card}>
@@ -39,17 +62,7 @@ const ItineraryCard = () => {
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <p>{mockText}</p>
-        </div>
-      </div>
-      <div style={styles.card}>
-        <img
-          src={manhImg} // Placeholder image URL
-          alt="Card Image"
-          style={styles.image}
-        />
-        <div style={styles.textContent}>
-          <p>{mockText}</p>
+          <p>{mockText1}</p>
         </div>
       </div>
       

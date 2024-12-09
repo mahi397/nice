@@ -7,7 +7,6 @@ import SummaryCard from "./SummaryCard";
 import DayWiseCard from "./DayWiseCard";
 import ActivityCard from "./ActivityCard";
 import RestaurantCard from "./RestaurantCard";
-import OtherPackages from "./OtherPackages";
 import { API_URL } from "../admin/api";
 import ItineraryCard from "./ItineraryCard";
 import Summary from "./Summary";
@@ -107,7 +106,6 @@ const CruiseDetails = ({ tripid }) => {
       <ActivityCard />
       <h2 className="cruise-heading">Dining Onboard</h2>
       <RestaurantCard />
-      <OtherPackages />
     </div>
   );
 };

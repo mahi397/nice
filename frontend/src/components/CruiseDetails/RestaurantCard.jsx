@@ -3,7 +3,9 @@ import restaurantImg from "../../assets/restaurant.avif";
 import { FaCheckCircle, FaDollarSign, FaArrowCircleRight } from "react-icons/fa";
 import { IoIosArrowDropright } from "react-icons/io";
 import { AiFillDollarCircle } from "react-icons/ai";
-
+import dine1 from '../../assets/dine2.png';
+import dine2 from '../../assets/dine3.png';
+import dine3 from '../../assets/dine4.png';
 
 const RestaurantCard = () => {
   const headline = "Water activities";
@@ -18,7 +20,7 @@ const RestaurantCard = () => {
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Round Clock Cafe</h3>
           <h5 style={styles.subtitle}>
           <AiFillDollarCircle style={styles.icon} /> {subtitle}
           </h5>
@@ -27,12 +29,12 @@ const RestaurantCard = () => {
       
       <div style={styles.card}>
         <img
-          src={restaurantImg} // Placeholder image URL
+          src={dine1} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Common Buffet</h3>
           <h5 style={styles.subtitle}>
           <AiFillDollarCircle style={styles.icon} /> {subtitle}
           </h5>
@@ -41,12 +43,12 @@ const RestaurantCard = () => {
 
       <div style={styles.card}>
         <img
-          src={restaurantImg} // Placeholder image URL
+          src={dine2} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>La-Carte Continental</h3>
           <h5 style={styles.subtitle}>
             <AiFillDollarCircle style={styles.icon} /> {subtitle}
           </h5>
@@ -55,12 +57,12 @@ const RestaurantCard = () => {
 
       <div style={styles.card}>
         <img
-          src={restaurantImg} // Placeholder image URL
+          src={dine3} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <h3 style={styles.headline}>{headline}</h3>
+          <h3 style={styles.headline}>Stout Bar</h3>
           <h5 style={styles.subtitle}>
             <AiFillDollarCircle style={styles.icon} /> {subtitle}
           </h5>

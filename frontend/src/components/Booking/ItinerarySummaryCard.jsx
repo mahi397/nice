@@ -16,17 +16,6 @@ const WideCard = () => {
         <p style={styles.paragraph}><span><IoLocationSharp /> </span>{leftParagraph1}</p>
         <p style={styles.dateText}>{leftParagraph2}</p>
       </div>
-
-      {/* Right Section (20%) */}
-      <div style={styles.rightSection}>
-        <p style={styles.fromText}>From</p>
-        <p style={styles.priceText}>$979*</p>
-        <p style={styles.priceDescription}>average per person, 2 person room</p>
-
-        {/* Book Now Button */}
-        <button style={styles.bookNowButton}>
-            <Link to={'/booking'}>BOOK NOW</Link></button>
-      </div>
     </div>
   );
 };
@@ -41,12 +30,15 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     // margin: '0 auto', // Center the card horizontally
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    // boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
     overflow: 'hidden',
     color: 'black',
-    margin: '-40px auto 0 auto',
+    // margin: '-40px auto 0 auto',
     zIndex: 2,
     position: 'relative',
+    marginLeft: '20px',
+    border: '1px solid #ccc',
   },
   leftSection: {
     width: '80%',

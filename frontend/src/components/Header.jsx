@@ -4,7 +4,7 @@ import '../style.css';
 import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import cruiselogo from '../assets/cruiselogo.png';
-
+// import cruiselogo from '../assets/white-ship-2.png';
 
 const isLoggedIn = () => {
   return localStorage.getItem('token') ? true : false; // Check if token exists in localStorage
