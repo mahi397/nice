@@ -6,6 +6,7 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class AuthGroup(models.Model):
@@ -366,7 +367,7 @@ class MmsTrip(models.Model):
     tripcapacityremaining = models.IntegerField()
     tempcapacityreserved = models.IntegerField()
     tempreservationtimestamp = models.DateTimeField(blank=True, null=True)
-    tempcapacitynumber = models.IntegerField()
+    tempcapacitynumber = models.IntegerField(blank=True, null=True)
     shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
 
     class Meta:
@@ -405,7 +406,7 @@ class MmsUserProfile(models.Model):
     profileid = models.AutoField(primary_key=True)
     phonenumber = models.CharField(max_length=15, db_collation='utf8mb4_0900_ai_ci', blank=True, null=True)
     dateofbirth = models.DateField(blank=True, null=True)
-    userid = models.ForeignKey(AuthUser, models.DO_NOTHING, db_column='userid')
+    userid = models.ForeignKey(User, models.DO_NOTHING, db_column='userid')
 
     class Meta:
         managed = False

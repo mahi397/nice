@@ -103,7 +103,8 @@ urlpatterns = [
     path('reset/done', auth_views.PasswordResetCompleteView.as_view(
         template_name='registration/password_reset_complete.html'
     ), name='password_reset_complete'),
-    path('user/<int:id>/update', views.MmsUserUpdateView.as_view(), name='user-update'),
+    path('user/create-profile', views.MmsUserProfileCreateView.as_view(), name='create-user-profile'),
+    path('user/update', views.MmsUserUpdateView.as_view(), name='user-update'),
     path('user/delete', views.UserDeleteView.as_view(), name='self-delete-user'),
     path('trips/list',views.MmsTripListView.as_view(),name = 'trip-list-view'),
     path('trips/list/<int:tripid>', views.MmsTripDetailView.as_view(), name='trip-detail'),
@@ -114,6 +115,7 @@ urlpatterns = [
     path('trips/<int:tripid>/package-details/', views.MmsTripPackageListView.as_view(), name='list-package-details'),
     path('trips/<int:tripid>/add-package/', views.MmsAddPackageView.as_view(), name='add-package'),
     path('trips/<int:tripid>/booking-summary/', views.MmsBookingSummaryView.as_view(), name='booking-summary'),
-    path('create-booking/', views.BookingView.as_view(), name='create-booking'),
+    path('payment-create/', views.MmsPaymentDetailView.as_view(), name='payment-summary'),
+    path('create-booking/', views.MmsBookingView.as_view(), name='create-booking'),
     
 ]

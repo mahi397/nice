@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import status
 from django.db import transaction
+from collections import defaultdict
 from rest_framework import serializers 
 from django.contrib.auth.models import User
 from rest_framework.response import Response
@@ -600,8 +601,13 @@ class MmsRoomBaseSerializer(serializers.ModelSerializer):
     """
     
     # Expecting IDs to be passed for stateroom type, location, and ship
-    stateroomtypeid = serializers.IntegerField()
-    locid = serializers.IntegerField()
+    # Use PrimaryKeyRelatedField for foreign keys
+    stateroomtypeid = serializers.PrimaryKeyRelatedField(
+        queryset=models.MmsRoomType.objects.all()
+    )
+    locid = serializers.PrimaryKeyRelatedField(
+        queryset=models.MmsRoomLoc.objects.all()
+    )
 
     class Meta:
         model = models.MmsRoom
@@ -632,31 +638,7 @@ class MmsRoomBaseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Floor number cannot be more than 20.")
         
         return data
-            
-    def validate_stateroomtypeid(self, data):
-        """
-        Validates the stateroom type ID to ensure it exists in the MmsRoomType table.
-        Raises a validation error if the provided ID doesn't match any existing stateroom type.
-        """
-        try:
-            room_type = models.MmsRoomType.objects.get(stateroomtypeid=data)
-        except models.MmsRoomType.DoesNotExist:
-            raise serializers.ValidationError(f"Invalid stateroom type ID: {data}")
-        
-        return room_type  # Returning the room type object for the foreign key
-    
-    def validate_locid(self, data):
-        """
-        Validates the location ID to ensure it exists in the MmsRoomLoc table.
-        Raises a validation error if the provided ID doesn't match any existing location.
-        """
-        try:
-            location = models.MmsRoomLoc.objects.get(locid=data)
-        except models.MmsRoomLoc.DoesNotExist:
-            raise serializers.ValidationError(f"Invalid location ID: {data}")
-        
-        return location  # Returning the location object for the foreign key
-       
+                   
 class MmsRoomCSVUploadSerializer(serializers.Serializer):
     """
     Serializer to handle the upload and validation of CSV files for room data.
@@ -722,7 +704,7 @@ class MmsRoomsCreateSerializer(serializers.ModelSerializer):
     """
 
     # Field for accepting nested room data (list of rooms).
-    rooms = MmsRoomBaseSerializer(many=True, required=False)
+    rooms = MmsRoomBaseSerializer(many=True, required=False, allow_null=True)
     
     # Field for accepting a CSV file for room data upload.
     csv_file = serializers.FileField(write_only=True, required=False, allow_null=True)
@@ -764,7 +746,7 @@ class MmsRoomsCreateSerializer(serializers.ModelSerializer):
             # If room data is provided, create rooms from the nested data
             for room_data in rooms_data:
                 created_rooms.append(models.MmsRoom.objects.create(**room_data))
-
+            
         elif csv_file:
             # If a CSV file is provided, process it using the MmsRoomCSVUploadSerializer
             csv_serializer = MmsRoomCSVUploadSerializer(data={'file': csv_file})
@@ -774,11 +756,13 @@ class MmsRoomsCreateSerializer(serializers.ModelSerializer):
                 # Create rooms from each row in the CSV file
                 for row in validated_rows:
                     created_rooms.append(models.MmsRoom.objects.create(**row))
+            
 
         # Serialize the created rooms before returning
-        #room_serializer = MmsRoomBaseSerializer(created_rooms, many=True)
-        return created_rooms
-        
+        room_serializer = MmsRoomBaseSerializer(created_rooms, many=True)
+        print(room_serializer.data)
+        return room_serializer.data
+               
 class MmsRoomListSerializer(serializers.ModelSerializer):
     """
     Serializer for listing room information, including details about room type and location.
@@ -1542,55 +1526,15 @@ class MmsAdminTripListSerializer(MmsTripListSerializer):
         fields = MmsTripListSerializer.Meta.fields + ['tripstatus']  # Include parent fields and any new ones
                      
 # User related features
-class MmsUserProfileSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.MmsUserProfile
-        fields = ['phonenumber', 'dateofbirth']  # Include phone number and date of birth fields in the serialized data
-        
-    def validate_phonenumber(self, value):
-        """
-        Validate phone number to ensure it only contains digits and follows a specific format.
-        
-        The phone number must:
-        - Be in the E.164 international format (e.g., +1234567890 or 1234567890).
-        - Contain only digits and optionally start with a plus sign.
-        """
-        # Regular expression checks for valid phone number format in E.164 standard
-        if not re.fullmatch(r'\+?[1-9]\d{1,14}', value):  # E.164 format: starting with an optional '+' followed by digits
-            raise ValidationError("Phone number must be valid and follow international standards.")
-        return value
-
-    def validate_dateofbirth(self, value):
-        """
-        Validate date of birth to ensure it's not in the future and that the user is at least 13 years old.
-        
-        The date of birth must:
-        - Not be in the future.
-        - Represent an age of at least 13 years.
-        """
-        # Ensure the date of birth is not a future date
-        if value > date.today():
-            raise serializers.ValidationError("Date of birth cannot be in the future.")
-        
-        # Calculate the user's age based on their date of birth
-        age = (date.today() - value).days // 365  # Approximate age in years
-        if age < 18:  # Check if the age is less than 13 years
-            raise ValidationError("User must be at least 18 years old.")
-        
-        return value
-
 class MmsUserCreateSerializer(serializers.ModelSerializer):
-    # Nested serializer for user profile, it's optional (required=False)
-    profile = MmsUserProfileSerializer(required=False)
-
+   
     # Password and confirm password fields are required, should be written in 'password' input type
     password = serializers.CharField(write_only=True, required=True, min_length=8, style={'input_type': 'password'})
     confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'confirm_password', 'first_name', 'last_name', 'profile']
+        fields = ['username', 'email', 'password', 'confirm_password', 'first_name', 'last_name']
         extra_kwargs = {"password": {"write_only": True}}  # Password field should not be read in response
 
     def validate_username(self, value):
@@ -1682,14 +1626,57 @@ class MmsUserCreateSerializer(serializers.ModelSerializer):
         
         # Set the password (it gets hashed here)
         user.set_password(password)
-        
-        # If profile data is provided, create the user profile instance
-        if profile_data:
-            models.MmsUserProfile.objects.create(userid=user.pk, **profile_data)
-        
-        # Save the user instance after setting the password
         user.save()
+        
         return user
+
+class MmsUserProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.MmsUserProfile
+        fields = ['phonenumber', 'dateofbirth']  # Include phone number and date of birth fields in the serialized data
+        
+    def validate_phonenumber(self, value):
+        """
+        Validate phone number to ensure it only contains digits and follows a specific format.
+        
+        The phone number must:
+        - Be in the E.164 international format (e.g., +1234567890 or 1234567890).
+        - Contain only digits and optionally start with a plus sign.
+        """
+        # Regular expression checks for valid phone number format in E.164 standard
+        if not re.fullmatch(r'\+?[1-9]\d{1,14}', value):  # E.164 format: starting with an optional '+' followed by digits
+            raise ValidationError("Phone number must be valid and follow international standards.")
+        return value
+
+    def validate_dateofbirth(self, value):
+        """
+        Validate date of birth to ensure it's not in the future and that the user is at least 13 years old.
+        
+        The date of birth must:
+        - Not be in the future.
+        - Represent an age of at least 13 years.
+        """
+        if value == None:
+            raise serializers.ValidationError("You must provide date of birth.")
+        # Ensure the date of birth is not a future date
+        if value > date.today():
+            raise serializers.ValidationError("Date of birth cannot be in the future.")
+        
+        # Calculate the user's age based on their date of birth
+        age = (date.today() - value).days // 365  # Approximate age in years
+        if age < 18:  # Check if the age is less than 13 years
+            raise ValidationError("User must be at least 18 years old.")
+        
+        return value
+
+    def create(self, validated_data):
+        # Attach the authenticated user from the context (passed in the view)
+        print(validated_data)
+        user = validated_data.pop('user')
+        # Create the profile linked to the authenticated user
+        userinstance = User.objects.get(username=user)
+        return models.MmsUserProfile.objects.create(**validated_data, userid=userinstance)
 
 class MmsUserUpdateSerializer(serializers.ModelSerializer):
     # Nested serializer for the user profile, optional (required=False)
@@ -1697,55 +1684,42 @@ class MmsUserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'profile']  # Only updatable fields are included
+        fields = ['first_name', 'last_name', 'profile']  # Include fields that can be updated
 
     @transaction.atomic
     def update(self, instance, validated_data):
         """
         Update the user instance and related profile if provided.
-        
-        - Updates the user's first name and last name.
-        - If profile data is provided, updates the user's profile.
-        - Uses atomic transactions to ensure consistency of changes (either all changes succeed or none).
         """
-        # Update the user's first name and last name if new data is provided
+        # Update basic user fields
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
 
-        # Extract profile data from validated_data (if provided)
+        # Extract profile data if provided
         profile_data = validated_data.pop('profile', None)
         if profile_data:
-            try:
-                # Try to find the user's profile and update fields
-                profile_instance = models.MmsUserProfile.objects.get(userid=instance.id)  # Get the profile by user ID
-                profile_instance.phonenumber = profile_data.get('phonenumber', profile_instance.phonenumber)
-                profile_instance.save()  # Save the profile instance with updated data
-            except models.MmsUserProfile.DoesNotExist:
-                # If profile does not exist, handle it (optional based on business rules)
-                pass
+            # Either update the profile if it exists or create a new one
+            models.MmsUserProfile.objects.update_or_create(
+                userid=instance,  # Link to the user instance
+                defaults=profile_data  # Update with provided profile data
+            )
 
-        # Save the updated user instance
+        # Save the user instance with updated details
         instance.save()
         return instance
 
     def to_representation(self, instance):
         """
         Customize the serialized output to include the related profile data.
-        
-        - This method customizes the serialized response to include user profile data in the final response.
-        - If the profile exists, it adds the serialized profile data; otherwise, it adds `None`.
         """
-        # Call the default 'to_representation' method from the parent serializer
+        # Default user representation
         representation = super().to_representation(instance)
 
-        # Add the profile data manually to the representation
+        # Add the serialized profile data if it exists
         try:
-            # Fetch the user's profile instance
-            profile_instance = models.MmsUserProfile.objects.get(user_id=instance.id)
-            # Serialize the profile and add it to the output representation
+            profile_instance = models.MmsUserProfile.objects.get(userid=instance)
             representation['profile'] = MmsUserProfileSerializer(profile_instance).data
         except models.MmsUserProfile.DoesNotExist:
-            # If the profile does not exist, set 'profile' to None in the output
             representation['profile'] = None
 
         return representation
@@ -1915,7 +1889,7 @@ class MmsTripDetailSerializer(MmsTripListSerializer):
             for activity in ship_activities
         ]
 
-class MmsTripRoomSerializer(serializers.ModelSerializer):
+'''class MmsTripRoomSerializer(serializers.ModelSerializer):
     """
     Serializer for trip room information.
     - Fields include room details such as number, booking status, price, type, and location.
@@ -1930,7 +1904,7 @@ class MmsTripRoomSerializer(serializers.ModelSerializer):
             'roomtype',
             'location'
         ]
-        
+ '''       
 class MmsTripBookingSerializer(serializers.ModelSerializer):
     """
     Serializer for basic trip booking details.
@@ -1942,7 +1916,7 @@ class MmsTripBookingSerializer(serializers.ModelSerializer):
         fields = ['tripid', 'tripname', 'startdate', 'enddate', 'tripcostperperson', 'tripcapacityremaining']
         # Make all fields read-only to avoid updates
 
-class MmsPackageSerializer(serializers.ModelSerializer):
+class MmsTripPackageBookingSerializer(serializers.ModelSerializer):
     """
     Serializer for trip package details.
     - Includes fields such as package ID, trip ID, and detailed package information.
@@ -1981,12 +1955,14 @@ class MmsStartBookingSerializer(serializers.Serializer):
         """
         Clear expired temporary locks on rooms and return a filtered queryset.
         """
+        #print(available_rooms)
         # Filter out expired locked rooms
         valid_rooms = available_rooms.filter(
             Q(tempreserved=False) | 
-            Q(tempreserved=True, tempreservationtimestamp__gt=now() - timedelta(minutes=5))
+            Q(tempreserved=True, tempreservationtimestamp__gt=now() - timedelta(minutes=5)) | Q(tempreserved=None)
         )
         
+        print(valid_rooms)
         # Ensure that expired rooms are released in the process
         with transaction.atomic():  # Ensure thread safety
             for room in valid_rooms:
@@ -2022,8 +1998,10 @@ class MmsStartBookingSerializer(serializers.Serializer):
         """
         if not obj:
             return []
-        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid)
+        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid,isbooked=False)
+        print(available_rooms)
         valid_rooms = self.clear_expired_locks(available_rooms)
+        #print(valid_rooms)
         available_categories = valid_rooms.values_list('roomtype', flat=True).distinct()
         return list(available_categories)
 
@@ -2034,7 +2012,7 @@ class MmsStartBookingSerializer(serializers.Serializer):
         if not obj:
             return []
         available_packages = models.MmsTripPackage.objects.filter(tripid=obj.tripid)
-        return MmsPackageSerializer(available_packages, many=True).data
+        return MmsTripPackageBookingSerializer(available_packages, many=True).data
 
     def to_representation(self, instance):
         """
@@ -2046,45 +2024,50 @@ class MmsStartBookingSerializer(serializers.Serializer):
             "available_packages": self.get_available_packages(instance),
         }
 
+class MmsRoomSerializer(serializers.Serializer):
+    room_number = serializers.IntegerField(min_value=1)
+    number_of_people = serializers.IntegerField(min_value=1)
+    
 class MmsTemporaryCapacityReservationSerializer(serializers.Serializer):
     """
     Serializer to handle temporary capacity reservation for trip bookings.
     The temporary capacity reservation occurs before actual room selection.
     """
-    number_of_rooms = serializers.IntegerField(min_value=1, max_value=3)  # Max 3 rooms per user
-    number_of_people_per_room = serializers.IntegerField(min_value=1, max_value=4)  # Max 4 people per room
+    rooms = serializers.ListField(
+        child=MmsRoomSerializer()  # Using RoomSerializer to handle room data
+    )
 
     def validate(self, data):
         """
         Validates the number of rooms and people per room.
         """
         trip = self.context['trip']  # Access the trip instance from the context
-        number_of_rooms = data['number_of_rooms']
-        number_of_people_per_room = data['number_of_people_per_room']
+        rooms = data['rooms']
 
+        # Calculate total number of people
+        total_people = sum(room['number_of_people'] for room in rooms)
+        
         # Check if enough capacity is available for the number of people
-        total_people = number_of_rooms * number_of_people_per_room
         if trip.tripcapacityremaining < total_people:
             raise serializers.ValidationError("Not enough capacity available for the selected rooms.")
 
         return data
 
-    def reduce_trip_capacity(self, trip, number_of_rooms, number_of_people_per_room):
+    def reduce_trip_capacity(self, trip, rooms):
         """
         Temporarily reduce the trip's capacity by the total number of people.
         This function is for preventing concurrency issues and ensuring
         that no other users can book the same rooms before the user finalizes their booking.
         """
+        total_people = sum(room['number_of_people'] for room in rooms)
 
-        # Step 1: Check if remaining capacity falls below a threshold
-        threshold_percentage = 0.10  # For example, if remaining capacity falls below 10%
-        if trip.tripcapacityremaining <= trip.tripcapacity * threshold_percentage:
+        if trip.tripcapacityremaining <= trip.tripcapacity: 
             # Step 2: Check if the capacity is already temporarily reserved
             with transaction.atomic():
                 # Lock the trip row for update to prevent other transactions from modifying it concurrently
                 trip = models.MmsTrip.objects.select_for_update(skip_locked=True).get(tripid=trip.tripid)
 
-                if trip.temp_capacity_reserved:
+                if trip.tempcapacityreserved:
                     # Step 3: Check if the previous reservation has expired
                     time_since_reservation = timezone.now() - trip.tempreservationtimestamp
                     if time_since_reservation > timedelta(minutes=5):  # 5 minutes expiration time
@@ -2098,9 +2081,6 @@ class MmsTemporaryCapacityReservationSerializer(serializers.Serializer):
                         raise serializers.ValidationError("Capacity is temporarily reserved by another user.")
 
                 # Proceed to temporarily reduce the capacity
-                total_people = number_of_rooms * number_of_people_per_room
-
-                # Lock the trip row and temporarily reduce the remaining capacity
                 trip.tripcapacityremaining -= total_people
                 trip.tempcapacityreserved = True  # Mark the capacity as temporarily reserved
                 trip.tempreservationtimestamp = timezone.now()  # Mark the timestamp for the reservation
@@ -2117,7 +2097,7 @@ class MmsRoomSelectionSerializer(serializers.Serializer):
     number_of_rooms = serializers.IntegerField(min_value=1)  # At least 1 room per selection
         
 class MmsRoomCategorySelectionSerializer(serializers.Serializer):
-    trip_id = serializers.IntegerField()
+    # trip_id = serializers.IntegerField()
     room_selections = serializers.ListField(
         child=MmsRoomSelectionSerializer()  # Use the serializer for room selections
     )
@@ -2540,3 +2520,195 @@ class MmsBookingConfirmSerializer(serializers.ModelSerializer):
             # In case of any exception, transaction will be rolled back
             print(f"Error occurred during booking creation: {str(e)}")
             raise serializers.ValidationError("An error occurred while processing the booking.")
+
+class MmsBookingCancellationSerializer(serializers.Serializer):
+    """
+    Serializer to handle booking cancellation.
+    """
+    bookingid = serializers.IntegerField()
+
+    def validate_bookingid(self, bookingid):
+        try:
+            booking = models.MmsBooking.objects.get(bookingid=bookingid)
+        except models.MmsBooking.DoesNotExist:
+            raise serializers.ValidationError("Booking does not exist.")
+        
+        if booking.bookingstatus == 'Canceled':
+            raise serializers.ValidationError("Booking is already canceled.")
+        
+        if booking.bookingstatus == 'Completed':
+            raise serializers.ValidationError("Can't cancel a completed booking.")
+
+        return bookingid
+
+    def cancel_booking(self):
+        bookingid = self.validated_data['bookingid']
+        booking = models.MmsBooking.objects.get(bookingid=bookingid)
+
+        # Update booking status to canceled
+        booking.bookingstatus = 'Canceled'
+        booking.cancellation_date = timezone.now()
+        booking.save()
+
+        # Restore trip capacity
+        trip = booking.tripid
+        trip.capacity += booking.groupid.count  # Add passenger count back to trip capacity
+        trip.save()
+
+        # Unreserve rooms
+        # Unreserve rooms and mark as not booked
+        models.MmsTripRoom.objects.filter(bookingid=booking).update(bookingid=None, isbooked=False)
+
+
+        return booking
+    
+class MmsUserBookingSerializer(serializers.ModelSerializer):
+    """
+    Serializer for booking summary grouped by status.
+    """
+    tripid = serializers.SerializerMethodField()
+    destination = serializers.SerializerMethodField()
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    number_of_passengers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.MmsBooking
+        fields = [
+            "bookingid",
+            "tripid",
+            "destination",
+            "start_date",
+            "end_date",
+            "status",
+            "total_cost",
+            "number_of_passengers",
+        ]
+
+    def get_tripid(self, obj):
+        return obj.tripid.tripid
+
+    def get_destination(self, obj):
+        return obj.tripid.destination
+
+    def get_start_date(self, obj):
+        return obj.tripid.start_date
+
+    def get_end_date(self, obj):
+        return obj.tripid.end_date
+
+    def get_number_of_passengers(self, obj):
+        return obj.groupid.count
+
+    def to_representation(self, instance):
+        """
+        Override to_representation to group data by status.
+        """
+        grouped_data = defaultdict(list)
+
+        for booking in instance:
+            trip_summary = {
+                "bookingid": booking.bookingid,
+                "tripid": booking.tripid.tripid,
+                "destination": booking.tripid.destination,
+                "start_date": booking.tripid.start_date,
+                "end_date": booking.tripid.end_date,
+                "total_cost": booking.total_cost,
+                "number_of_passengers": booking.groupid.count,
+            }
+
+            if booking.bookingstatus == "Cancelled":
+                grouped_data["cancelled"].append(trip_summary)
+            elif booking.tripid.start_date > now():
+                grouped_data["upcoming"].append(trip_summary)
+            else:
+                grouped_data["past"].append(trip_summary)
+
+        return grouped_data
+    
+class MmsBookingPassengerSerializer(serializers.ModelSerializer):
+    """
+    Serializer for passenger details in a booking.
+    """
+
+    class Meta:
+        model = models.MmsPassenger
+        fields = [
+            'firstname',
+            'lastname',
+            'dateofbirth',
+            'gender',
+            'contactnumber',
+            'emailaddress',
+            'streetaddr',
+            'city',
+            'state',
+            'country',
+            'zipcode',
+            'nationality',
+            'passportnumber',
+            'emergencycontactname',
+            'emergencycontactnumber',
+        ]
+
+class MmsBookingRoomSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the rooms associated with a booking.
+    """
+
+    class Meta:
+        model = models.MmsTripRoom
+        fields = ['roomnumber', 'location', 'roomtype', 'dynamicprice']
+
+class MmsBookingPackageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the packages associated with a booking.
+    """
+    packagename = serializers.SerializerMethodField()
+    class Meta:
+        model = models.MmsBookingPackage
+        fields = ['packageid', 'packagename']  # Adjust fields based on your model
+    
+    def get_packagename(self, obj):
+        return obj.packageid.packagename
+
+class MmsBookingPaymentDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for payment details associated with the booking.
+    """
+
+    class Meta:
+        model = models.MmsPaymentDetail
+        fields = ['paymentdate', 'paymentamount', 'paymentmethod', 'transactionid', 'invoiceid']
+
+class MmsBookingDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer to provide detailed information about a single booking.
+    """
+
+    tripid = serializers.SerializerMethodField()
+    passengers = MmsBookingPassengerSerializer(many=True)
+    rooms = MmsBookingRoomSerializer(many=True)
+    packages = MmsBookingPackageSerializer(many=True)
+    payment_details = MmsBookingPaymentDetailSerializer(many=True)
+
+    class Meta:
+        model = models.MmsBooking
+        fields = [
+            'bookingid',
+            'bookingdate',
+            'bookingstatus',
+            'trip_name',  # Example of additional fields
+            'total_cost',
+            'number_of_passengers',
+            'passengers',
+            'rooms',
+            'packages',
+            'payment_details',
+        ]
+
+
+    def get_trip_name(self, obj):
+        return obj.tripid.tripname  # Adjust field names based on your model
+

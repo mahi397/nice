@@ -1,3 +1,5 @@
+from xml.dom import ValidationErr
+from jsonschema import ValidationError
 import stripe
 from . import models
 from decimal import Decimal
@@ -1991,6 +1993,14 @@ class MmsTripDeleteView(generics.GenericAPIView, mixins.DestroyModelMixin):
     serializer_class = serializers.MmsTripCreateSerializer
     lookup_field = 'tripid'  # Field used to lookup the trip in the URL
 
+    
+    def get_object(self):
+        """
+        Get the trip instance based on the URL parameter.
+        """
+        tripid = self.kwargs['tripid']
+        return models.MmsTrip.objects.get(tripid=tripid)
+    
     @extend_schema(
         operation_id="delete_trip",
         summary="Delete a trip",
@@ -2072,29 +2082,40 @@ class MmsUserCreateView(generics.CreateAPIView):
             fail_silently=True,
         )
 
+class MmsUserProfileCreateView(generics.GenericAPIView, mixins.CreateModelMixin):
+    queryset = models.MmsUserProfile.objects.all()
+    serializer_class = serializers.MmsUserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        """
+        Override perform_create to associate the authenticated user with the profile.
+        """
+        serializer.save(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """
+        POST method to create a user profile.
+        """
+        return self.create(request, *args, **kwargs)
+    
 class MmsUserUpdateView(generics.GenericAPIView, mixins.UpdateModelMixin):
     queryset = User.objects.all()
     serializer_class = serializers.MmsUserUpdateSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = "id"
-    
-    def partial_update(self, request, *args, **kwargs):
-        # Extract `portid` from URL
-        userid = kwargs.get('id')
 
-        # Validate the `userid` in the request body (if provided)
-        if 'userid' in request.data and str(request.data['userid']) != str(userid):
-            return Response(
-                {"detail": "User ID in the request body does not match the URL."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    def get_object(self):
+        """
+        Retrieve the authenticated user instance.
+        """
+        return self.request.user
 
-        # Call the parent class update method
-        return super().partial_update(request, *args, **kwargs)
-    
-    def put(self, request, *args, **kwargs):
-        return self.partial_update(request=request, *args, **kwargs)
-    
+    def patch(self, request, *args, **kwargs):
+        """
+        Handle partial updates for the authenticated user.
+        """
+        return self.partial_update(request, *args, **kwargs)
+        
 class UserDeleteView(mixins.DestroyModelMixin, generics.GenericAPIView):
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
@@ -2381,20 +2402,26 @@ class MmsStartBookingView(generics.RetrieveAPIView):
     serializer_class = serializers.MmsStartBookingSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self):
+    def get_trip(self, tripid):
         """
-        Get the trip instance based on the URL parameter.
+        Helper method to retrieve the trip based on the tripid.
         """
-        tripid = self.kwargs['tripid']
-        return models.MmsTrip.objects.get(tripid=tripid)
+        try:
+            trip = models.MmsTrip.objects.get(tripid=tripid)
+            return trip
+        except models.MmsTrip.DoesNotExist:
+            raise serializers.ValidationError("Trip not found.")
+    
 
     def get(self, request, *args, **kwargs):
         """
         Override GET to ensure context is correctly passed.
         """
-        trip = self.get_object()
+        tripid = self.kwargs.get('tripid')  # Get the tripid from the URL
+        trip = self.get_trip(tripid)  # Retrieve the trip object
         serializer = self.get_serializer(instance=trip)
         trip_data = serializer.data
+    
         # Store relevant data from serializer directly into session
         request.session['trip_details'] = {
             'trip_id': trip_data['trip_details']['tripid'],
@@ -2415,7 +2442,7 @@ class MmsStartBookingView(generics.RetrieveAPIView):
         
 class MmsTemporaryCapacityReservationView(generics.GenericAPIView):
     """
-    API view to temporarily reserve capacity for a trip. 
+    API view to temporarily reserve capacity for a trip.
     This ensures that no other users can book the same capacity while the user is in the process of selecting rooms.
     """
     permission_classes = [IsAuthenticated]
@@ -2442,18 +2469,20 @@ class MmsTemporaryCapacityReservationView(generics.GenericAPIView):
 
         # Validate the input data and reduce trip capacity if validation passes
         if serializer.is_valid():
-            number_of_rooms = serializer.validated_data['number_of_rooms']
-            number_of_people_per_room = serializer.validated_data['number_of_people_per_room']
+            rooms = serializer.validated_data['rooms']
             
-            
-            # Store these details in the session (without trip_id as it's already stored)
+            # Store room details in the session
             request.session['booking_details'] = {
-            'number_of_rooms': number_of_rooms,
-            'number_of_people_per_room': number_of_people_per_room,
-            'number_of_passengers': number_of_rooms * number_of_people_per_room,
-}
+                'rooms': rooms,  # List of rooms with their room numbers and number of people
+                'number_of_passengers': sum(room['number_of_people'] for room in rooms),  # Total number of people
+                'room_details': [
+                    {'room_number': room['room_number'], 'number_of_people': room['number_of_people']}
+                    for room in rooms
+                ],  # Storing detailed room info
+            }
+
             # Reduce the trip capacity by temporarily marking it
-            trip = serializer.reduce_trip_capacity(trip, number_of_rooms, number_of_people_per_room)
+            trip = serializer.reduce_trip_capacity(trip, rooms)
 
             # Return the updated trip details
             return Response({
@@ -2785,50 +2814,26 @@ class MmsBookingSummaryView(APIView):
         total_price = total_room_price + total_package_price + (cost_per_person * num_passengers)
 
         return total_price
+
+class MmsPaymentDetailView(APIView):
+    """
+    Retrieve payment details (such as amount) for a user from session data.
+    """
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get the payment information (retrieved from session storage).
+        """
+        # Retrieve payment details from session storage
+        payment_details = request.session.get('total_price', None)
+
+        if not payment_details:
+            return Response({'error': 'Payment details not found in session'}, status=400)
+
+        return Response(payment_details)  # Return the payment data stored in session
     
-'''class StripePaymentView(APIView):
-    """
-    Handle Stripe Payment Intent creation.
-    """
-    def post(self, request, *args, **kwargs):
-        """
-        Handle payment processing when a customer submits the payment request.
-        """
-        try:
-            # Retrieve amount option (either deposit or full)
-            payment_option = request.data.get('payment_option')  # 'deposit' or 'full'
-
-            if payment_option not in ['deposit', 'full']:
-                return Response({'error': 'Invalid payment option'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Retrieve the total amount from the session
-            total_price = Decimal(request.session.get('total_price', 0))
-
-            if total_price == 0:
-                return Response({'error': 'Total price not found in session'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Calculate the amount based on the payment option
-            if payment_option == 'deposit':
-                amount_to_charge = total_price * Decimal('0.50')  # 50% deposit
-            else:
-                amount_to_charge = total_price  # full amount
-
-            # Create a PaymentIntent with the selected amount
-            intent = stripe.PaymentIntent.create(
-                amount=int(amount_to_charge * 100),  # Convert to cents
-                currency='usd',
-                metadata={'integration_check': 'accept_a_payment'},
-            )
-
-            # Return the client secret to the frontend for further processing
-            return Response({'client_secret': intent.client_secret}, status=status.HTTP_200_OK)
-
-        except stripe.error.CardError as e:
-            return Response({'error': e.user_message}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': 'Something went wrong. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-class PaymentStatusView(APIView):
+class MmsPaymentStatusView(APIView):
     """
     Check the status of the payment using Stripe PaymentIntent ID.
     """
@@ -2856,8 +2861,8 @@ class PaymentStatusView(APIView):
         except Exception as e:
             # Handle other errors
             return Response({'error': 'An error occurred while checking payment status'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        '''
-class BookingView(APIView):
+        
+class MmsBookingView(APIView):
     """
     View to handle booking creation.
     """
@@ -2884,3 +2889,67 @@ class BookingView(APIView):
         
         # If validation fails, return an error response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MmsBookingCancellationView(generics.GenericAPIView, mixins.UpdateModelMixin):
+    """
+    View to handle booking cancellation.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        # Extract the booking ID from URL kwargs
+        bookingid = kwargs.get('bookingid')
+
+        # Attach the bookingid to the data for the serializer
+        data = {"bookingid": bookingid}
+        serializer = serializers.MmsBookingCancellationSerializer(data=data, context={'request': request})
+
+        if serializer.is_valid():
+            try:
+                # Call cancel_booking which will handle the cancellation logic
+                booking = serializer.cancel_booking()
+                return Response(
+                    {"message": "Booking canceled successfully.", "bookingid": booking.bookingid},
+                    status=status.HTTP_200_OK
+                )
+            except Exception as e:
+                return Response(
+                    {"error": "An error occurred while canceling the booking.", "details": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MmsUserBookingsListView(generics.ListAPIView):
+    """
+    View to list all bookings for the authenticated user.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.MmsUserBookingSerializer
+
+    def get_queryset(self):
+        """
+        Filter bookings to only include those belonging to the authenticated user.
+        """
+        user = self.request.user
+        return models.MmsBooking.objects.filter(userid=user).select_related('tripid')
+    
+class MmsUserBookingDetailView(generics.RetrieveAPIView):
+    """
+    View to retrieve detailed information for a specific booking.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.MmsBookingDetailSerializer
+    lookup_field = 'bookingid'
+
+    def get_queryset(self):
+        """
+        Ensure only bookings belonging to the authenticated user and matching the bookingid are returned.
+        """
+        user = self.request.user
+        bookingid = self.kwargs['bookingid']  # Get the bookingid from the URL
+        return models.MmsBooking.objects.filter(userid=user, bookingid=bookingid)
+    

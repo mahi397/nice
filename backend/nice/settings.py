@@ -74,8 +74,11 @@ MIDDLEWARE = [
 # Session timeout (in seconds)
 SESSION_COOKIE_AGE = 900  # 1 hour
 
-# Whether the session expires when the user closes the browser
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Security Settings for Session Management
+SESSION_COOKIE_SECURE = True  # Ensure cookies are only sent over HTTPS
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session expires when the browser is closed
+CSRF_COOKIE_SECURE = True  # Ensure CSRF cookie is only sent over HTTPS
+CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookie
 
 ROOT_URLCONF = 'nice.urls'
 
