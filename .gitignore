@@ -1,2 +1,4 @@
 .vscode/settings.json
 .DS_Store
+backend/templates/booking_summary.html
+backend/templates/payment.html
