@@ -9,7 +9,6 @@ import BgImage from "./CruiseDetails/BgImage";
 import TripSummaryCard from "./TripSummaryCard";
 
 
-
 const HomePage = () => {
   const mockTrips = [
     {

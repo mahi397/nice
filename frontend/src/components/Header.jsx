@@ -21,7 +21,7 @@ function Header() {
  const [isAuthenticated, setIsAuthenticated] = useState(false);
  const [dropdownOpen, setDropdownOpen] = useState(false); // To control the dropdown visibility
   
-  const navigate = useNavigate(); // 
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsAuthenticated(isLoggedIn());
@@ -30,7 +30,7 @@ function Header() {
   const handleLogout = async () => {
     try {
       // Perform logout on the server (optional for cleanup purposes)
-      await axios.post('/api/logout/'); // Add this endpoint in your Django backend for cleanup, if needed.
+      await axios.post('/nice/logout/'); // Add this endpoint in your Django backend for cleanup, if needed.
     } catch (error) {
       console.error('Error during logout:', error);
     }

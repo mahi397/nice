@@ -7,7 +7,7 @@ import SummaryCard from "./SummaryCard";
 import DayWiseCard from "./DayWiseCard";
 import ActivityCard from "./ActivityCard";
 import RestaurantCard from "./RestaurantCard";
-import { API_URL } from "../admin/api";
+import { API_URL } from "../../constants";
 import ItineraryCard from "./ItineraryCard";
 import Summary from "./Summary";
 import BgImage from "./BgImage";
@@ -97,7 +97,7 @@ const CruiseDetails = ({ tripid }) => {
       {/* <SummaryCard data={cruise} /> */}
       <Header />
       <BgImage />
-      <Summary />
+      <Summary tripid={tripid}/>
       <h2 className="cruise-heading">Cruise Itinerary</h2>
       {/* <DayWiseCard tripdata={cruise} /> */}
       <ItineraryCard />
