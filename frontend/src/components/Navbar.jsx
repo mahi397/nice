@@ -1,4 +1,3 @@
-// src/components/Navbar.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../axios'; // Import axios instance
@@ -19,7 +18,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       // Perform logout on the server (optional for cleanup purposes)
-      await axios.post('/api/logout/'); // Add this endpoint in your Django backend for cleanup, if needed.
+      await axios.post('/nice/logout'); // Add this endpoint in your Django backend for cleanup, if needed.
     } catch (error) {
       console.error('Error during logout:', error);
     }

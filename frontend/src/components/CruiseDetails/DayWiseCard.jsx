@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 // import { Card, Row, Col, Spin, Alert } from 'antd';
 import Card from './Card';
-import { API_URL } from '../admin/api';
 
 const { Meta } = Card;
 

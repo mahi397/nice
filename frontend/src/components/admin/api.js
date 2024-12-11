@@ -1,6 +1,5 @@
-import axios from 'axios';
-
-export const API_URL = 'http://localhost:8000/nice';
+import axios from "axios";
+import { API_URL } from "../../constants";
 
 // Function to refresh the access token
 // export const refreshAccessToken = async () => {
@@ -29,26 +28,49 @@ export const getEntity = async (entity) => {
   try {
     const response = await axios.get(`${API_URL}/admin/${entity}/list`, {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
     return await response.data;
-
-    } catch (error) {
-        // Handle any errors (optional, logging here)
-        console.error(`Error fetching ${entity} data:`, error);
-        throw error;  // Re-throw the error so the caller knows something went wrong
-    }
+  } catch (error) {
+    // Handle any errors (optional, logging here)
+    console.error(`Error fetching ${entity} data:`, error);
+    throw error; // Re-throw the error so the caller knows something went wrong
+  }
 };
 
 export const getTrips = async () => {
-//   const response = await fetch(`${API_URL}/ports/list`);
-//   return await response.json();
-    return [
-        { id: 1, name: 'Bahamas Cruise', startPort: 'Miami', endPort: 'Bahamas', startMonth: 'December', duration: 4, imageUrl: 'https://via.placeholder.com/150' },
-        { id: 2, name: 'Caribbean Cruise', startPort: 'Miami', endPort: 'Jamaica', startMonth: 'January', duration: 7, imageUrl: 'https://via.placeholder.com/150' },
-        { id: 3, name: 'Alaska Cruise', startPort: 'Seattle', endPort: 'Alaska', startMonth: 'June', duration: 10, imageUrl: 'https://via.placeholder.com/150' },
-      ];
+  //   const response = await fetch(`${API_URL}/ports/list`);
+  //   return await response.json();
+  return [
+    {
+      id: 1,
+      name: "Bahamas Cruise",
+      startPort: "Miami",
+      endPort: "Bahamas",
+      startMonth: "December",
+      duration: 4,
+      imageUrl: "https://via.placeholder.com/150",
+    },
+    {
+      id: 2,
+      name: "Caribbean Cruise",
+      startPort: "Miami",
+      endPort: "Jamaica",
+      startMonth: "January",
+      duration: 7,
+      imageUrl: "https://via.placeholder.com/150",
+    },
+    {
+      id: 3,
+      name: "Alaska Cruise",
+      startPort: "Seattle",
+      endPort: "Alaska",
+      startMonth: "June",
+      duration: 10,
+      imageUrl: "https://via.placeholder.com/150",
+    },
+  ];
 };
 
 // Example API call that uses the access token
@@ -57,8 +79,8 @@ export const getShips = async () => {
   try {
     const response = await fetch(`${API_URL}/admin/ships/list`, {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     // if (response.status === 401) {
@@ -85,8 +107,8 @@ export const getPorts = async () => {
   try {
     const response = await fetch(`${API_URL}/admin/ports/list`, {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     // if (response.status === 401) {
@@ -114,31 +136,31 @@ export const getUsers = async () => {
 };
 
 export const getActivities = async () => {
-    const response = await fetch(`${API_URL}/admin/activities/list`);
-    return await response.json();
-  };
+  const response = await fetch(`${API_URL}/admin/activities/list`);
+  return await response.json();
+};
 
 export const getRestaurants = async () => {
-    const response = await fetch(`${API_URL}/admin/restaurants/list`);
-    return await response.json();
-  };
+  const response = await fetch(`${API_URL}/admin/restaurants/list`);
+  return await response.json();
+};
 
 export const getPackages = async () => {
-    const response = await fetch(`${API_URL}/admin/packages/list`);
-    return await response.json();
+  const response = await fetch(`${API_URL}/admin/packages/list`);
+  return await response.json();
 };
 
 export const addRecord = async (entity, data) => {
-    const response = await fetch(`${API_URL}/admin/${entity}/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-    return await response.json();
-  };
-  
+  const response = await fetch(`${API_URL}/admin/${entity}/add`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+  return await response.json();
+};
+
 export const updateRecord = async (entity, id, data) => {
   const response = await fetch(`${API_URL}/admin/${entity}/${id}/update`, {
     method: "PUT",
@@ -155,4 +177,3 @@ export const deleteRecord = async (entity, id) => {
     method: "DELETE",
   });
 };
-

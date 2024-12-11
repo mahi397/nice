@@ -43,7 +43,7 @@ const Register = () => {
     // Send the registration request to the backend
     try {
       const response = await axios.post(
-        "http://localhost:8000/nice/register/",
+        "http://localhost:8000/nice/register",
         {
           username,
           email,

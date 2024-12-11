@@ -13,13 +13,15 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:8000/nice/login/", {
+      const response = await axios.post("http://localhost:8000/nice/login", {
         username,
         password,
       });
 
       if (response.status === 200) {
-        localStorage.setItem("token", response.data.token); // Save token in local storage
+        localStorage.setItem("token", response.data.access); // Save token in local storage
+        // console.log("Login Response: ", response.data);
+        // console.log("Token set after login: ", response.data.access);
         navigate("/"); // Redirect to home page after login
       }
     } catch (err) {

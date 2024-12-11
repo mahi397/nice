@@ -3,7 +3,7 @@ import { Modal, Button, Form, Checkbox, Input, Select, Steps, message } from 'an
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { API_URL } from './api';
+import { API_URL } from '../../constants';
 import EditableTable from './EditableTable';
 import { getEntity } from './api';
 
