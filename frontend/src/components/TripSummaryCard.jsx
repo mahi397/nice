@@ -34,7 +34,7 @@ const WideCard = (trip) => {
 
         {/* Book Now Button */}
         <button style={styles.bookNowButton}>
-            <Link to={'/booking'}>BOOK NOW</Link></button>
+            <Link to={'/cruise-details'}>VIEW ITINERARY</Link></button>
       </div>
     </div>
   );
