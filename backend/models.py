@@ -6,10 +6,11 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class AuthGroup(models.Model):
-    name = models.CharField(unique=True, max_length=150, db_collation='utf8mb4_0900_ai_ci')
+    name = models.CharField(unique=True, max_length=150)
 
     class Meta:
         managed = False
@@ -28,9 +29,9 @@ class AuthGroupPermissions(models.Model):
 
 
 class AuthPermission(models.Model):
-    name = models.CharField(max_length=255, db_collation='utf8mb4_0900_ai_ci')
+    name = models.CharField(max_length=255)
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
-    codename = models.CharField(max_length=100, db_collation='utf8mb4_0900_ai_ci')
+    codename = models.CharField(max_length=100)
 
     class Meta:
         managed = False
@@ -39,13 +40,13 @@ class AuthPermission(models.Model):
 
 
 class AuthUser(models.Model):
-    password = models.CharField(max_length=128, db_collation='utf8mb4_0900_ai_ci')
+    password = models.CharField(max_length=128)
     last_login = models.DateTimeField(blank=True, null=True)
     is_superuser = models.IntegerField()
-    username = models.CharField(unique=True, max_length=150, db_collation='utf8mb4_0900_ai_ci')
-    first_name = models.CharField(max_length=150, db_collation='utf8mb4_0900_ai_ci')
-    last_name = models.CharField(max_length=150, db_collation='utf8mb4_0900_ai_ci')
-    email = models.CharField(max_length=254, db_collation='utf8mb4_0900_ai_ci')
+    username = models.CharField(unique=True, max_length=150)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    email = models.CharField(max_length=254)
     is_staff = models.IntegerField()
     is_active = models.IntegerField()
     date_joined = models.DateTimeField()
@@ -79,10 +80,10 @@ class AuthUserUserPermissions(models.Model):
 
 class DjangoAdminLog(models.Model):
     action_time = models.DateTimeField()
-    object_id = models.TextField(db_collation='utf8mb4_0900_ai_ci', blank=True, null=True)
-    object_repr = models.CharField(max_length=200, db_collation='utf8mb4_0900_ai_ci')
+    object_id = models.TextField(blank=True, null=True)
+    object_repr = models.CharField(max_length=200)
     action_flag = models.PositiveSmallIntegerField()
-    change_message = models.TextField(db_collation='utf8mb4_0900_ai_ci')
+    change_message = models.TextField()
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING, blank=True, null=True)
     user = models.ForeignKey(AuthUser, models.DO_NOTHING)
 
@@ -92,8 +93,8 @@ class DjangoAdminLog(models.Model):
 
 
 class DjangoContentType(models.Model):
-    app_label = models.CharField(max_length=100, db_collation='utf8mb4_0900_ai_ci')
-    model = models.CharField(max_length=100, db_collation='utf8mb4_0900_ai_ci')
+    app_label = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
 
     class Meta:
         managed = False
@@ -103,8 +104,8 @@ class DjangoContentType(models.Model):
 
 class DjangoMigrations(models.Model):
     id = models.BigAutoField(primary_key=True)
-    app = models.CharField(max_length=255, db_collation='utf8mb4_0900_ai_ci')
-    name = models.CharField(max_length=255, db_collation='utf8mb4_0900_ai_ci')
+    app = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
     applied = models.DateTimeField()
 
     class Meta:
@@ -113,8 +114,8 @@ class DjangoMigrations(models.Model):
 
 
 class DjangoSession(models.Model):
-    session_key = models.CharField(primary_key=True, max_length=40, db_collation='utf8mb4_0900_ai_ci')
-    session_data = models.TextField(db_collation='utf8mb4_0900_ai_ci')
+    session_key = models.CharField(primary_key=True, max_length=40)
+    session_data = models.TextField()
     expire_date = models.DateTimeField()
 
     class Meta:
@@ -139,19 +140,29 @@ class MmsBooking(models.Model):
     bookingid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every booking')
     bookingdate = models.DateTimeField(db_comment='Date when the booking was made. Important for scheduling and availability tracking.')
     bookingstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Status of the booking, e.g., "Confirmed," "Pending," "Canceled." Assists with management tracking.')
-    estimatedcost = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Estimated cost for the trip including base cost, room price and package price exclusing tax and other add ons')
     groupid = models.ForeignKey('MmsGroup', models.DO_NOTHING, db_column='groupid', db_comment='Unqiue identifier for every group')
     tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
-    userid = models.ForeignKey(AuthUser, models.DO_NOTHING, db_column='userid')
+    userid = models.ForeignKey(User, models.DO_NOTHING, db_column='userid')
+    cancellationdate = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'mms_booking'
 
 
+class MmsBookingPackage(models.Model):
+    bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid')
+    packageid = models.ForeignKey('MmsPackage', models.DO_NOTHING, db_column='packageid')
+
+    class Meta:
+        managed = False
+        db_table = 'mms_booking_package'
+
+
 class MmsGroup(models.Model):
     groupid = models.BigAutoField(primary_key=True, db_comment='Unqiue identifier for every group')
     groupname = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='Name of the group')
+    count = models.IntegerField()
 
     class Meta:
         managed = False
@@ -165,6 +176,7 @@ class MmsInvoice(models.Model):
     paymentstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Indicates whether the invoice is "Paid," "Unpaid," or "Overdue." Tracks financial status.')
     duedate = models.DateTimeField(db_comment='Date by which the payment should be completed. Ensures timely collection.')
     bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid', db_comment='Unique identifier for every booking')
+    dueamount = models.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:
         managed = False
@@ -207,7 +219,7 @@ class MmsPassenger(models.Model):
 
 
 class MmsPaymentDetail(models.Model):
-    paymentid = models.BigAutoField(primary_key=True, db_comment='Primary key for each payment record.')  # The composite primary key (paymentid, invoiceid) found, that is not supported. The first column is selected.
+    paymentid = models.BigAutoField(primary_key=True, db_comment='Primary key for each payment record.')
     paymentdate = models.DateTimeField(db_comment='Date when the payment was made. Important for financial records.')
     paymentamount = models.DecimalField(max_digits=6, decimal_places=2, db_comment='Amount paid during the transaction. Helps track partial or full payments.')
     paymentmethod = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Method of payment (e.g., "Credit Card," "Bank Transfer," "Cash"). Provides context for processing.')
@@ -217,7 +229,6 @@ class MmsPaymentDetail(models.Model):
     class Meta:
         managed = False
         db_table = 'mms_payment_detail'
-        unique_together = (('paymentid', 'invoiceid'),)
 
 
 class MmsPort(models.Model):
@@ -237,29 +248,18 @@ class MmsPort(models.Model):
 
 class MmsPortStop(models.Model):
     itineraryid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every port stop of a trip')
-    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.')
-    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
+    portid = models.ForeignKey(MmsPort, models.DO_NOTHING, db_column='portid', db_comment='Primary key for the port entity. Unique identifier for each port.', related_name='portstops')
+    tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.', related_name='portstops')
     arrivaltime = models.DateTimeField(blank=True, null=True, db_comment='Time at which the ship arrives at the port')
     departuretime = models.DateTimeField(blank=True, null=True, db_comment='Time of departure from the port')
-    orderofstop = models.SmallIntegerField(db_comment='The order in which the ship stops at each port')
-    isstartport = models.CharField(max_length=1, db_collation='utf8mb4_unicode_ci', db_comment='Indicates if the port is starting point of the trip')
-    isendport = models.CharField(max_length=1, db_collation='utf8mb4_unicode_ci', db_comment='Indicates if the port is ending point of the trip')
+    orderofstop = models.IntegerField(db_comment='The order in which the ship stops at each port')
+    isstartport = models.IntegerField(db_comment='Indicates if the port is starting point of the trip')
+    isendport = models.IntegerField(db_comment='Indicates if the port is ending point of the trip')
     description = models.CharField(max_length=500)
 
     class Meta:
         managed = False
         db_table = 'mms_port_stop'
-
-
-class MmsPsngrPackage(models.Model):
-    purchaseid = models.BigAutoField(primary_key=True, db_comment='Unique identifier for every package purchased by the passenger')
-    packageid = models.ForeignKey(MmsPackage, models.DO_NOTHING, db_column='packageid', db_comment='Unique identifier for every package')
-    passengerid = models.ForeignKey(MmsPassenger, models.DO_NOTHING, db_column='passengerid', blank=True, null=True, db_comment='Unique identifier for each passenger')
-    sale_price = models.DecimalField(max_digits=6, decimal_places=2, db_comment='The actual price paid by the passenger for the package at the time of booking. \nThis price may differ from the base price in the mms_package table due to discounts, promotions, or special offers applied at the time of purchase.\n ')
-
-    class Meta:
-        managed = False
-        db_table = 'mms_psngr_package'
 
 
 class MmsRestaurant(models.Model):
@@ -280,14 +280,10 @@ class MmsRestaurant(models.Model):
 
 
 class MmsRoom(models.Model):
-    roomid = models.AutoField(primary_key=True, db_comment='Unique identifier for every room')
+    roomnumber = models.IntegerField(primary_key=True)
     roomfloor = models.SmallIntegerField(db_comment='Floor number of the room')
     stateroomtypeid = models.ForeignKey('MmsRoomType', models.DO_NOTHING, db_column='stateroomtypeid', db_comment='Unique identifier of room type')
     locid = models.ForeignKey('MmsRoomLoc', models.DO_NOTHING, db_column='locid')
-    shipid = models.ForeignKey('MmsShip', models.DO_NOTHING, db_column='shipid')
-    availability = models.IntegerField()
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    roomnumber = models.IntegerField()
 
     class Meta:
         managed = False
@@ -295,8 +291,8 @@ class MmsRoom(models.Model):
 
 
 class MmsRoomLoc(models.Model):
-    locid = models.SmallAutoField(primary_key=True, db_comment='Unique ID of the location\tin the ship')
-    location = models.CharField(max_length=50, db_comment='Name of the location in the ship')
+    locid = models.SmallAutoField(primary_key=True, db_comment='Unique ID of the location in the ship')
+    location = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='Name of the location in the ship')
 
     class Meta:
         managed = False
@@ -305,12 +301,13 @@ class MmsRoomLoc(models.Model):
 
 class MmsRoomType(models.Model):
     stateroomtypeid = models.SmallAutoField(primary_key=True, db_comment='Unique identifier of room type')
-    stateroomtype = models.CharField(max_length=20, db_comment='Name of the stateroom type')
+    stateroomtype = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Name of the stateroom type')
     roomsize = models.BigIntegerField(db_comment='Size of the stateroom in SQFT')
     numberofbeds = models.SmallIntegerField(db_comment='Number of beds in the room')
     numberofbaths = models.DecimalField(max_digits=2, decimal_places=1, db_comment='Number of the bathrooms in the stateroom')
     numberofbalconies = models.SmallIntegerField(db_comment='Number of balconies in the stateroom')
-    roombaseprice = models.DecimalField(max_digits=6, decimal_places=2, db_comment='Price of the room type per night')
+    roomtypedescription = models.CharField(max_length=500)
+    baseprice = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
         managed = False
@@ -346,17 +343,31 @@ class MmsShipRestaurant(models.Model):
         db_table = 'mms_ship_restaurant'
 
 
+class MmsShipRoom(models.Model):
+    shiproomid = models.AutoField(primary_key=True)
+    shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
+    roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
+
+    class Meta:
+        managed = False
+        db_table = 'mms_ship_room'
+
+
 class MmsTrip(models.Model):
     tripid = models.BigAutoField(primary_key=True, db_comment='Primary key for each trip. Unique identifier for each trip entry.')
     tripname = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='Descriptive name of the trip.')
-    startdate = models.DateTimeField(db_comment='The date when the trip begins. Ensures accurate tracking of trip schedules.')
-    enddate = models.DateTimeField(db_comment='The date when the trip ends. Helps define the trip duration.')
+    startdate = models.DateField(db_comment='The date when the trip begins. Ensures accurate tracking of trip schedules.')
+    enddate = models.DateField(db_comment='The date when the trip ends. Helps define the trip duration.')
     tripcostperperson = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Cost per person for the trip, including taxes. Supports budgeting and billing.')
     tripstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Status of the trip (e.g., upcoming, ongoing, completed).')
-    trip_cancellation = models.CharField(max_length=10, db_collation='utf8mb4_unicode_ci', db_comment='Trip cancellation status ΓÇÿcanceledΓÇÖ.')
-    trip_capacity = models.IntegerField(db_comment='Total passenger capacity for the cruise liner.')
-    trip_description = models.TextField(db_collation='utf8mb4_unicode_ci', db_comment='Description of the trip booked.')
-    final_booking = models.DateField()
+    cancellationpolicy = models.CharField(max_length=300, db_collation='utf8mb4_unicode_ci', db_comment='Trip cancellation status ΓÇÿcanceledΓÇÖ.')
+    tripcapacity = models.IntegerField(db_comment='Total passenger capacity for the cruise liner.')
+    tripdescription = models.CharField(max_length=300, db_collation='utf8mb4_unicode_ci', db_comment='Description of the trip booked.')
+    finalbookingdate = models.DateField()
+    tripcapacityremaining = models.IntegerField()
+    tempcapacityreserved = models.IntegerField()
+    tempreservationtimestamp = models.DateTimeField(blank=True, null=True)
+    tempcapacitynumber = models.IntegerField(blank=True, null=True)
     shipid = models.ForeignKey(MmsShip, models.DO_NOTHING, db_column='shipid')
 
     class Meta:
@@ -364,11 +375,27 @@ class MmsTrip(models.Model):
         db_table = 'mms_trip'
 
 
-class MmsTripRoom(models.Model):
-    triproomid = models.AutoField(primary_key=True, db_comment='A unique identifier for the association between a trip and a specific room allocation. This ID links a particular room to a specific trip, allowing the tracking of room assignments for each trip. It is used to map rooms to the trips they are associated with, facilitating room reservations and occupancy management for each trip.')
-    roomid = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomid')
+class MmsTripPackage(models.Model):
     tripid = models.ForeignKey(MmsTrip, models.DO_NOTHING, db_column='tripid')
-    roomsaleprice = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Room sale price for that particular trip')
+    packageid = models.ForeignKey(MmsPackage, models.DO_NOTHING, db_column='packageid')
+
+    class Meta:
+        managed = False
+        db_table = 'mms_trip_package'
+
+
+class MmsTripRoom(models.Model):
+    dynamicprice = models.DecimalField(max_digits=6, decimal_places=2)
+    baseprice = models.DecimalField(max_digits=6, decimal_places=2)
+    isbooked = models.IntegerField()
+    roomtype = models.CharField(max_length=20)
+    location = models.CharField(max_length=50)
+    roomnumber = models.ForeignKey(MmsRoom, models.DO_NOTHING, db_column='roomnumber')
+    tripid = models.ForeignKey(MmsTrip, models.DO_NOTHING, db_column='tripid')
+    tempreserved = models.IntegerField(blank=True, null=True)
+    tempreservationtimestamp = models.DateTimeField(blank=True, null=True)
+    tempreservationuser = models.IntegerField(blank=True, null=True)
+    bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -379,7 +406,7 @@ class MmsUserProfile(models.Model):
     profileid = models.AutoField(primary_key=True)
     phonenumber = models.CharField(max_length=15, db_collation='utf8mb4_0900_ai_ci', blank=True, null=True)
     dateofbirth = models.DateField(blank=True, null=True)
-    userid = models.ForeignKey(AuthUser, models.DO_NOTHING, db_column='userid')
+    userid = models.ForeignKey(User, models.DO_NOTHING, db_column='userid')
 
     class Meta:
         managed = False
@@ -398,11 +425,11 @@ class TokenBlacklistBlacklistedtoken(models.Model):
 
 class TokenBlacklistOutstandingtoken(models.Model):
     id = models.BigAutoField(primary_key=True)
-    token = models.TextField(db_collation='utf8mb4_0900_ai_ci')
+    token = models.TextField()
     created_at = models.DateTimeField(blank=True, null=True)
     expires_at = models.DateTimeField()
     user = models.ForeignKey(AuthUser, models.DO_NOTHING, blank=True, null=True)
-    jti = models.CharField(unique=True, max_length=255, db_collation='utf8mb4_0900_ai_ci')
+    jti = models.CharField(unique=True, max_length=255)
 
     class Meta:
         managed = False

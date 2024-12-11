@@ -1,7 +1,7 @@
 import re
 import csv
 from . import models
-from django.db.models import Q
+from django.db.models import Q, F
 from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import status
@@ -2061,7 +2061,7 @@ class MmsTemporaryCapacityReservationSerializer(serializers.Serializer):
         """
         total_people = sum(room['number_of_people'] for room in rooms)
 
-        if trip.tripcapacityremaining <= trip.tripcapacity: 
+        if trip.tripcapacityremaining <= trip.tripcapacity * 0.01: 
             # Step 2: Check if the capacity is already temporarily reserved
             with transaction.atomic():
                 # Lock the trip row for update to prevent other transactions from modifying it concurrently
@@ -2406,72 +2406,107 @@ class MmsTripPackageAddSerializer(serializers.Serializer):
         if not data.get('packages') or len(data['packages']) == 0:
             raise serializers.ValidationError("At least one package must be selected.")
         return data
-    
-class MmsBookingConfirmSerializer(serializers.ModelSerializer):
+   
+class MmsBookingConfirmSerializer(serializers.Serializer):
     """
     Serializer for handling booking creation including group, booking, room, passenger, and payment details.
     """
+    trip_id = serializers.IntegerField()
+    number_of_passengers = serializers.IntegerField()  # Based on the session data for group creation
+    reserved_rooms = serializers.ListField(child=serializers.DictField())  # Reserved room details
+    package_selection = serializers.ListField(child=serializers.DictField())  # Available packages
+    passengers_data = serializers.ListField(child=serializers.DictField())  # Passenger data
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=3)
+    payment_details = serializers.DictField()  # Payment details (transaction_id, payment_time, etc.)
 
-    class Meta:
-        model = models.MmsBooking
-        fields = ['bookingid', 'bookingdate', 'bookingstatus', 'groupid', 'tripid', 'userid']
+    def validate(self, data):
+        required_keys = ['trip_id', 'package_selection', 'reserved_rooms', 'passengers_data', 'number_of_passengers', 'total_price', 'payment_details']
+    
+        # Check if all required keys are in validated_data
+        missing_keys = [key for key in required_keys if key not in data]
+        if missing_keys:
+            raise serializers.ValidationError(f"Missing required data: {', '.join(missing_keys)}")
+    
+        return data
 
     def create(self, validated_data):
         """
         Create a booking record and related group, rooms, passengers, and payment details.
         """
-        # Fetch necessary data from session
         user = self.context['request'].user  # Assuming the user is logged in
-        session_data = self.context['request'].session  # Fetch session data
+    
+        # Extract session data from validated_data or context if needed
+        trip_id = validated_data.get('trip_id')
+        package_selection = validated_data.get('package_selection')
+        reserved_rooms = validated_data.get('reserved_rooms')
+        passengers_data = validated_data.get('passengers_data')
+        number_of_passengers = validated_data.get('number_of_passengers')
+        total_price = validated_data.get('total_price')
+        payment_details = validated_data.get('payment_details')
 
-        # Extract session details
-        trip_id = session_data.get('trip_details', {}).get('trip_id')
-        available_packages = session_data.get('trip_details', {}).get('available_packages', [])
-        reserved_rooms = session_data.get('room_selection_details', {}).get('reserved_rooms', [])
-        passengers_data = session_data.get('passengers', [])
-        number_of_passengers = session_data.get('booking_details', {}).get('number_of_passengers')
-        total_price = session_data.get('total_price')
-
-        # Payment-related session data
-        payment_status = session_data.get('payment_status')
-        payment_intent_id = session_data.get('payment_intent_id')
-        payment_time = session_data.get('payment_time')
-        payment_amount = session_data.get('payment_amount')
-        payment_method = session_data.get('payment_method')
-
-        # Ensure group exists (create new group if not exists)
-        group = models.MmsGroup.objects.create(count=number_of_passengers)
+        
+        # Step 1: Create group based on number_of_passengers
+        
 
         try:
             # Start the transaction block
             with transaction.atomic():
-                # Create the booking record
+                group = models.MmsGroup.objects.create(count=number_of_passengers)
+                trip = models.MmsTrip.objects.get(tripid=trip_id)
+                # Step 2: Create booking record
                 booking = models.MmsBooking.objects.create(
+                    tripid=trip,
+                    userid=user,
+                    groupid=group,
                     bookingdate=timezone.now(),
                     bookingstatus='Confirmed',  # Assume confirmed after payment success
-                    groupid=group,
-                    tripid=trip_id,
-                    userid=user,
                 )
+                
+                trip = models.MmsTrip.objects.select_for_update().filter(tripid=trip_id).first()
+                if trip:
+                    trip.tripcapacity = F('tripcapacity') - number_of_passengers
+                    trip.save()
 
-                # Add the reserved rooms to MmsTripRoom and link bookingid
-                for reserved_room in reserved_rooms:
-                    # Find the corresponding room in MmsTripRoom
-                    room = models.MmsTripRoom.objects.filter(
+                # Step 3: Reserve rooms (set isbooked to True and associate with booking)
+                for room in reserved_rooms:
+                    room_instance = models.MmsTripRoom.objects.filter(
                         tripid=trip_id, 
-                        room_number=reserved_room['room_number']
+                        roomnumber=room['room_number']
                     ).first()
 
-                    if room:
-                        # Update the MmsTripRoom with the bookingid
-                        room.bookingid = booking
-                        room.save()
+                    if room_instance:
+                        room_instance.isbooked = True
+                        room_instance.bookingid = booking
+                        room_instance.save()
 
-                # Add booking packages (if any)
-                for package in available_packages:
-                    models.MmsBookingPackage.objects.create(bookingid=booking, packageid=package['package_id'])
+                # Step 4: Add available packages to the booking
+                
+                for package in package_selection:  # Access 'package_selection' from validated_data
+                    packageInstance = models.MmsPackage.objects.get(packageid=package['package_id'])
+                    models.MmsBookingPackage.objects.create(
+                        bookingid=booking,
+                        packageid=packageInstance,  # Assuming package has 'package_id' as key
+                        quantity=package['quantity']
+                    )
 
-                # Create passengers and associate them with the group and booking
+                # Step 5: Create invoice
+                invoice = models.MmsInvoice.objects.create(
+                    invoicedate=timezone.now(),
+                    totalamount=total_price,
+                    paymentstatus='Paid',  # Assuming payment is successful
+                    bookingid=booking,
+                )
+
+                # Step 6: Create payment details record
+                models.MmsPaymentDetail.objects.create(
+                    paymentdate=timezone.now(),
+                    paymentamount=payment_details.get('payment_amount'),
+                    paymentmethod=payment_details.get('payment_method'),
+                    transactionid=payment_details.get('transaction_id'),
+                    invoiceid=invoice,
+                )
+
+                # Step 7: Create passengers based on passenger data
                 for passenger in passengers_data:
                     models.MmsPassenger.objects.create(
                         groupid=group,
@@ -2492,34 +2527,10 @@ class MmsBookingConfirmSerializer(serializers.ModelSerializer):
                         emergencycontactnumber=passenger['emergency_contact']['number'],
                     )
 
-                # Handle payment and invoice creation (only if payment was successful)
-                if payment_status == 'succeeded':
-                    total_amount = payment_amount
-
-                    # Create an invoice for the booking
-                    invoice = models.MmsInvoice.objects.create(
-                        invoicedate=timezone.now(),
-                        totalamount=total_price,
-                        paymentstatus='Paid',  # Since payment is succeeded
-                        duedate=timezone.now() + timezone.timedelta(days=15),  # Assuming due date is 15 days after partial payment
-                        bookingid=booking,
-                        dueamount=total_price-total_amount,
-                    )
-
-                    # Create a payment detail record
-                    models.MmsPaymentDetail.objects.create(
-                        paymentdate=payment_time,
-                        paymentamount=payment_amount,
-                        paymentmethod=payment_method,
-                        transactionid=payment_intent_id,  # Using payment_intent_id from session
-                        invoiceid=invoice,
-                    )
-
                 return booking
         except Exception as e:
             # In case of any exception, transaction will be rolled back
-            print(f"Error occurred during booking creation: {str(e)}")
-            raise serializers.ValidationError("An error occurred while processing the booking.")
+            raise serializers.ValidationError(f"Error occurred during booking creation: {str(e)}")
 
 class MmsBookingCancellationSerializer(serializers.Serializer):
     """

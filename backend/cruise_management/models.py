@@ -8,7 +8,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
 
@@ -142,7 +141,7 @@ class MmsBooking(models.Model):
     bookingstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Status of the booking, e.g., "Confirmed," "Pending," "Canceled." Assists with management tracking.')
     groupid = models.ForeignKey('MmsGroup', models.DO_NOTHING, db_column='groupid', db_comment='Unqiue identifier for every group')
     tripid = models.ForeignKey('MmsTrip', models.DO_NOTHING, db_column='tripid', db_comment='Primary key for each trip. Unique identifier for each trip entry.')
-    userid = models.ForeignKey(AuthUser, models.DO_NOTHING, db_column='userid')
+    userid = models.ForeignKey(User, models.DO_NOTHING, db_column='userid')
     cancellationdate = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -153,6 +152,7 @@ class MmsBooking(models.Model):
 class MmsBookingPackage(models.Model):
     bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid')
     packageid = models.ForeignKey('MmsPackage', models.DO_NOTHING, db_column='packageid')
+    quantity = models.IntegerField()
 
     class Meta:
         managed = False
@@ -174,9 +174,11 @@ class MmsInvoice(models.Model):
     invoicedate = models.DateTimeField(db_comment='Date when the invoice was generated. Important for tracking billing and payment cycles.')
     totalamount = models.DecimalField(max_digits=8, decimal_places=2, db_comment='Total amount billed on the invoice ')
     paymentstatus = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Indicates whether the invoice is "Paid," "Unpaid," or "Overdue." Tracks financial status.')
-    duedate = models.DateTimeField(db_comment='Date by which the payment should be completed. Ensures timely collection.')
     bookingid = models.ForeignKey(MmsBooking, models.DO_NOTHING, db_column='bookingid', db_comment='Unique identifier for every booking')
-    dueamount = models.DecimalField(max_digits=8, decimal_places=2)
+    firstname = models.CharField(max_length=50)
+    lastname = models.CharField(max_length=50)
+    phonenumber = models.CharField(max_length=15)
+    email = models.CharField(max_length=100)
 
     class Meta:
         managed = False
@@ -200,7 +202,7 @@ class MmsPassenger(models.Model):
     lastname = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment="Stores the passenger's last name")
     dateofbirth = models.DateTimeField(db_comment="Hold's the passenger's birth date")
     gender = models.CharField(max_length=1, db_collation='utf8mb4_unicode_ci', db_comment='Captures the gender of the passenger')
-    contactnumber = models.CharField(max_length=10, db_collation='utf8mb4_unicode_ci', db_comment='A primary phone number to reach the passenger for notifications, emergencies, or updates related to their trip.')
+    contactnumber = models.CharField(max_length=15, db_collation='utf8mb4_unicode_ci', db_comment='A primary phone number to reach the passenger for notifications, emergencies, or updates related to their trip.')
     emailaddress = models.CharField(max_length=100, db_collation='utf8mb4_unicode_ci', db_comment='Stores the passengerΓö£├ä╬ô├ç┬úΓö£├ó╬ô├ç├¡Γö£├ó╬ô├ç├┤s email address for electronic communication, including booking confirmations and promotional materials.')
     streetaddr = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment="The street address of the passenger's primary residence, used for correspondence and identification purposes.")
     city = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment="Represents the passenger's residential address. This could be useful for billing, mailing tickets, or other physical correspondence.")
@@ -210,7 +212,7 @@ class MmsPassenger(models.Model):
     nationality = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment="Records the passenger's nationality, which may be relevant for certain legal or travel restrictions.")
     passportnumber = models.CharField(max_length=20, db_collation='utf8mb4_unicode_ci', db_comment='Stores the passport number, useful for international cruise trips where passport details are required for customs and immigration checks.')
     emergencycontactname = models.CharField(max_length=50, db_collation='utf8mb4_unicode_ci', db_comment='The name of a designated emergency contact who can be notified if needed.')
-    emergencycontactnumber = models.CharField(max_length=10, db_collation='utf8mb4_unicode_ci', db_comment='The contact number for the emergency contact, ensuring quick reachability in case of emergencies during the trip.')
+    emergencycontactnumber = models.CharField(max_length=15, db_collation='utf8mb4_unicode_ci', db_comment='The contact number for the emergency contact, ensuring quick reachability in case of emergencies during the trip.')
     groupid = models.ForeignKey(MmsGroup, models.DO_NOTHING, db_column='groupid', db_comment='Unqiue identifier for every group')
 
     class Meta:

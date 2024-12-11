@@ -1,13 +1,13 @@
-from xml.dom import ValidationErr
-from jsonschema import ValidationError
-import stripe
+import re
+import uuid
+import random
 from . import models
 from decimal import Decimal
+from datetime import datetime
 from django.http import Http404
-from django.conf import settings
-from django.utils import timezone
 from django.db.models import Count
 from . import filters, serializers
+from django.utils.timezone import now
 from django.core.mail import send_mail
 from . permissions import IsAdminOrStaff
 from rest_framework.views import APIView
@@ -2710,21 +2710,23 @@ class MmsAddPackageView(APIView):
             return Response({"error": "No passengers added yet."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create a list if it doesn't exist in the session
-        if 'packages' not in request.session:
+        if not 'packages' in request.session:
             request.session['packages'] = []
+        
 
         # Validate the package data
         serializer = serializers.MmsTripPackageAddSerializer(data=request.data, context={'num_passengers': num_passengers})
         if serializer.is_valid():
             # Add the validated package data to the session
             package_data = serializer.validated_data
-            request.session['packages'].extend([{
-                'package_id': package['packageid'],  # Store the package_id
+            print(package_data)
+            request.session['packages'] = [{
+                'package_id': package['packageid'],
                 'package_name': package['packagename'],
                 'quantity': package['quantity'],
-            } for package in package_data['packages']])
+            } for package in package_data['packages']]
             request.session.modified = True  # Ensure the session is updated
-
+            print(request.session.get('packages'))
             return Response({"message": "Package added to session.", "package_data": package_data}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -2741,7 +2743,7 @@ class MmsBookingSummaryView(APIView):
         """
         Handle GET request to display booking summary.
         """
-
+        tripid_from_url = kwargs.get('tripid')
         # Retrieve details from session
         trip_details = request.session.get('trip_details', {})
         booking_details = request.session.get('booking_details', {})
@@ -2749,10 +2751,16 @@ class MmsBookingSummaryView(APIView):
         passengers = request.session.get('passengers', [])
         package_selections = request.session.get('packages', [])
 
+        
         # Validate session data existence
         if not trip_details or not booking_details or not room_selection_details or not passengers:
             return Response({"error": "Missing essential booking details."}, status=status.HTTP_400_BAD_REQUEST)
 
+        tripid_from_session = trip_details.get('trip_id')
+        
+        if (tripid_from_url) != (tripid_from_session):
+            return Response({"error": "Trip ID mismatch between session and URL."}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Retrieve room selections and reserved rooms
         room_selections = room_selection_details.get('room_selections', [])
         reserved_rooms = room_selection_details.get('reserved_rooms', [])
@@ -2764,7 +2772,7 @@ class MmsBookingSummaryView(APIView):
             return Response({"error": "No passengers added yet."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Calculate the total price
-        total_price = self.calculate_total_price(room_selections, reserved_rooms, package_selections, trip_details, num_passengers)
+        total_price = self.calculate_total_price(room_selections, reserved_rooms, package_selections, trip_details, num_passengers, passengers)
 
         # Store the total price in session for use in payment API
         request.session['total_price'] = str(total_price)
@@ -2781,12 +2789,27 @@ class MmsBookingSummaryView(APIView):
 
         return Response(summary, status=status.HTTP_200_OK)
 
-    def calculate_total_price(self, room_selections, reserved_rooms, package_selections, trip_details, num_passengers):
+    def calculate_total_price(self, room_selections, reserved_rooms, package_selections, trip_details, num_passengers, passengers):
         """
         Calculate the total price based on room selections, package selections, and trip details.
         """
         total_room_price = Decimal('0.00')
         total_package_price = Decimal('0.00')
+
+        # Current date
+        current_date = datetime.now()
+
+        # Calculate chargeable passengers based on age (greater than 5 years)
+        def calculate_age(dob):
+            dob_date = datetime.strptime(dob, "%Y-%m-%d")
+            return current_date.year - dob_date.year - ((current_date.month, current_date.day) < (dob_date.month, dob_date.day))
+
+        #print(passengers)
+        # Filter passengers older than 5 years
+        chargeable_passengers = [
+            p for p in passengers if calculate_age(p["date_of_birth"]) > 5
+        ]
+        num_chargeable_passengers = len(chargeable_passengers)
 
         # Get cost per person from trip details
         cost_per_person = Decimal(trip_details.get("trip_cost_per_person", 0))
@@ -2800,6 +2823,11 @@ class MmsBookingSummaryView(APIView):
                 room_price = Decimal(matching_room.get('dynamic_price', 0))
                 total_room_price += room_price * num_rooms
 
+        # Reduce room price proportionally for passengers aged 5 and below
+        total_passengers = len(passengers)
+        if total_passengers > 0:
+            total_room_price *= Decimal(num_chargeable_passengers) / Decimal(total_passengers)
+
         # Calculate total package price
         available_packages = trip_details.get('available_packages', [])
         for package in package_selections:
@@ -2810,8 +2838,8 @@ class MmsBookingSummaryView(APIView):
                 package_price = Decimal(package_details['price'])
                 total_package_price += package_price * quantity
 
-        # Total cost: room price + package price + per person cost
-        total_price = total_room_price + total_package_price + (cost_per_person * num_passengers)
+        # Total cost: room price + package price + per person cost for chargeable passengers
+        total_price = total_room_price + total_package_price + (cost_per_person * num_chargeable_passengers)
 
         return total_price
 
@@ -2835,90 +2863,122 @@ class MmsPaymentDetailView(APIView):
     
 class MmsPaymentStatusView(APIView):
     """
-    Check the status of the payment using Stripe PaymentIntent ID.
+    Simulate and return payment status dynamically with basic validation for payment details.
     """
 
-    def get(self, request, payment_intent_id, *args, **kwargs):
-        try:
-            # Fetch the PaymentIntent from Stripe
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-
-            # Check the payment status
-            if payment_intent.status == 'succeeded':
-                # Store payment details in the session
-                request.session['payment_status'] = 'succeeded'
-                request.session['payment_intent_id'] = payment_intent.id  # Transaction ID
-                request.session['payment_time'] = payment_intent.created  # Payment time in UNIX timestamp
-                request.session['payment_amount'] = payment_intent.amount_received / 100.0  # Convert to dollars
-                request.session['payment_method'] = payment_intent.charges.data[0].payment_method_details.card.brand  # Payment method (Card type)
-                return Response({'status': 'succeeded'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'status': payment_intent.status}, status=status.HTTP_200_OK)
-
-        except stripe.error.StripeError as e:
-            # Handle Stripe errors
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            # Handle other errors
-            return Response({'error': 'An error occurred while checking payment status'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-class MmsBookingView(APIView):
-    """
-    View to handle booking creation.
-    """
-
-    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
-    
     def post(self, request, *args, **kwargs):
         """
-        Handle POST request to create a booking.
-        This view expects data to be passed as part of the request body,
-        and the session will be used to retrieve additional details for booking creation.
+        Process payment details and validate the input.
         """
-        serializer = serializers.MmsBookingConfirmSerializer(data=request.data, context={'request': request})
+        payment_data = request.data
+
+        # Extract payment details from the request
+        first_name = payment_data.get('first_name', '').strip()
+        last_name = payment_data.get('last_name', '').strip()
+        email = payment_data.get('email', '').strip()
+        phone = payment_data.get('phone', '').strip()
+        card_number = payment_data.get('card_number', '').strip()
+        card_cvv = payment_data.get('card_cvv', '').strip()
+        card_expiry = payment_data.get('card_expiry', '').strip()
         
+        amount = request.session.get('total_price', None)
+        # Basic validation
+        errors = {}
+        if not first_name:
+            errors['first_name'] = "First name is required."
+        if not last_name:
+            errors['last_name'] = "Last name is required."
+        if not email or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            errors['email'] = "A valid email address is required."
+        if not phone or not re.fullmatch(r'\+?[1-9]\d{1,14}', phone):
+            errors['phone'] = "A valid phone number with at least 10 digits is required."
+        if not card_number or not card_number.isdigit() or len(card_number) not in [13, 16, 19]:
+            errors['card_number'] = "A valid card number with 13, 16, or 19 digits is required."
+        if not card_cvv or not card_cvv.isdigit() or len(card_cvv) not in [3, 4]:
+            errors['card_cvv'] = "A valid CVV with 3 or 4 digits is required."
+        if not card_expiry or not re.match(r"^(0[1-9]|1[0-2])\/\d{2}$", card_expiry):
+            errors['card_expiry'] = "A valid card expiry date in MM/YY format is required."
+
+        if errors:
+            return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Simulate payment success/failure logic
+        is_success = random.choice([True, False])  # Simulates payment success/failure
+        if is_success:
+            request.session['payment_details'] = {
+                "transaction_id": f"{uuid.uuid4()}",
+                "payment_time": int(now().timestamp()),
+                "payment_amount": amount,  # Use the amount sent from frontend
+                "payment_method": "SimulatedCard"  # Example payment method
+            }
+            payment_details = { 
+                "status": "succeeded"  
+            }
+            return Response(payment_details, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"status": "failed", "reason": "Payment processing failed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+class MmsPaymentSucceededView(APIView):
+    """
+    View to handle booking creation after a successful payment.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST request to create a booking after payment succeeds.
+        """
+        
+        # Extract session data
+        session_data = request.session
+        
+        # Extract necessary session details
+        trip_id = session_data.get('trip_details', {}).get('trip_id')
+        package_selection = session_data.get('packages', [])
+        reserved_rooms = session_data.get('room_selection_details', {}).get('reserved_rooms', [])
+        passengers_data = session_data.get('passengers', [])
+        number_of_passengers = session_data.get('booking_details', {}).get('number_of_passengers')
+        total_price = session_data.get('total_price')
+        payment_details = session_data.get('payment_details', {})
+        
+        #print(trip_id, package_selection, reserved_rooms, passengers_data, number_of_passengers, total_price, payment_details)
+
+        # Check if all required session data is present
+        if not all([trip_id, package_selection, reserved_rooms, passengers_data, total_price, payment_details]):
+            return Response({"error": "Missing session data for booking."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create a dictionary with the extracted session data
+        booking_data = {
+            'trip_id': trip_id,
+            'package_selection': package_selection,
+            'reserved_rooms': reserved_rooms,
+            'passengers_data': passengers_data,
+            'number_of_passengers': number_of_passengers,
+            'total_price': total_price,
+            'payment_details': payment_details
+        }
+
+        print(booking_data)
+        # Pass session data as actual input data (not context)
+        serializer = serializers.MmsBookingConfirmSerializer(data=booking_data, context={'request': request})
+
         if serializer.is_valid():
+          
             # The serializer handles the creation and transaction inside the create method
             booking = serializer.save()  # This triggers the create() method in the serializer
-            
+
             # Return a successful response with the booking details
             return Response({
                 "message": "Booking created successfully",
                 "booking_id": booking.bookingid
             }, status=status.HTTP_201_CREATED)
-        
+            
+
         # If validation fails, return an error response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class MmsBookingCancellationView(generics.GenericAPIView, mixins.UpdateModelMixin):
-    """
-    View to handle booking cancellation.
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def update(self, request, *args, **kwargs):
-        # Extract the booking ID from URL kwargs
-        bookingid = kwargs.get('bookingid')
-
-        # Attach the bookingid to the data for the serializer
-        data = {"bookingid": bookingid}
-        serializer = serializers.MmsBookingCancellationSerializer(data=data, context={'request': request})
-
-        if serializer.is_valid():
-            try:
-                # Call cancel_booking which will handle the cancellation logic
-                booking = serializer.cancel_booking()
-                return Response(
-                    {"message": "Booking canceled successfully.", "bookingid": booking.bookingid},
-                    status=status.HTTP_200_OK
-                )
-            except Exception as e:
-                return Response(
-                    {"error": "An error occurred while canceling the booking.", "details": str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MmsUserBookingsListView(generics.ListAPIView):
