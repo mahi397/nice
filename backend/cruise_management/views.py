@@ -2131,7 +2131,7 @@ class MmsUserCreateView(generics.CreateAPIView):
         send_mail(
             subject="Welcome to NICE",
             message="Thank you for registering with NICE!",
-            from_email="noreply@nice.com",
+            from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
             fail_silently=True,
         )
