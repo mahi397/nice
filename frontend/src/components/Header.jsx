@@ -5,19 +5,13 @@ import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import cruiselogo from '../assets/cruiselogo.png';
 // import cruiselogo from '../assets/white-ship-2.png';
+import { FaRegUserCircle } from "react-icons/fa";
 
 const isLoggedIn = () => {
   return localStorage.getItem('token') ? true : false; // Check if token exists in localStorage
 };
 
 function Header() {
-
-  // const [isModalVisible, setIsModalVisible] = useState(false);
-
-  // const toggleModal = () => {
-  //   setIsModalVisible(isModalVisible => !isModalVisible);
- // }
-
  const [isAuthenticated, setIsAuthenticated] = useState(false);
  const [dropdownOpen, setDropdownOpen] = useState(false); // To control the dropdown visibility
   
@@ -64,12 +58,11 @@ function Header() {
           {isAuthenticated ? (
             <div className="profile-dropdown" onClick={toggleDropdown}>
               <div className="profile-circle">
-                {/* Display user profile image or initials */}
+                <FaRegUserCircle size={30} />
               </div>
-              {/* Dropdown menu */}
               {dropdownOpen && (
                 <div className="dropdown-content">
-                  <Link to="/profile">My Profile</Link>
+                  <Link to="/nice/profile">My Profile</Link>
                   <button onClick={handleLogout}>Logout</button>
                 </div>
               )}

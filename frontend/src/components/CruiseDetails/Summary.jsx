@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { IoLocationSharp } from "react-icons/io5";
 import { getStartBookingURL } from "../Booking/booking_api";
 import axios from "axios";
+import moment from "moment";
 
 const handleBookingClick = async (tripid) => {
   console.log("Book Now button clicked");
@@ -22,12 +23,17 @@ const handleBookingClick = async (tripid) => {
   }
 };
 
-const WideCard = ({ tripid }) => {
-  const leftHeading =
-    "8-Day The Bahamas from Manhattan, New York City, NY".toUpperCase();
+const WideCard = ({ cruise }) => {
+  console.log("CRUISE:", cruise);
+  // const leftHeading = "8-Day The Bahamas from Manhattan, New York City, NY".toUpperCase();
+  const leftHeading = cruise.tripname.toUpperCase();
   const leftParagraph1 =
     "Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City";
-  const leftParagraph2 = "Wed Jul 1, 2026 - Thu Jul 9, 2026";
+  // const leftParagraph2 = "Wed Jul 1, 2026 - Thu Jul 9, 2026";
+  const formattedStartDate = moment(cruise.startdate).format('ddd MMM D, YYYY');
+  const formattedEndDate = moment(cruise.enddate).format('ddd MMM D, YYYY');
+  const leftParagraph2 = `${formattedStartDate} - ${formattedEndDate}`;
+
 
   console.log("Summary Card rendered");
   return (
@@ -47,13 +53,13 @@ const WideCard = ({ tripid }) => {
       {/* Right Section (20%) */}
       <div style={styles.rightSection}>
         <p style={styles.fromText}>From</p>
-        <p style={styles.priceText}>$979*</p>
-        <p style={styles.priceDescription}>average per person, 2 person room</p>
+        <p style={styles.priceText}>{cruise.tripcostperperson}*</p>
+        <p style={styles.priceDescription}>average per person</p>
 
         {/* Book Now Button */}
         <button
           style={styles.bookNowButton}
-          onClick={() => handleBookingClick(tripid)}
+          onClick={() => handleBookingClick(cruise.tripid)}
         >
           <Link to={"/booking"}>BOOK NOW</Link>
         </button>

@@ -12,8 +12,10 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import CruiseDetails from "./components/CruiseDetails/CruiseDetails";
 import Booking from "./components/Booking/Booking";
+import Booking2 from "./components/Booking/Booking2";
 
-import BookingSummary from "./components/Booking/BookingSummary";
+import AddPassengers from "./components/Booking/AddPassengers";
+import ReviewBooking from "./components/Booking/ReviewBooking";
 import Checkout from './components/Booking/Checkout';
 
 function App() {
@@ -40,10 +42,12 @@ function App() {
             />
 
             {/* <Route path="/admin/dashboard" element={<AdminDash />} /> */}
-            <Route path="/cruise-details" element={<CruiseDetails tripid={56}/>} />
+            <Route path="/cruisedetails/:tripid" element={<CruiseDetails/>} />
 
-            <Route path="/booking" element={<Booking />} />
-            <Route path="/booking-summary" element={<BookingSummary />} />
+            {/* <Route path="/booking" element={<Booking />} /> */}
+            <Route path="/booking" element={<Booking2 />} />
+            <Route path="/addpassengers" element={<AddPassengers />} />
+            <Route path="/reviewbooking" element={<ReviewBooking />} />
             <Route path="/payment-page" element={<Checkout />}></Route>
           </Routes>
         </Router>

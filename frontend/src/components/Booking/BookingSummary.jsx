@@ -1,100 +1,89 @@
-import React, { useState } from "react";
-import "./booking.css";
-import bahamas from "../../assets/bahamas.webp";
-import "../CruiseDetails/cruise.css";
-import BgImage from '../CruiseDetails/BgImage';
-import Summary from '../CruiseDetails/Summary';
-import RoomInfoCard from '../Booking/RoomInfoCard';
-import ItinerarySummaryCard from '../Booking/ItinerarySummaryCard';
-import PaymentSummaryCard from "./PaymentSummaryCard";
-import HeaderLoggedIn from '../HeaderLoggedIn';
+import React from 'react';
+import './booking.css'; // Assuming you have a CSS file for styling
 
-
-const ReviewBooking = () => {
-
-    const room = 
-        {
-            number: 108,
-            location: "Stern",
-            category: "Interior",
-            image: "https://via.placeholder.com/392x220.png?text=Room+101",
-            amenities: [
-              "Two twin beds",
-              "Desk and seat",
-              "Full bathroom with shower",
-              "Ample closet space",
-            ],
-          }
-    
+const BookingSummary = ({ bookingDetails }) => {
+  const {
+    referenceNumber,
+    passengerName,
+    tripName,
+    startDate,
+    endDate,
+    totalGuests,
+    stateroomType,
+    totalPrice,
+    paymentMethod,
+    packagesIncluded,
+  } = bookingDetails;
 
   return (
-    // <div className="review-booking-container">
-    //   {/* Left Section */}
-    //   <div className="left-section">
-    //     <div className="card itinerary-card">
-    //       <div
-    //         className="itinerary-image"
-    //         style={{ backgroundImage: {bahamas} }}
-    //       ></div>
-    //       <div className="itinerary-text">
-    //         <h3>8-Day The Bahamas from Manhattan, New York City, NY</h3>
-    //         <p>Wed Jul 1, 2026 - Thu Jul 9, 2026</p>
-    //         <p>Ship: Carnival Venezia</p>
-    //       </div>
-    //     </div>
+    <div className="booking-summary-container">
+      <header className="booking-summary-header">
+        <h1>Thank You for Your Booking!</h1>
+        <p>Your cruise adventure awaits!</p>
+      </header>
 
-    //     <div className="booking-card room-card">
-    //       <div
-    //         className="room-image"
-    //         style={{ backgroundImage: `url('https://via.placeholder.com/436x574')` }}
-    //       ></div>
-    //       <div className="room-text">
-    //         <h3>Room Information</h3>
-    //         <p>Interior Upper/Lower - 1 Room, 2 Guests - $2,008.00</p>
-    //       </div>
-    //     </div>
-    //   </div>
+      <section className="booking-reference-section">
+        <h2>Booking Reference</h2>
+        <p className="reference-number">{referenceNumber}</p>
+      </section>
 
-    //   {/* Right Section */}
-    //   <div className="right-section">
-    //     <div className="booking-card payment-card">
-    //       <div className="payment-details">
-    //         <h3>Payment Summary</h3>
-    //         <p>8-Day The Bahamas from Manhattan, New York City, NY</p>
-    //         <p>Wed Jul 1, 2026 - Thu Jul 9, 2026</p>
-    //         <p>Ship: Carnival Venezia</p>
-    //         <hr />
-    //         <p>Room 1: $2,008.00</p>
-    //         <p>Guest 1 Total: $1,004.00</p>
-    //         <p>Guest 2 Total: $1,004.00</p>
-    //         <p>Total: $2,008.00</p>
-    //       </div>
-    //       <button className="checkout-button">
-    //         Review and Pay
-    //       </button>
-    //     </div>
-    //   </div>
+      <section className="booking-details-section">
+        <h2>Booking Details</h2>
+        <ul>
+          <li><strong>Passenger Name:</strong> {passengerName}</li>
+          <li><strong>Trip Name:</strong> {tripName}</li>
+          <li><strong>Start Date:</strong> {startDate}</li>
+          <li><strong>End Date:</strong> {endDate}</li>
+          <li><strong>Total Guests:</strong> {totalGuests}</li>
+          <li><strong>Stateroom Type:</strong> {stateroomType}</li>
+        </ul>
+      </section>
 
-    // </div>
-<>
-<HeaderLoggedIn />  
-<div className="booking-summary-container">
-      <div className="booking-summary-left">
-      <h1 style={{color: 'black', fontFamily: 'Bebas Neue', }}>BOOKING SUMMARY</h1>
-      <br />
-        <ItinerarySummaryCard />
-        <br />
-        {/* <br /> */}
-        <h2 style={{fontFamily: 'Bebas Neue', fontSize: '35px'}}>ROOM SELECTED</h2>
-        <RoomInfoCard room={room}/>
-      </div>
-      <div className="booking-summary-right">
-        <PaymentSummaryCard />
-      </div>
+      <section className="payment-summary-section">
+        <h2>Payment Summary</h2>
+        <ul>
+          <li><strong>Total Price:</strong> ${totalPrice}</li>
+          <li><strong>Payment Method:</strong> {paymentMethod}</li>
+        </ul>
+      </section>
+
+      <section className="packages-included-section">
+        <h2>Packages Included</h2>
+        {packagesIncluded.length > 0 ? (
+          <ul>
+            {packagesIncluded.map((pkg, index) => (
+              <li key={index}>{pkg}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>No additional packages included.</p>
+        )}
+      </section>
+
+      <footer className="booking-summary-footer">
+        <p>If you have any questions, feel free to contact our support team.</p>
+        <button className="btn btn-primary" onClick={() => window.print()}>Print This Page</button>
+      </footer>
     </div>
-</>
-    
   );
 };
 
-export default ReviewBooking;
+export default BookingSummary;
+
+// Sample Usage
+// import BookingSummary from './BookingSummary';
+// 
+// const sampleBookingDetails = {
+//   referenceNumber: 'ABC123456',
+//   passengerName: 'John Doe',
+//   tripName: 'Caribbean Explorer',
+//   startDate: '2024-12-25',
+//   endDate: '2025-01-01',
+//   totalGuests: 4,
+//   stateroomType: 'Ocean View Suite',
+//   totalPrice: 3599.99,
+//   paymentMethod: 'Credit Card',
+//   packagesIncluded: ['Water and Non-Alcoholic Package', 'Unlimited Internet Package'],
+// };
+// 
+// <BookingSummary bookingDetails={sampleBookingDetails} />

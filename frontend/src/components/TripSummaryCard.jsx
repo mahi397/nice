@@ -4,13 +4,19 @@ import { IoLocationSharp } from "react-icons/io5";
 import landing1 from '../assets/landing1.jpg';
 import landing2 from '../assets/landing2.jpg';
 import landing3 from '../assets/landing3.jpg';
+import moment from 'moment'
 
 const WideCard = (trip) => {
-    console.log(trip);
+    console.log("TRIP:", trip.trip);
     // const { id, name, startPort, endPort, startMonth, startDate, endDate, description, duration, imageUrl } = trip;
-  const leftHeading = trip.data.name.toUpperCase();
+  const leftHeading = trip.trip.tripname.toUpperCase();
   const leftParagraph1 = 'Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City';
-  const leftParagraph2 = "Wed Jul 1, 2025 - Thu Jul 9, 2025";
+  // const leftParagraph2 = "Wed Jul 1, 2025 - Thu Jul 9, 2025";
+  const formattedStartDate = moment(trip.trip.startdate).format('ddd MMM D, YYYY');
+  const formattedEndDate = moment(trip.trip.enddate).format('ddd MMM D, YYYY');
+  const leftParagraph2 = `${formattedStartDate} - ${formattedEndDate}`;
+
+  // const leftParagraph2 = `${trip.trip.startdate} - ${trip.trip.enddate}`;
 
   console.log('trip Summary Card rendered');
   return (
@@ -29,12 +35,12 @@ const WideCard = (trip) => {
       {/* Right Section (20%) */}
       <div style={styles.rightSection}>
         {/* <p style={styles.fromText}>From</p> */}
-        <p style={styles.priceText}>${trip.data.price}</p>
+        <p style={styles.priceText}>${trip.trip.tripcostperperson}</p>
         <p style={styles.priceDescription}>average per person, 2 person room</p>
 
         {/* Book Now Button */}
         <button style={styles.bookNowButton}>
-            <Link to={'/cruise-details'}>VIEW ITINERARY</Link></button>
+            <Link to={`/cruisedetails/${trip.trip.tripid}`}>VIEW ITINERARY</Link></button>
       </div>
     </div>
   );

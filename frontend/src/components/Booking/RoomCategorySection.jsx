@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import RoomCategoryCard from "./RoomCategoryCard";
 
-export default function RoomCategorySection() {
+export default function RoomCategorySection({onContinue}) {
   const [selectedCardId, setSelectedCardId] = useState(null);
 
   // Set the selected card
@@ -67,6 +67,7 @@ export default function RoomCategorySection() {
   ];
 
   return (
+    <div>
     <div className="room-category-section">
       <h2 style={{ marginTop: "50px" }}>Select Room Category</h2>
       {categories.map((category) => (
@@ -78,6 +79,8 @@ export default function RoomCategorySection() {
           />
         </div>
       ))}
+    </div>
+    <button onClick={onContinue}>CONTINUE</button>
     </div>
   );
 }

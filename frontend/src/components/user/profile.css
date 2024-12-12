@@ -1,0 +1,76 @@
+
+.profile-page {
+    height: 100%;
+    width: 100vw;
+    padding: 20px;
+    background-color: #f4f4f9;
+    color: black;
+  }
+  
+  .section-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .user-details {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .user-info p {
+    font-size: 16px;
+    margin: 10px 0;
+  }
+  
+  .user-bookings {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tabs {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+  }
+  
+  .tab-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    /* background-color: #f4f4f9; */
+    cursor: pointer;
+  }
+  
+  .tab-button.active {
+    border-bottom: 2px solid #007bff;
+  }
+  
+  .tab-content {
+    display: none;
+  }
+  
+  .tab-content.active {
+    display: block;
+  }
+  
+  .hidden {
+    display: none;
+  } 
+  
+  /* Media Queries */
+  @media (max-width: 768px) {
+    .user-info p {
+      font-size: 14px;
+    }
+    .tab-button {
+      font-size: 14px;
+    }
+  } 
+  

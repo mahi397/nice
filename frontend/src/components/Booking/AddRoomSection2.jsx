@@ -1,27 +1,26 @@
-/** This is the Add Room page */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa";
-import RoomCategoryCard from "./RoomCategoryCard";
-import RoomLocCard from "./RoomLocCard";
-import RoomCategorySection from "./RoomCategorySection";
-import RoomLocationSection from "./RoomLocationSection";
-import RoomNumberSection from "./RoomNumberSection";
-import PackageSelection from "./PackageSelection";
+import axios from "axios";
+import { getTripCapacityReserveURL } from "./booking_api";
 
-const App = () => {
-  // State to track rooms and guests for each room
-  const [rooms, setRooms] = useState([
-    { id: 1, guests: 2 }, // Initial room with 2 guests
-  ]);
+const AddRoomSection = ({ rooms, setRooms }) => {
+  const [bookingData, setBookingData] = useState(null);
 
-    // Function to add a new room
+  useEffect(() => {
+    // Retrieve bookingData from sessionStorage
+    const storedBookingData = sessionStorage.getItem("bookingData");
+    if (storedBookingData) {
+      setBookingData(JSON.parse(storedBookingData));
+    }
+    // console.log(storedBookingData);
+  }, []);
+
   const addRoom = () => {
     if (rooms.length < 4) {
       setRooms([...rooms, { id: rooms.length + 1, guests: 1 }]);
     }
   };
 
-  // Function to remove a room
   const removeRoom = (roomId) => {
     if (rooms.length > 1) {
       const updatedRooms = rooms.filter((room) => room.id !== roomId);
@@ -43,43 +42,50 @@ const App = () => {
     );
   };
 
-  // Calculate total number of guests
-  const totalGuests = rooms.reduce((total, room) => total + room.guests, 0);
+  const handleConfirm = async () => {
+    if (!bookingData) {
+      console.error("No booking data available");
+      return;
+    }
+
+    const tripid = bookingData.trip_details.tripid;
+    const url = getTripCapacityReserveURL(tripid);
+
+    const data = {
+      rooms: rooms.map((room) => ({
+        room_number: room.id,
+        number_of_people: room.guests,
+      })),
+    };
+
+    // console.log("Data to be sent: ", data);
+
+    const token = localStorage.getItem("token"); // Assuming you have a token for authentication
+
+    try {
+      const response = await axios.patch(url, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("Patch sent successfully:", response.data);
+    } catch (error) {
+      console.error("Error sending patch:", error);
+    }
+  };
 
   return (
-    <div className="room-list-container">
-      {/* Top section containing the trip info, rooms, and guests */}
-      <div style={styles.topSection}>
-        {/* Section 1: Trip Name and Dates */}
-        <div style={styles.section}>
-          <h4 style={styles.tripName}>8-Day The Bahamas</h4>
-          <p style={styles.tripDates}>Wed Jul 1, 2026 - Thu Jul 9, 2026</p>
-        </div>
-
-        {/* Section 2: Number of Selected Rooms */}
-        <div style={styles.section}>
-          <h4 style={styles.countLabel}>Selected Rooms</h4>
-          <p style={styles.countValue}>{rooms.length}</p>
-        </div>
-
-        {/* Section 3: Number of Selected Guests */}
-        <div style={styles.section}>
-          <h4 style={styles.countLabel}>Total Guests</h4>
-          <p style={styles.countValue}>{totalGuests}</p>
-        </div>
-      </div>
-
-      {/* Room Cards */}
-
+    <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={styles.container} className="add-room-section">
-        <h2 style={{ marginTop: "50px" }}>ADD ROOMS</h2>
-        <p style={{ marginBottom: "20px" }}>
+        {/* <h2 style={{ marginTop: "50px" }}>ADD ROOMS</h2> */}
+        <p style={{ marginBottom: "25px" }}>
           You can add up to 3 rooms and up to 4 guests per room
         </p>
         {rooms.map((room) => (
           <div key={room.id} style={styles.roomCard}>
             {/* Top Section */}
-            
+
             <div style={styles.topOfCard}>
               <div style={styles.leftSection}>
                 <h3 style={styles.roomLabel}>Room {room.id}</h3>
@@ -116,8 +122,7 @@ const App = () => {
               </div>
             </div>
 
-            {/* Bottom Section */}
-            
+            {/* Add/Remove Buttons Container */}
             <div style={styles.bottomSection}>
               {rooms.length > 1 && (
                 <button
@@ -136,17 +141,11 @@ const App = () => {
           </div>
         ))}
       </div>
-      <button>CONTINUE</button>
-      
-      {/* Room Category Section */}
-       <RoomCategorySection /> 
-
-      {/* Location Section */}
-      {/* <RoomLocationSection /> */}
-
-      {/* <RoomNumberSection /> */}
-
-      <PackageSelection />
+      <div style={styles.buttonContainer}>
+        <button style={{ width: "40%" }} onClick={handleConfirm}>
+          CONFIRM
+        </button>
+      </div>
     </div>
   );
 };
@@ -156,7 +155,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    paddingTop: "20px",
+    // paddingTop: "20px"
   },
   topSection: {
     height: "92px",
@@ -220,7 +219,7 @@ const styles = {
     height: "135px",
     backgroundColor: "#fff",
     borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -292,6 +291,11 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
   },
+  buttonContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "20px", // Add some margin if needed
+  },
 };
 
-export default App;
+export default AddRoomSection;

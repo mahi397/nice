@@ -53,70 +53,81 @@ const HomePage = () => {
   ];
 
   const [trips, setTrips] = useState([]);
-  const [filteredTrips, setFilteredTrips] = useState([]);
-  const [filters, setFilters] = useState({
-    startPort: "",
-    endPort: "",
-    startDate: "",
-    endDate: "",
-    duration: "",
-  });
+  const [searchResults, setSearchResults] = useState([]);
 
-  useEffect(() => {
-    // Mock API data for the cruises
-    setTrips(mockTrips);
-    setFilteredTrips(mockTrips); // Initially display all trips
-  }, []);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
+  const handleSearchResults = (results) => {
+    setSearchResults(results);
   };
+  
+  // const [filteredTrips, setFilteredTrips] = useState([]);
+  // const [filters, setFilters] = useState({
+  //   startPort: "",
+  //   endPort: "",
+  //   startDate: "",
+  //   endDate: "",
+  //   duration: "",
+  // });
 
-  const handleSearch = () => {
-    let filtered = trips;
+  // useEffect(() => {
+  //   // Mock API data for the cruises
+  //   setTrips(mockTrips);
+  //   setFilteredTrips(mockTrips); // Initially display all trips
+  // }, []);
 
-    // Apply filters
-    if (filters.startPort) {
-      filtered = filtered.filter(
-        (trip) => trip.startPort === filters.startPort
-      );
-    }
-    if (filters.endPort) {
-      filtered = filtered.filter((trip) => trip.endPort === filters.endPort);
-    }
-    if (filters.startMonth) {
-      filtered = filtered.filter(
-        (trip) => trip.startMonth === filters.startMonth
-      );
-    }
-    if (filters.duration) {
-      filtered = filtered.filter(
-        (trip) => trip.duration === parseInt(filters.duration)
-      );
-    }
+  // const handleFilterChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFilters((prevFilters) => ({
+  //     ...prevFilters,
+  //     [name]: value,
+  //   }));
+  // };
 
-    setFilteredTrips(filtered);
-  };
+  // const handleSearch = () => {
+  //   let filtered = trips;
+
+  //   // Apply filters
+  //   if (filters.startPort) {
+  //     filtered = filtered.filter(
+  //       (trip) => trip.startPort === filters.startPort
+  //     );
+  //   }
+  //   if (filters.endPort) {
+  //     filtered = filtered.filter((trip) => trip.endPort === filters.endPort);
+  //   }
+  //   if (filters.startMonth) {
+  //     filtered = filtered.filter(
+  //       (trip) => trip.startMonth === filters.startMonth
+  //     );
+  //   }
+  //   if (filters.duration) {
+  //     filtered = filtered.filter(
+  //       (trip) => trip.duration === parseInt(filters.duration)
+  //     );
+  //   }
+
+  //   setFilteredTrips(filtered);
+  // };
 
   return (
     <div className="cruise-details">
       <Header />
       <BgImage />
       <SearchBar
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
+        // filters={filters}
+        // onFilterChange={handleFilterChange}
+        // onSearch={handleSearch}
+        handleSearchResults={handleSearchResults}
       />
       <div className="trip-container">
-        {filteredTrips.map((trip) => (
-          <div key={trip.id}>
-            <TripSummaryCard data={trip} />
+      {searchResults.length > 0 ? (
+        searchResults.map((trip, idx) => (
+          <div key={idx}>
+            <TripSummaryCard trip={trip} />
           </div>
-        ))}
+        ))
+      ) : (
+        <p>No search results found.</p>
+      )}
       </div>
     </div>
   );
