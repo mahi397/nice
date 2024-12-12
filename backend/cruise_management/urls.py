@@ -83,7 +83,7 @@ urlpatterns = [
     path('admin/trips/list',views.MmsAdminTripListView.as_view(),name = 'trip-list-view'),
     path('admin/trips/list/<int:tripid>', views.MmsAdminTripDetailView.as_view(), name='trip-detail'),
     path('admin/trips/<int:tripid>/delete', views.MmsTripDeleteView.as_view(), name='trip-delete'),
-    path('admin/trips/<int:tripid>/rooms', views.MmsRoomSummaryListView.as_view(), name='room-summary-view'),
+    path('admin/trips/<int:tripid>/rooms/', views.MmsRoomSummaryListView.as_view(), name='room-summary-view'),
     path('admin/trips/<int:tripid>/rooms/set-price', views.MmsTripRoomPriceUpdateView.as_view(), name='set-room-price'),
     path('register', views.MmsUserCreateView.as_view(), name='user-register'),
     path('login', views.MmsLoginView.as_view(), name='login'),
@@ -118,5 +118,6 @@ urlpatterns = [
     path('payment-create', views.MmsPaymentDetailView.as_view(), name='payment-page'),
     path('payment-status', views.MmsPaymentStatusView.as_view(), name='payment-status'),
     path('create-booking', views.MmsPaymentSucceededView.as_view(), name='create-booking'),
-    
+    path('my-bookings/', views.MmsUserBookingsListView.as_view(), name='list-bookings'),
+    path('my-bookings/<int:bookingid>', views.MmsUserBookingDetailView.as_view(), name='booking-detail-view'),
 ]

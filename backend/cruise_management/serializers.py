@@ -1419,7 +1419,7 @@ class MmsTripCreateSerializer(serializers.ModelSerializer):
 
         return trip
 
-class MmsRoomSummarySerializer(serializers.Serializer):
+'''class MmsRoomSummarySerializer(serializers.Serializer):
     """
     Serializer to handle the grouped room data, splitting roomtype and location details into separate dictionaries.
     """
@@ -1439,6 +1439,29 @@ class MmsRoomSummarySerializer(serializers.Serializer):
             "location": {
                 "name": instance.get("locid__location"),
                 "count": instance.get("locationcount"),
+            }
+        }'''
+        
+class MmsRoomSummarySerializer(serializers.Serializer):
+    """
+    Serializer to handle the grouped room data, splitting roomtype and location details into separate dictionaries.
+    """
+    roomtype = serializers.DictField()  # Dictionary for roomtype data
+    location = serializers.DictField()  # Dictionary for location data
+
+    def to_representation(self, instance):
+        """
+        Map the grouped dictionary to the required structure.
+        """
+        return {
+            "roomtype": {
+                "name": instance.get("roomtype"),  # Direct field, not through foreign key
+                "price": instance.get("baseprice"),  # Direct field for baseprice
+                "count": instance.get("roomtypecount"),  # Count of rooms for this room type
+            },
+            "location": {
+                "name": instance.get("location"),  # Direct field, not through foreign key
+                "count": instance.get("locationcount"),  # Count of rooms for this location
             }
         }
 
@@ -1926,7 +1949,7 @@ class MmsTripPackageBookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.MmsTripPackage
-        fields = ['packageid', 'tripid', 'package_details']
+        fields = ['packageid','package_details']
 
     def get_package_details(self, obj):
         """
@@ -1994,16 +2017,38 @@ class MmsStartBookingSerializer(serializers.Serializer):
 
     def get_available_room_categories(self, obj):
         """
-        Retrieve a distinct list of room categories available on the trip.
+        Retrieve a list of room categories available on the trip along with their details.
         """
         if not obj:
             return []
-        available_rooms = models.MmsTripRoom.objects.filter(tripid=obj.tripid,isbooked=False)
-        print(available_rooms)
+
+        # Filter available rooms for the trip
+        available_rooms = models.MmsTripRoom.objects.filter(
+            tripid=obj.tripid,
+            isbooked=False
+        )
+
+        # Clear expired locks and fetch valid rooms
         valid_rooms = self.clear_expired_locks(available_rooms)
-        #print(valid_rooms)
-        available_categories = valid_rooms.values_list('roomtype', flat=True).distinct()
-        return list(available_categories)
+
+        # Get distinct room types from valid rooms
+        room_types = valid_rooms.values_list('roomtype', flat=True).distinct()
+
+        # Fetch details for these room types from the mms_room_type table
+        room_type_details = models.MmsRoomType.objects.filter(
+            stateroomtype__in=room_types
+        ).values(
+            'stateroomtype',
+            'roomsize',
+            'numberofbeds',
+            'numberofbaths',
+            'numberofbalconies',
+            'roomtypedescription'
+        )
+
+        # Return the list of room type details
+        return list(room_type_details)
+
 
     def get_available_packages(self, obj):
         """
@@ -2464,7 +2509,7 @@ class MmsBookingConfirmSerializer(serializers.Serializer):
                 
                 trip = models.MmsTrip.objects.select_for_update().filter(tripid=trip_id).first()
                 if trip:
-                    trip.tripcapacity = F('tripcapacity') - number_of_passengers
+                    trip.tripcapacity = F('tripcapacityremaining') - number_of_passengers
                     trip.save()
 
                 # Step 3: Reserve rooms (set isbooked to True and associate with booking)
@@ -2573,7 +2618,7 @@ class MmsBookingCancellationSerializer(serializers.Serializer):
 
         return booking
     
-class MmsUserBookingSerializer(serializers.ModelSerializer):
+'''class MmsUserBookingListSerializer(serializers.ModelSerializer):
     """
     Serializer for booking summary grouped by status.
     """
@@ -2617,7 +2662,7 @@ class MmsUserBookingSerializer(serializers.ModelSerializer):
         Override to_representation to group data by status.
         """
         grouped_data = defaultdict(list)
-
+        print(instance)
         for booking in instance:
             trip_summary = {
                 "bookingid": booking.bookingid,
@@ -2632,6 +2677,48 @@ class MmsUserBookingSerializer(serializers.ModelSerializer):
             if booking.bookingstatus == "Cancelled":
                 grouped_data["cancelled"].append(trip_summary)
             elif booking.tripid.start_date > now():
+                grouped_data["upcoming"].append(trip_summary)
+            else:
+                grouped_data["past"].append(trip_summary)
+
+        return grouped_data'''
+        
+class MmsUserBookingListSerializer(serializers.Serializer):
+    
+    def get_destination(self, booking):
+        """
+        Fetch the trip destination from the PortStop table.
+        """
+        end_port = booking.tripid.portstops.filter(isendport=True).values_list('portid__portname', flat=True).first()
+        return end_port or "Unknown"  # Default to 'Unknown' if no end port is found
+    
+    def get_total_cost(self, booking):
+        """
+        Fetch total cost from the Invoice table using the totalamount field.
+        """
+        total_cost = models.MmsInvoice.objects.filter(bookingid=booking.bookingid).values_list('totalamount', flat=True).first()
+        return total_cost or 0  # Return 0 if no invoice exists
+    
+    def to_representation(self, queryset):
+        """
+        Override to_representation to group bookings by status.
+        """
+        grouped_data = defaultdict(list)
+
+        for booking in queryset:
+            trip_summary = {
+                "bookingid": booking.bookingid,
+                "tripname": booking.tripid.tripname,
+                "tripdestination": self.get_destination(booking),
+                "start_date": booking.tripid.startdate,
+                "end_date": booking.tripid.enddate,
+                "total_cost": self.get_total_cost(booking),
+                "number_of_passengers": booking.groupid.count,
+            }
+
+            if booking.bookingstatus == "Cancelled":
+                grouped_data["cancelled"].append(trip_summary)
+            elif booking.tripid.startdate > now().date():
                 grouped_data["upcoming"].append(trip_summary)
             else:
                 grouped_data["past"].append(trip_summary)
@@ -2693,12 +2780,12 @@ class MmsBookingPaymentDetailSerializer(serializers.ModelSerializer):
         model = models.MmsPaymentDetail
         fields = ['paymentdate', 'paymentamount', 'paymentmethod', 'transactionid', 'invoiceid']
 
-class MmsBookingDetailSerializer(serializers.ModelSerializer):
+'''class MmsBookingDetailSerializer(serializers.ModelSerializer):
     """
     Serializer to provide detailed information about a single booking.
     """
 
-    tripid = serializers.SerializerMethodField()
+    tripname = serializers.SerializerMethodField()
     passengers = MmsBookingPassengerSerializer(many=True)
     rooms = MmsBookingRoomSerializer(many=True)
     packages = MmsBookingPackageSerializer(many=True)
@@ -2710,7 +2797,7 @@ class MmsBookingDetailSerializer(serializers.ModelSerializer):
             'bookingid',
             'bookingdate',
             'bookingstatus',
-            'trip_name',  # Example of additional fields
+            'tripname',  # Example of additional fields
             'total_cost',
             'number_of_passengers',
             'passengers',
@@ -2723,3 +2810,74 @@ class MmsBookingDetailSerializer(serializers.ModelSerializer):
     def get_trip_name(self, obj):
         return obj.tripid.tripname  # Adjust field names based on your model
 
+'''
+
+class MmsBookingDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer to provide detailed information about a single booking with custom representation.
+    """
+
+    bookingid = serializers.IntegerField()
+    bookingdate = serializers.SerializerMethodField()
+    bookingstatus = serializers.CharField()
+    tripname = serializers.SerializerMethodField()
+    totalamount = serializers.SerializerMethodField()
+    tripdestination = serializers.SerializerMethodField()
+    number_of_passengers = serializers.SerializerMethodField()
+    passengers = MmsBookingPassengerSerializer(many=True)
+    rooms = MmsBookingRoomSerializer(many=True)
+    packages = MmsBookingPackageSerializer(many=True)
+    payment_details = MmsBookingPaymentDetailSerializer(many=True)
+
+    def get_bookingdate(self, obj):
+        if obj.bookingdate:
+            return obj.bookingdate.date()
+        return None
+
+    def get_tripname(self, obj):
+        return obj.tripid.tripname
+
+    def get_totalamount(self, obj):
+        total_cost = models.MmsInvoice.objects.filter(bookingid=obj.bookingid).values_list('totalamount', flat=True).first()
+        return total_cost or 0
+
+    def get_tripdestination(self, obj):
+        end_port = obj.tripid.portstops.filter(isendport=True).values_list('portid__portname', flat=True).first()
+        return end_port or "Unknown"
+
+    def get_number_of_passengers(self, obj):
+        return obj.groupid.count
+
+    def get_passengers(self, obj):
+        passengers = obj.groupid.mmspassenger_set.all()
+        return MmsBookingPassengerSerializer(passengers, many=True).data
+
+    def get_payment_details(self, obj):
+        """
+        Fetch payment details related to this booking.
+        We filter the payment details by the booking's invoiceid.
+        """
+        payment_details = models.MmsPaymentDetail.objects.filter(invoiceid__bookingid=obj.bookingid)
+        return MmsBookingPaymentDetailSerializer(payment_details, many=True).data
+    
+    def to_representation(self, instance):
+        """
+        Represent details of a single booking.
+        """
+        trip_summary = {
+            "bookingid": instance.bookingid,
+            "tripname": self.get_tripname(instance),
+            "tripdestination": self.get_tripdestination(instance),
+            "start_date": instance.tripid.startdate,
+            "end_date": instance.tripid.enddate,
+            "total_cost": self.get_totalamount(instance),
+            "number_of_passengers": self.get_number_of_passengers(instance),
+            "bookingstatus": instance.bookingstatus,
+            "booking_date": self.get_bookingdate(instance),
+            "passengers": self.get_passengers(instance),
+            "rooms": MmsBookingRoomSerializer(instance.mmstriproom_set.all(), many=True).data,
+            "packages": MmsBookingPackageSerializer(instance.mmsbookingpackage_set.all(), many=True).data,
+            "payment_details": self.get_payment_details(instance),
+        }
+
+        return trip_summary

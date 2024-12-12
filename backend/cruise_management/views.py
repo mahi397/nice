@@ -5,6 +5,7 @@ from . import models
 from decimal import Decimal
 from datetime import datetime
 from django.http import Http404
+from django.conf import settings
 from django.db.models import Count
 from . import filters, serializers
 from django.utils.timezone import now
@@ -17,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework import mixins, generics, status
 from django.contrib.auth import views as auth_views
+from django.template.loader import render_to_string
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -1868,7 +1870,7 @@ class MmsTripAddView(generics.GenericAPIView, mixins.CreateModelMixin):
         """Handle trip creation."""
         return self.create(request=request, *args, **kwargs)
 
-class MmsRoomSummaryListView(generics.ListAPIView): 
+'''class MmsRoomSummaryListView(generics.ListAPIView): 
     """
     API view to retrieve a list of rooms grouped by room type and location.
     Supports filtering, searching, and ordering of room data.
@@ -1911,7 +1913,59 @@ class MmsRoomSummaryListView(generics.ListAPIView):
         # Pass the queryset (which is a list of dictionaries) to the serializer
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+'''
 
+class MmsRoomSummaryListView(generics.ListAPIView):
+    """
+    API view to retrieve a list of rooms for a particular trip, grouped by room type and location.
+    Supports filtering, searching, and ordering of room data.
+    Only authenticated users with staff or admin permissions can access this list.
+    """
+    
+    serializer_class = serializers.MmsRoomSummarySerializer  # Use the summary serializer here
+    permission_classes = [IsAuthenticated, IsAdminOrStaff]  # Ensure the user is authenticated and has required permissions
+    filter_backends = [DjangoFilterBackend, SearchFilter]  # Enable filtering, searching
+    filterset_class = filters.RoomSummaryFilter  # Apply custom filterset
+    search_fields = ['roomnumber']  # Enable search by room number
+    
+    def get_queryset(self):
+        """
+        Group rooms by room type and location for a particular trip, and annotate with count.
+        """
+        trip_id = self.kwargs.get('tripid')  # Get the trip_id from URL parameters
+        
+        if not trip_id:
+            return Response({"detail": "Trip ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        print(trip_id)
+        # Query MmsTripRoom for the specified trip_id
+        room_details = models.MmsTripRoom.objects.filter(tripid=trip_id).all()
+        print(room_details)
+        # Group by room type and location, and count the number of rooms for each group
+        room_summary = room_details.values(
+            'roomtype',  # Group by room type name
+            'baseprice',  # Fetch room type price
+            'location'    # Group by location name
+        ).annotate(
+            roomtypecount=Count('roomnumber'),  # Count of rooms for each room type
+            locationcount=Count('roomnumber')  # Count of rooms for each location
+        )
+        
+        return room_summary
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Handle the GET request to list rooms for a specific trip, grouped by room type and location.
+        """
+        queryset = self.get_queryset()
+       
+        if not queryset.exists():
+            return Response({"detail": "No rooms found for the specified trip."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Pass the queryset (which is a list of dictionaries) to the serializer
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
 class MmsTripRoomPriceUpdateView(generics.GenericAPIView):
     """
     View to handle price updates for rooms in MmsTripRoom.
@@ -2427,7 +2481,17 @@ class MmsStartBookingView(generics.RetrieveAPIView):
             'trip_id': trip_data['trip_details']['tripid'],
             'trip_capacity_remaining': trip_data['trip_details']['tripcapacityremaining'],
             'trip_cost_per_person': float(trip_data['trip_details']['tripcostperperson']),  # Convert to float for math operations
-            'available_room_categories': list(trip_data['available_room_categories']),  # Ensure it's a proper list
+            'available_room_categories': [
+            {  # Parse available room categories into structured objects
+                'room_type': room['stateroomtype'],
+                'room_size': float(room['roomsize']),
+                'number_of_beds': float(room['numberofbeds']),
+                'number_of_baths': float(room['numberofbaths']),
+                'number_of_balconies': float(room['numberofbalconies']),
+                'room_type_description': room['roomtypedescription']
+            }
+            for room in trip_data['available_room_categories']
+            ],  # Ensure it's a proper list
             'available_packages': [
                 {  # Parse available packages into structured objects
                     'package_id': pkg['packageid'],
@@ -2903,7 +2967,7 @@ class MmsPaymentStatusView(APIView):
             return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
 
         # Simulate payment success/failure logic
-        is_success = random.choice([True, False])  # Simulates payment success/failure
+        is_success = random.choice([True])  # Simulates payment success/failure
         if is_success:
             request.session['payment_details'] = {
                 "transaction_id": f"{uuid.uuid4()}",
@@ -2962,7 +3026,6 @@ class MmsPaymentSucceededView(APIView):
             'payment_details': payment_details
         }
 
-        print(booking_data)
         # Pass session data as actual input data (not context)
         serializer = serializers.MmsBookingConfirmSerializer(data=booking_data, context={'request': request})
 
@@ -2970,6 +3033,15 @@ class MmsPaymentSucceededView(APIView):
           
             # The serializer handles the creation and transaction inside the create method
             booking = serializer.save()  # This triggers the create() method in the serializer
+
+            request.session.pop('trip_details', None)
+            request.session.pop('packages', None)
+            request.session.pop('room_selection_details', None)
+            request.session.pop('passengers', None)
+            request.session.pop('booking_details', None)
+            request.session.pop('total_price', None)
+            request.session.pop('payment_details', None)
+            self.send_confirmation_email(booking, request)
 
             # Return a successful response with the booking details
             return Response({
@@ -2981,20 +3053,69 @@ class MmsPaymentSucceededView(APIView):
         # If validation fails, return an error response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class MmsUserBookingsListView(generics.ListAPIView):
+    def send_confirmation_email(self, booking, request):
+            """
+            Send an email with booking and invoice details.
+            """
+            # Prepare email details
+            customer_email =  booking.userid.email  # Assuming the first passenger is the primary contact
+            subject = f"Booking Confirmation - {booking.bookingid}"
+            
+            # Generate the email body from a template
+            context = {
+                'booking': booking,
+                'passengers': booking.groupid.mmspassenger_set.all(),
+                'rooms': booking.mmstriproom_set.all(),
+                'packages': booking.mmsbookingpackage_set.all(),
+                'total_price': booking.mmsinvoice_set.first().totalamount,
+                'invoiceid': booking.mmsinvoice_set.first().invoiceid      # Assuming total price is stored
+            }
+            
+            # Use a template to render the email body
+            message = render_to_string('email/booking_confirmation.html', context)
+
+            # Send the email (using SMTP configured in settings)
+            send_mail(
+                subject,
+            '',  # Empty plain text body since we are using HTML
+            settings.EMAIL_HOST_USER,  # From email address
+            [customer_email],  # Recipient email address
+            fail_silently=False,
+            html_message=message 
+            )
+# class MmsUserBookingsListView(generics.ListAPIView):
+#     """
+#     View to list all bookings for the authenticated user.
+#     """
+
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = serializers.MmsUserBookingListSerializer
+
+#     def get_queryset(self):
+#         """
+#         Filter bookings to only include those belonging to the authenticated user.
+#         """
+#         user = self.request.user
+#         bookings = models.MmsBooking.objects.filter(userid=user).select_related('tripid')
+#         print(bookings)
+#         return bookings
+    
+class MmsUserBookingsListView(APIView):
     """
-    View to list all bookings for the authenticated user.
+    View to list all bookings for the authenticated user, grouped by status.
     """
 
     permission_classes = [IsAuthenticated]
-    serializer_class = serializers.MmsUserBookingSerializer
 
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
         """
-        Filter bookings to only include those belonging to the authenticated user.
+        Handle GET requests and return grouped bookings.
         """
-        user = self.request.user
-        return models.MmsBooking.objects.filter(userid=user).select_related('tripid')
+        user = request.user
+        bookings = models.MmsBooking.objects.filter(userid=user).select_related('tripid')
+        serializer = serializers.MmsUserBookingListSerializer()
+        grouped_data = serializer.to_representation(bookings)
+        return Response(grouped_data)
     
 class MmsUserBookingDetailView(generics.RetrieveAPIView):
     """
