@@ -1,42 +1,51 @@
-<!-- email/booking_confirmation.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Booking Confirmation</title>
 </head>
 <body>
-    <h1>Booking Confirmation - {{ booking.bookingid }}</h1>
-
-    <p>Dear {{ passengers.0.firstname }} {{ passengers.0.lastname }},</p>
-    <p>Your booking has been successfully confirmed!</p>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Booking Confirmation</title>
+    </head>
+    <body>
+        <h1>Booking Confirmation - {{ bookingid }}</h1>
     
-    <h2>Booking Details:</h2>
-    <p><strong>Trip Name:</strong> {{ booking.tripname }}</p>
-    <p><strong>Trip Destination:</strong> {{ booking.tripdestination }}</p>
-    <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
-    <p><strong>End Date:</strong> {{ booking.end_date }}</p>
-    <p><strong>Total Price:</strong> ${{ total_price }}</p>
+        <p>Dear {{ passengers.0.firstname }} {{ passengers.0.lastname }},</p>
+        <p>Your booking has been successfully confirmed!</p>
+        
+        <h2>Booking Details:</h2>
+        <p><strong>Trip Name:</strong> {{ tripname }}</p>
+        <p><strong>Trip Destination:</strong> {{ tripdestination }}</p>
+        <p><strong>Start Date:</strong> {{ tripstartdate }}</p>
+        <p><strong>End Date:</strong> {{ tripenddate }}</p>
+        <p><strong>Total Price:</strong> ${{ total_price }}</p>
+        
+        <h2>Invoice ID - {{ invoiceid }}</h2>
     
-    <h2>Invoice ID - {{ invoiceid }}</h2>
-
-    <h3>Passenger Details:</h3>
-    <ul>
-        {% for passenger in passengers %}
-        <li>{{ passenger.firstname }} {{ passenger.lastname }} - {{ passenger.emailaddress }}</li>
-        {% endfor %}
-    </ul>
-
-    <h3>Rooms:</h3>
-    <ul>
-        {% for room in rooms %}
-        <li>Room {{ room.roomnumber }} ({{ room.roomtype }}): ${{ room.dynamicprice }}</li>
-        {% endfor %}
-    </ul>
-
-
+        <h3>Passenger Details:</h3>
+        <ul>
+            {% for passenger in passengers %}
+            <li>{{ passenger.firstname }} {{ passenger.lastname }} - {{ passenger.emailaddress }}</li>
+            {% endfor %}
+        </ul>
     
+        <h3>Rooms:</h3>
+        <ul>
+            {% for room in rooms %}
+            <li>Room ({{ room.roomtype }}) - Price: ${{ room.dynamicprice }}</li>
+            {% endfor %}
+        </ul>
     
-
-</body>
-</html>
+        <h3>Payment Details:</h3>
+        <ul>
+            {% for payment in payment_details %}
+            <li>Payment Method: {{ payment.paymentmethod }} - Amount: ${{ total_price }}</li>
+            {% endfor %}
+        </ul>
+        
+        <p>Thank you for choosing our service! If you have any questions, feel free to contact us.</p>
+    </body>
+    </html>
+    

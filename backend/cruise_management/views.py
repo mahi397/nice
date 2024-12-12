@@ -2966,6 +2966,7 @@ class MmsPaymentStatusView(APIView):
         if errors:
             return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
 
+        card_number = '*' * (len(card_number) - 4) + card_number[-4:]
         # Simulate payment success/failure logic
         is_success = random.choice([True])  # Simulates payment success/failure
         if is_success:
@@ -2973,7 +2974,11 @@ class MmsPaymentStatusView(APIView):
                 "transaction_id": f"{uuid.uuid4()}",
                 "payment_time": int(now().timestamp()),
                 "payment_amount": amount,  # Use the amount sent from frontend
-                "payment_method": "SimulatedCard"  # Example payment method
+                "payment_method": card_number,  # Example payment method,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "phone": phone   
             }
             payment_details = { 
                 "status": "succeeded"  
@@ -3009,7 +3014,7 @@ class MmsPaymentSucceededView(APIView):
         total_price = session_data.get('total_price')
         payment_details = session_data.get('payment_details', {})
         
-        #print(trip_id, package_selection, reserved_rooms, passengers_data, number_of_passengers, total_price, payment_details)
+        print(trip_id, package_selection, reserved_rooms, passengers_data, number_of_passengers, total_price, payment_details)
 
         # Check if all required session data is present
         if not all([trip_id, package_selection, reserved_rooms, passengers_data, total_price, payment_details]):
@@ -3063,12 +3068,17 @@ class MmsPaymentSucceededView(APIView):
             
             # Generate the email body from a template
             context = {
-                'booking': booking,
+                'bookingid': booking.bookingid,
+                'tripname': booking.tripid.tripname,
+                'tripdestination': booking.tripid.portstops.filter(isendport=True).values_list('portid__portname', flat=True).first(),
+                'tripstartdate': booking.tripid.startdate,
+                'tripenddate': booking.tripid.enddate,
                 'passengers': booking.groupid.mmspassenger_set.all(),
                 'rooms': booking.mmstriproom_set.all(),
                 'packages': booking.mmsbookingpackage_set.all(),
                 'total_price': booking.mmsinvoice_set.first().totalamount,
-                'invoiceid': booking.mmsinvoice_set.first().invoiceid      # Assuming total price is stored
+                'invoiceid': booking.mmsinvoice_set.first().invoiceid,
+                'payment_details': booking.mmsinvoice_set.first().mmspaymentdetail_set.all()                                                            # Assuming total price is stored
             }
             
             # Use a template to render the email body

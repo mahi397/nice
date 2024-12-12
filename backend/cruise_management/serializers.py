@@ -2509,7 +2509,7 @@ class MmsBookingConfirmSerializer(serializers.Serializer):
                 
                 trip = models.MmsTrip.objects.select_for_update().filter(tripid=trip_id).first()
                 if trip:
-                    trip.tripcapacity = F('tripcapacityremaining') - number_of_passengers
+                    trip.tripcapacityremaining = F('tripcapacityremaining') - number_of_passengers
                     trip.save()
 
                 # Step 3: Reserve rooms (set isbooked to True and associate with booking)
@@ -2538,7 +2538,11 @@ class MmsBookingConfirmSerializer(serializers.Serializer):
                 invoice = models.MmsInvoice.objects.create(
                     invoicedate=timezone.now(),
                     totalamount=total_price,
-                    paymentstatus='Paid',  # Assuming payment is successful
+                    paymentstatus='Paid',  # Assuming payment is successful,
+                    firstname = payment_details.get('first_name'),
+                    lastname = payment_details.get('last_name'),
+                    email = payment_details.get('email'),
+                    phonenumber = payment_details.get('phone'),
                     bookingid=booking,
                 )
 
