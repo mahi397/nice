@@ -2833,6 +2833,11 @@ class MmsBookingDetailSerializer(serializers.ModelSerializer):
     packages = MmsBookingPackageSerializer(many=True)
     payment_details = MmsBookingPaymentDetailSerializer(many=True)
 
+    class Meta:
+        model = models.MmsBooking
+        fields = ["bookingid", "bookingdate", "bookingstatus", "tripdestination", "rooms", "packages",
+                  "payment_details", "passengers", "tripdestination", "number_of_passengers", "tripname", "totalamount"]
+        
     def get_bookingdate(self, obj):
         if obj.bookingdate:
             return obj.bookingdate.date()
