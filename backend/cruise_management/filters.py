@@ -33,33 +33,33 @@ class TripFilter(filters.FilterSet):
         Filters trips based on the start port name (via MmsPortStop).
         """
         return queryset.filter(
-            mmsportstop__portid__portname__icontains=value,
-            mmsportstop__isstartport='Y'  # Only consider the start port (assuming 'Y' means start port)
+            portstops__portid__portname__icontains=value,
+            portstops__isstartport= True  # Only consider the start port (assuming 'Y' means start port)
         )
         
     def filter_by_port_city(self, queryset, name, value):
         """
         Filters trips based on the start port name (via MmsPortStop).
         """
-        return queryset.filter(mmsportstop__portid__portcity__iexact=value)
+        return queryset.filter(portstops__portid__portcity__iexact=value)
     
     def filter_by_port_country(self, queryset, name, value):
         """
         Filters trips based on the start port name (via MmsPortStop).
         """
-        return queryset.filter(mmsportstop__portid__portcountry__iexact=value)
+        return queryset.filter(portstops__portid__portcountry__iexact=value)
 
     def filter_by_duration_min(self, queryset, name, value):
         """
         Filters trips based on the minimum duration (startdate and enddate).
         """
-        return queryset.filter(enddate__gt=F('startdate') + timedelta(days=value))
+        return queryset.filter(enddate__gt=F('startdate') + timedelta(days=int(value)))
 
     def filter_by_duration_max(self, queryset, name, value):
         """
         Filters trips based on the maximum duration (startdate and enddate).
         """
-        return queryset.filter(enddate__lt=F('startdate') + timedelta(days=value))
+        return queryset.filter(enddate__lt=F('startdate') + timedelta(days=int(value)))
 
 class AdminTripFilter(TripFilter):
     valid_statuses = ['Scheduled', 'Completed', 'Cancelled', 'Postponed']
