@@ -13,46 +13,60 @@ import Summary from "./Summary";
 import BgImage from "./BgImage";
 import Header from "../Header";
 
-const CruiseDetails = ({ tripid }) => {
-  // const { id } = useParams(); // Get the cruise id from the URL
-  const fallbackData = [
-    {
-      headline: 'Default Headline 1',
-      subheading: 'Default Subheading 1',
-      description: 'Fallback description in case of an error.',
-      image: 'https://via.placeholder.com/300',
-    },
-    {
-      headline: 'Default Headline 2',
-      subheading: 'Default Subheading 2',
-      description: 'Fallback description in case of an error.',
-      image: 'https://via.placeholder.com/300',
-    },
-  ];
+const CruiseDetails = () => {
+  const { tripid } = useParams(); // Get the cruise id from the URL
+  console.log("Trip ID:", tripid);
+  // const fallbackData = [
+  //   {
+  //     headline: 'Default Headline 1',
+  //     subheading: 'Default Subheading 1',
+  //     description: 'Fallback description in case of an error.',
+  //     image: 'https://via.placeholder.com/300',
+  //   },
+  //   {
+  //     headline: 'Default Headline 2',
+  //     subheading: 'Default Subheading 2',
+  //     description: 'Fallback description in case of an error.',
+  //     image: 'https://via.placeholder.com/300',
+  //   },
+  // ];
 
-  const [cruise, setCruise] = useState(fallbackData);
+  const [cruise, setCruise] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const url = `${API_URL}/trips/list/${tripid}`;
+  // const token = localStorage.getItem('token');
 
   useEffect(() => {
     // Fetch the cruise details from the backend using the id
     const fetchCruiseDetails = async () => {
+      console.log('Fetching cruise details');
       try {
-        const response = await axios.get(`${API_URL}/trips/list/${tripid}`);
+        const response = await axios.get(url);
         setCruise(response.data);
+        console.log("Data returned from call:", response.data);
       } catch (error) {
         console.error('Error:', error);
         setError('Error fetching data');
-        setCruise(fallbackData);  // Use fallback data if API call fails
-      } finally {
-        setLoading(false);
-        console.log('Loading state set to false');
-      }
+        // setCruise(fallbackData);  // Use fallback data if API call fails
+      } 
+      // finally {
+      //   setLoading(false);
+      //   console.log('Loading state set to false');
+      // }
     };
 
     fetchCruiseDetails();
-  }, [tripid]); // Fetch details whenever the id changes
+  }, [url]); // Fetch details whenever the id changes
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  if (!cruise) {
+    return <div>Loading...</div>;
+  }
 
   // If the cruise data is still loading, display a loading state
   // if (!cruise) {
@@ -97,7 +111,8 @@ const CruiseDetails = ({ tripid }) => {
       {/* <SummaryCard data={cruise} /> */}
       <Header />
       <BgImage />
-      <Summary tripid={tripid}/>
+      {/* <Summary tripid={tripid}/> */}
+      <Summary cruise={cruise} />
       <h2 className="cruise-heading">Cruise Itinerary</h2>
       {/* <DayWiseCard tripdata={cruise} /> */}
       <ItineraryCard />

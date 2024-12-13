@@ -1,5 +1,5 @@
 .checkout {
-  height: 100vh;
+  height: 100%;
   width: 100vw;
   background-color: #fff;
   color: #333;
@@ -12,12 +12,13 @@
 
 .checkout-container {
   /* height: 100vh; */
-    max-width: 600px;
+    /* max-width: 600px; */
+    /* width: 40%; */
     margin: 20px auto;
     padding: 20px;
     background-color: #fff;
     border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
   
   .step-content {

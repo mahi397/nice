@@ -20,16 +20,18 @@ body {
 }
 
 nav {
+  position: sticky;
+  top: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  top: 0;
   height: 60px;
   padding: 20px 36px;
   box-shadow: 0px 2.98256px 7.4564px rgba(0, 0, 0, 0.1);
   background-color: black;
-  color: white
+  color: white;
+  z-index: 1000; /* Ensure it stays above other content */
 }
 
 .nav--logo {
@@ -95,7 +97,7 @@ button {
     rgba(8, 8, 94, 1) 100%,
     rgba(0, 212, 255, 1) 100%
   );  */
-  background-image: url('./assets/cover.png');
+  background-image: url('./assets/cover-copy.png');
   background-size: cover;
   color: white;
   overflow: auto;

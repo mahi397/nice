@@ -5,32 +5,42 @@ import room1 from '../../assets/room1.png';
 import room2 from '../../assets/room2.png';
 import room3 from '../../assets/room8.png';
 import room4 from '../../assets/room10.png';
+import room5 from '../../assets/room6.png';
+import room6 from '../../assets/room9.png';
+import room7 from '../../assets/room7.png';
 
-const ItineraryCard = ({ category, isSelected, onSelect }) => {
-  const handleClick = () => onSelect(category.id);
+
+const ItineraryCard = ({ id, category, isSelected, onSelect }) => {
+  const handleClick = () => onSelect(id); // id should be given by api
 
   const mockText = (
     <>
-      <strong>{category.type}</strong>
+      <strong>{category.stateroomtype}</strong>
       <br />
-      <p>{category.size} sqft</p>
+      <p>{category.roomsize} sqft</p>
       <br />
       <p>
-        {category.beds} beds, {category.baths} baths, {category.balconies}{" "}
+        {category.numberofbeds} beds, {category.numberofbaths} baths, {category.numberofbalconies}{" "}
         balconies
       </p>
     </>
   );
 
   function calcImg() {
-    if (category.id === 1) {
+    if (id === 0) {
       return room1;
-    } else if (category.id === 2) {
+    } else if (id === 1) {
       return room2;
-    } else if (category.id === 3) {
+    } else if (id === 2) {
       return room3;
-    } else if (category.id === 4) {
+    } else if (id === 3) {
       return room4;
+    } else if (id === 4) {
+      return room5;
+    } else if (id === 5) {
+      return room6;
+    } else if (id === 6) {
+      return room7;
     }
   }
 
@@ -52,7 +62,7 @@ const ItineraryCard = ({ category, isSelected, onSelect }) => {
 const styles = {
   card: {
     display: "flex",
-    width: "100%", // Takes up 90% of the screen width
+    width: "100%",
     height: "128px",
     borderRadius: "8px", // Rounded corners
     overflow: "hidden", // Ensures no content overflows outside the card

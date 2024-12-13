@@ -1,0 +1,57 @@
+.booking-container {
+    width: 100vw;
+    /* max-width: 800px; Adjust the max-width as per your design */
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    
+    color: black;  
+}
+  
+  .top-nav {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .step-container {
+    margin-top: 20px;  /* Creates space below the summary bar */
+    /* padding: 20px; */
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .step-content {
+    min-height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .step-navigation {
+    display: flex;
+    justify-content: space-between;
+    /* margin-top: 20px;*/
+   margin-bottom: 10px;
+  }
+  
+  .step-indicator {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  
+  .step-dot {
+    width: 10px;
+    height: 10px;
+    margin: 0 5px;
+    border-radius: 50%;
+    background-color: #ccc;
+  }
+  
+  .step-dot.active {
+    background-color: #4caf50;
+  }
+  

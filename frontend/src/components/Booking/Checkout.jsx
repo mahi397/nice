@@ -12,12 +12,21 @@ const { Step } = Steps;
 const Checkout = () => {
   const [step, setStep] = useState(0); // 0 for Step 1, 1 for Step 2, 2 for Step 3
   const [passengerDetails, setPassengerDetails] = useState({
-    firstName: "",
-    lastName: "",
-    dob: "",
+    firstname: "",
+    lastname: "",
+    dateofbirth: "",
     gender: "",
-    email: "",
-    phone: "",
+    contactnumber: "",
+    emailaddress: "",
+    streetaddr: "",
+    city: "",
+    state: "",
+    country: "",
+    zipcode: "",
+    nationality: "",
+    passportnumber: "",
+    emergencycontactname: "",
+    emergencycontactnumber: "",
   });
   const [paymentDetails, setPaymentDetails] = useState({
     cardNumber: "",
@@ -88,31 +97,27 @@ const Checkout = () => {
             <Form layout="vertical">
               <Form.Item label="First Name">
                 <Input
-                  placeholder="Enter First Name"
-                  value={passengerDetails.firstName}
+                  value={passengerDetails.firstname}
                   onChange={handlePassengerDetailsChange}
                   name="firstName"
                 />
               </Form.Item>
               <Form.Item label="Last Name">
                 <Input
-                  placeholder="Enter Last Name"
-                  value={passengerDetails.lastName}
+                  value={passengerDetails.lastname}
                   onChange={handlePassengerDetailsChange}
                   name="lastName"
                 />
               </Form.Item>
               <Form.Item label="Date of Birth">
                 <Input
-                  placeholder="Enter Date of Birth"
-                  value={passengerDetails.dob}
+                  value={passengerDetails.dateofbirth}
                   onChange={handlePassengerDetailsChange}
                   name="dob"
                 />
               </Form.Item>
               <Form.Item label="Gender">
                 <Input
-                  placeholder="Enter Gender"
                   value={passengerDetails.gender}
                   onChange={handlePassengerDetailsChange}
                   name="gender"
@@ -120,20 +125,75 @@ const Checkout = () => {
               </Form.Item>
               <Form.Item label="Email">
                 <Input
-                  placeholder="Enter Email"
-                  value={passengerDetails.email}
+                  value={passengerDetails.emailaddress}
                   onChange={handlePassengerDetailsChange}
                   name="email"
                 />
               </Form.Item>
-              <Form.Item label="Phone">
+              <Form.Item label="Contact Number">
                 <Input
-                  placeholder="Enter Phone Number"
-                  value={passengerDetails.phone}
+                  value={passengerDetails.contactnumber}
                   onChange={handlePassengerDetailsChange}
                   name="phone"
                 />
               </Form.Item>
+              <Form.Item label="Street Address">
+                <Input
+                  value={passengerDetails.streetaddr}
+                  onChange={handlePassengerDetailsChange}
+                  name="streetaddress"
+                />
+              </Form.Item>
+              <Form.Item label="City">
+                <Input
+                  value={passengerDetails.city}
+                  onChange={handlePassengerDetailsChange}
+                  name="city"
+                />
+              </Form.Item>
+              <Form.Item label="Country">
+                <Input
+                  value={passengerDetails.country}
+                  onChange={handlePassengerDetailsChange}
+                  name="country"
+                />
+              </Form.Item>
+              <Form.Item label="Zip Code">
+                <Input
+                  value={passengerDetails.zipcode}
+                  onChange={handlePassengerDetailsChange}
+                  name="zipcode"
+                />
+              </Form.Item>
+              <Form.Item label="Nationality">
+                <Input
+                  value={passengerDetails.nationality}
+                  onChange={handlePassengerDetailsChange}
+                  name="nationality"
+                />
+              </Form.Item>
+              <Form.Item label="Passport Number">
+                <Input
+                  value={passengerDetails.passportnumber}
+                  onChange={handlePassengerDetailsChange}
+                  name="passportnumber"
+                />
+              </Form.Item>
+              <Form.Item label="Emergency Contact Name">
+                <Input
+                  value={passengerDetails.emergencycontactname}
+                  onChange={handlePassengerDetailsChange}
+                  name="emergencycontactname"
+                />
+              </Form.Item>
+              <Form.Item label="Emergency Contact Number">
+                <Input
+                  value={passengerDetails.emergencycontactnumber}
+                  onChange={handlePassengerDetailsChange}
+                  name="emergencycontactnumber"
+                />
+              </Form.Item>
+              
               <Button
                 type="primary"
                 onClick={handleNextStep}

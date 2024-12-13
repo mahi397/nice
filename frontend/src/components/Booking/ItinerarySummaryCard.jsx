@@ -22,7 +22,7 @@ const WideCard = () => {
 
 const styles = {
   card: {
-    width: '1096px',
+    width: '900px',
     height: '200px',
     borderRadius: '16px',
     backgroundColor: '#f4f4f9',
