@@ -6,7 +6,7 @@ import './booking.css';
 function AddPassengers() {
   return (
     <>
-      <Header />
+      {/* <Header /> */}
       <div className="add-passengers-container">
         <PassengerForm />
       </div>

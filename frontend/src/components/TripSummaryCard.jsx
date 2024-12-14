@@ -10,7 +10,11 @@ const WideCard = (trip) => {
     console.log("TRIP:", trip.trip);
     // const { id, name, startPort, endPort, startMonth, startDate, endDate, description, duration, imageUrl } = trip;
   const leftHeading = trip.trip.tripname.toUpperCase();
-  const leftParagraph1 = 'Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City';
+  // Map over port_stops to create the port stops string
+  const portStops = trip.trip.port_stops.map(stop => stop.city).join(' > ');
+  const leftParagraph1 = `${portStops}`;
+
+  // const leftParagraph1 = 'Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City';
   // const leftParagraph2 = "Wed Jul 1, 2025 - Thu Jul 9, 2025";
   const formattedStartDate = moment(trip.trip.startdate).format('ddd MMM D, YYYY');
   const formattedEndDate = moment(trip.trip.enddate).format('ddd MMM D, YYYY');

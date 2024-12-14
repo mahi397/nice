@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./AdminLogin.css";
+import "../../style.css";
 import { useNavigate } from "react-router-dom";
 
 const AdminLogin = () => {
@@ -41,7 +41,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="container">
+    <div className="form-container">
       <div className="wrapper">
         <h1>Admin Login</h1>
         <form onSubmit={handleLogin}>

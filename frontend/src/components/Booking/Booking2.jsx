@@ -10,6 +10,7 @@ import "./booking2.css";
 import Header from "../Header";
 import RoomCategoryParent from "./RoomCategoryParent";
 import PackageSelectionParent from "./PackageSelectionParent";
+import AddPassengers from "./AddPassengers";
 
 const { Step } = Steps;
 
@@ -18,15 +19,21 @@ const Booking = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [rooms, setRooms] = useState([{ id: 1, guests: 1 }]); // State to track rooms and guests for each room
   const [guests, setGuests] = useState(1);
-  
+
   const StepOne = () => <AddRoomSection2 rooms={rooms} setRooms={setRooms} />;
   // const StepTwo = () => <RoomCategorySection2 />;
   const StepTwo = () => <RoomCategoryParent rooms={rooms} />;
   // const StepThree = () => <PackageSelection2 />;
-  const StepThree = () => <PackageSelectionParent rooms={rooms} guests={guests} />;
+  const StepThree = () => <AddPassengers />;
+  const StepFour = () => <PackageSelectionParent rooms={rooms} guests={2} />;
 
   // Components for each step
-  const stepComponents = [<StepOne />, <StepTwo />, <StepThree />];
+  const stepComponents = [
+    <StepOne />,
+    <StepTwo />,
+    <StepThree />,
+    <StepFour />,
+  ];
 
   const nextStep = () => {
     if (currentStep < stepComponents.length - 1) {
@@ -56,6 +63,7 @@ const Booking = () => {
             title="Select Room Category"
             description="Choose the room type."
           />
+          <Step title="Add Passengers" description="Fill in guest details." />
           <Step title="Select Packages" description="Choose package add-ons." />
         </Steps>
 

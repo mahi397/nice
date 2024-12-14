@@ -45,13 +45,21 @@ function Header() {
         <img src={cruiselogo} className='nav--logo'></img>
 
         <ul className='nav--list'>
-            <li>
+            {/* <li>
               <Link to="/">Home</Link>
             </li>
             <li>Discover</li>
             <li>Services</li>
             <li>About Us</li>
-            <li>Contact</li>
+            <li>Contact</li> */}
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li><Link to="/">Discover</Link></li>
+            <li><Link to="/">Services</Link></li>
+            <li><Link to="/">About Us</Link></li>
+            <li><Link to="/">Contact</Link></li>
+        
         </ul>
 
         <div className="navbar-links">

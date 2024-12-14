@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./booking.css";
 import bahamas from "../../assets/bahamas.webp";
 import "../CruiseDetails/cruise.css";
@@ -11,19 +11,41 @@ import HeaderLoggedIn from "../HeaderLoggedIn";
 import Header from "../Header";
 
 const ReviewBooking = () => {
-  const room = {
-    number: 108,
-    location: "Stern",
-    category: "Interior",
-    image: "https://via.placeholder.com/392x220.png?text=Room+101",
-    amenities: [
-      "Two twin beds",
-      "Desk and seat",
-      "Full bathroom with shower",
-      "Ample closet space",
-    ],
-  };
-
+  const rooms = [
+    {
+      number: 108,
+      location: "Stern",
+      category: "Inside Stateroom",
+      image: "https://via.placeholder.com/392x220.png?text=Room+101",
+      amenities: [
+        "One twin bed",
+        "Desk and seat",
+        "Full bathroom with shower",
+        "Ample closet space",
+      ],
+    },
+    {
+      number: 105,
+      location: "Bow",
+      category: "Studio Stateroom",
+      image: "https://via.placeholder.com/392x220.png?text=Room+101",
+      amenities: [
+        "Single twin bed",
+        "Full bathroom with shower",
+        "Ample closet space",
+      ],
+    },
+  ];
+  // const [tripDetails, setTripDetails] = useState({});
+  // useEffect(() => {
+  //   console.log('Entering useEffect');
+  //   // Retrieve trip details from sessionStorage
+  //   const storedTripDetails = sessionStorage.getItem("bookingData");
+  //   console.log('Stored Trip Details:', storedTripDetails);
+  //   if (storedTripDetails) {
+  //     setTripDetails(JSON.parse(storedTripDetails));
+  //   }
+  // }, []);
   return (
     // <div className="review-booking-container">
     //   {/* Left Section */}
@@ -87,7 +109,7 @@ const ReviewBooking = () => {
           <h2 style={{ fontFamily: "Bebas Neue", fontSize: "35px" }}>
             ROOM SELECTION
           </h2>
-          <RoomInfoCard room={room} />
+          <RoomInfoCard rooms={rooms} />
         </div>
         <div className="booking-summary-right">
           <PaymentSummaryCard />

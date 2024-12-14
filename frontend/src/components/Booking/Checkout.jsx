@@ -6,6 +6,8 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import "./checkout.css";
+import Header from "../Header";
+import { Link } from "react-router-dom";
 
 const { Step } = Steps;
 
@@ -14,19 +16,8 @@ const Checkout = () => {
   const [passengerDetails, setPassengerDetails] = useState({
     firstname: "",
     lastname: "",
-    dateofbirth: "",
-    gender: "",
-    contactnumber: "",
-    emailaddress: "",
-    streetaddr: "",
-    city: "",
-    state: "",
-    country: "",
-    zipcode: "",
-    nationality: "",
-    passportnumber: "",
-    emergencycontactname: "",
-    emergencycontactnumber: "",
+    email: "",
+    phone: "",
   });
   const [paymentDetails, setPaymentDetails] = useState({
     cardNumber: "",
@@ -76,7 +67,15 @@ const Checkout = () => {
 
   return (
     <div className="checkout">
-      <h2 style={{ fontFamily: "Bebas Neue", fontSize: "40px" }}>
+      <Header />
+      <h2
+        style={{
+          fontFamily: "Bebas Neue",
+          fontSize: "40px",
+          marginTop: "20px",
+          color: "rgb(16, 85, 154)",
+        }}
+      >
         Review and Pay
       </h2>
 
@@ -89,111 +88,60 @@ const Checkout = () => {
         >
           <Step title="Passenger Details" icon={<UserOutlined />} />
           <Step title="Payment Details" icon={<CreditCardOutlined />} />
-          <Step title="Review & Pay" icon={<CheckCircleOutlined />} />
+          <Step title="Checkout" icon={<CheckCircleOutlined />} />
         </Steps>
 
         <div className="step-content">
           {step === 0 && (
             <Form layout="vertical">
-              <Form.Item label="First Name">
+              <Form.Item
+                label="First Name"
+                rules={[
+                  { required: true, message: "Please enter the first name" },
+                ]}
+              >
                 <Input
                   value={passengerDetails.firstname}
                   onChange={handlePassengerDetailsChange}
-                  name="firstName"
+                  name="firstname"
                 />
               </Form.Item>
-              <Form.Item label="Last Name">
+              <Form.Item
+                label="Last Name"
+                rules={[
+                  { required: true, message: "Please enter the last name" },
+                ]}
+              >
                 <Input
                   value={passengerDetails.lastname}
                   onChange={handlePassengerDetailsChange}
-                  name="lastName"
-                />
-              </Form.Item>
-              <Form.Item label="Date of Birth">
-                <Input
-                  value={passengerDetails.dateofbirth}
-                  onChange={handlePassengerDetailsChange}
-                  name="dob"
-                />
-              </Form.Item>
-              <Form.Item label="Gender">
-                <Input
-                  value={passengerDetails.gender}
-                  onChange={handlePassengerDetailsChange}
-                  name="gender"
+                  name="lastname"
                 />
               </Form.Item>
               <Form.Item label="Email">
                 <Input
-                  value={passengerDetails.emailaddress}
+                  value={passengerDetails.email}
                   onChange={handlePassengerDetailsChange}
                   name="email"
                 />
               </Form.Item>
-              <Form.Item label="Contact Number">
+              <Form.Item
+                label="Contact Number"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter the contact number",
+                  },
+                ]}
+              >
                 <Input
-                  value={passengerDetails.contactnumber}
+                  type="tel"
+                  value={passengerDetails.phone}
                   onChange={handlePassengerDetailsChange}
                   name="phone"
                 />
               </Form.Item>
-              <Form.Item label="Street Address">
-                <Input
-                  value={passengerDetails.streetaddr}
-                  onChange={handlePassengerDetailsChange}
-                  name="streetaddress"
-                />
-              </Form.Item>
-              <Form.Item label="City">
-                <Input
-                  value={passengerDetails.city}
-                  onChange={handlePassengerDetailsChange}
-                  name="city"
-                />
-              </Form.Item>
-              <Form.Item label="Country">
-                <Input
-                  value={passengerDetails.country}
-                  onChange={handlePassengerDetailsChange}
-                  name="country"
-                />
-              </Form.Item>
-              <Form.Item label="Zip Code">
-                <Input
-                  value={passengerDetails.zipcode}
-                  onChange={handlePassengerDetailsChange}
-                  name="zipcode"
-                />
-              </Form.Item>
-              <Form.Item label="Nationality">
-                <Input
-                  value={passengerDetails.nationality}
-                  onChange={handlePassengerDetailsChange}
-                  name="nationality"
-                />
-              </Form.Item>
-              <Form.Item label="Passport Number">
-                <Input
-                  value={passengerDetails.passportnumber}
-                  onChange={handlePassengerDetailsChange}
-                  name="passportnumber"
-                />
-              </Form.Item>
-              <Form.Item label="Emergency Contact Name">
-                <Input
-                  value={passengerDetails.emergencycontactname}
-                  onChange={handlePassengerDetailsChange}
-                  name="emergencycontactname"
-                />
-              </Form.Item>
-              <Form.Item label="Emergency Contact Number">
-                <Input
-                  value={passengerDetails.emergencycontactnumber}
-                  onChange={handlePassengerDetailsChange}
-                  name="emergencycontactnumber"
-                />
-              </Form.Item>
-              
+
               <Button
                 type="primary"
                 onClick={handleNextStep}
@@ -206,7 +154,12 @@ const Checkout = () => {
 
           {step === 1 && (
             <Form layout="vertical">
-              <Form.Item label="Card Number">
+              <Form.Item label="Card Number" rules={[
+                  {
+                    required: true,
+                    message: "Please enter your card number",
+                  },
+                ]}>
                 <Input
                   placeholder="Enter Card Number"
                   value={paymentDetails.cardNumber}
@@ -215,7 +168,12 @@ const Checkout = () => {
                   maxLength={16}
                 />
               </Form.Item>
-              <Form.Item label="CVV">
+              <Form.Item label="CVV" rules={[
+                  {
+                    required: true,
+                    message: "Please enter your CVV",
+                  },
+                ]}>
                 <Input
                   placeholder="Enter CVV"
                   value={paymentDetails.cvv}
@@ -225,7 +183,12 @@ const Checkout = () => {
                   type="password"
                 />
               </Form.Item>
-              <Form.Item label="Expiration Date (MM/YY)">
+              <Form.Item label="Expiration Date (MM/YY)" rules={[
+                  {
+                    required: true,
+                    message: "Please enter the card expiry date",
+                  },
+                ]}>
                 <Input
                   placeholder="Enter Expiry Date"
                   value={paymentDetails.expirationDate}
@@ -252,16 +215,18 @@ const Checkout = () => {
           {step === 2 && (
             <div className="review-section">
               <div>
-                <h3 style={{fontFamily: 'Bebas Neue', fontSize: '25px'}}>Passenger Details</h3>
-                <p>First Name: {passengerDetails.firstName}</p>
-                <p>Last Name: {passengerDetails.lastName}</p>
-                <p>Date of Birth: {passengerDetails.dob}</p>
-                <p>Gender: {passengerDetails.gender}</p>
+                <h3 style={{ fontFamily: "Bebas Neue", fontSize: "25px" }}>
+                  Passenger Details
+                </h3>
+                <p>First Name: {passengerDetails.firstname}</p>
+                <p>Last Name: {passengerDetails.lastname}</p>
                 <p>Email: {passengerDetails.email}</p>
                 <p>Phone: {passengerDetails.phone}</p>
               </div>
               <div>
-                <h3 style={{fontFamily: 'Bebas Neue', fontSize: '25px'}}>Payment Details</h3>
+                <h3 style={{ fontFamily: "Bebas Neue", fontSize: "25px" }}>
+                  Payment Details
+                </h3>
                 <p>
                   Card Number: XXXX XXXX XXXX{" "}
                   {paymentDetails.cardNumber.slice(-4)}
@@ -275,10 +240,10 @@ const Checkout = () => {
                 </Button>
                 <Button
                   type="primary"
-                  onClick={handleSubmit}
-                  style={{ width: "48%" }}
+                  // onClick={handleSubmit}
+                  style={{ marginLeft: "10px" }}
                 >
-                  Book Now
+                  <Link to="/bookingsummary">Confirm Payment</Link>
                 </Button>
               </div>
             </div>

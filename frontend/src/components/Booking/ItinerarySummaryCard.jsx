@@ -1,13 +1,34 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { Link } from 'react-router-dom';
 import { IoLocationSharp } from "react-icons/io5";
 
 const WideCard = () => {
-  const leftHeading = '8-Day The Bahamas from Manhattan, New York City, NY'.toUpperCase();
-  const leftParagraph1 = 'Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City';
-  const leftParagraph2 = 'Wed Jul 1, 2026 - Thu Jul 9, 2026';
+  const leftHeading = 'Dream Island Adventure';
+  const leftParagraph1 = 'Los Angeles  >  Adelaide  >  Dubai  > New York';
+  const leftParagraph2 = 'Fri Jan 3, 2025 - Tue Jan 7, 2025';
 
-  console.log('Summary Card rendered');
+  console.log('Itinerary Summary Card rendered');
+
+  // const [tripDetails, setTripDetails] = useState({});
+
+  // useEffect(() => {
+  //   console.log('Entering useEffect');
+  //   // Retrieve trip details from sessionStorage
+  //   const storedTripDetails = sessionStorage.getItem("bookingData");
+  //   console.log('Stored Trip Details:', storedTripDetails);
+  //   if (storedTripDetails) {
+  //     setTripDetails(JSON.parse(storedTripDetails));
+  //   }
+  // }, []);
+
+  // const leftHeading = tripDetails.trip_details.tripname.toUpperCase();
+  // const portStops = tripDetails.trip_details.port_stops.map(stop => stop.port_name).join(' > ');
+  // const leftParagraph1 = `${portStops}`;
+  // const formattedStartDate = new Date(tripDetails.trip_details.startdate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  // const formattedEndDate = new Date(tripDetails.trip_details.enddate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  // const leftParagraph2 = `${formattedStartDate} - ${formattedEndDate}`;
+
+
   return (
     <div style={styles.card}>
       {/* Left Section (80%) */}

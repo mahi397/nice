@@ -115,7 +115,7 @@ const CruiseDetails = () => {
       <Summary cruise={cruise} />
       <h2 className="cruise-heading">Cruise Itinerary</h2>
       {/* <DayWiseCard tripdata={cruise} /> */}
-      <ItineraryCard />
+      <ItineraryCard cruise={cruise} />
       {/* <Card data={cruise} /> */}
       <h2 className="cruise-heading">Activities Onboard</h2>
       <ActivityCard />

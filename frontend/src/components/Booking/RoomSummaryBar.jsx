@@ -10,8 +10,8 @@ function RoomSummaryBar({rooms}) {
       <div style={styles.topSection}>
         {/* Section 1: Trip Name and Dates */}
         <div style={styles.section}>
-          <h4 style={styles.tripName}>8-Day The Bahamas</h4>
-          <p style={styles.tripDates}>Wed Jul 1, 2026 - Thu Jul 9, 2026</p>
+          <h4 style={styles.tripName}>Dream Island Adventure</h4>
+          <p style={styles.tripDates}>Fri Jan 3, 2025 - Tue Jan 7, 2025</p>
         </div>
 
         {/* Section 2: Number of Selected Rooms */}

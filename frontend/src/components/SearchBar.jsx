@@ -46,8 +46,8 @@ const SearchBar = ({ filters, handleFilterChange, handleSearchResults }) => {
     const url = `${API_URL}/trips/list?${queryString}`;
     const plainURL = `${API_URL}/trips/list`;
     try {
-      // const response = await axios.get(url);
-      const response = await axios.get(plainURL);
+      const response = await axios.get(url);
+      // const response = await axios.get(plainURL);
       handleSearchResults(response.data);
     } catch (error) {
       console.error("Error fetching search results:", error);
@@ -69,8 +69,8 @@ const SearchBar = ({ filters, handleFilterChange, handleSearchResults }) => {
           id="price-slider"
           range
           defaultValue={priceRange}
-          min={1000}
-          max={30000}
+          min={500}
+          max={10000}
           step={1000}
           tooltip={{
             open: true,

@@ -14,11 +14,11 @@ const Overview = () => {
 
   // Example data for charts and stats
   const bookingData = {
-    labels: ["January", "February", "March", "April", "May"],
+    labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     datasets: [
       {
         label: "Bookings",
-        data: [200, 300, 250, 400, 350],
+        data: [200, 300, 250, 400, 200, 100, 150, 200, 250, 450, 350, 400],
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         borderColor: "rgba(75, 192, 192, 1)",
         borderWidth: 1,
@@ -68,15 +68,15 @@ const Overview = () => {
       <div className="overview-stats">
         <div className="stat-card">
           <h3>Total Trips</h3>
-          <p>50</p>
+          <p>40</p>
         </div>
         <div className="stat-card">
           <h3>Total Bookings</h3>
-          <p>1200</p>
+          <p>30</p>
         </div>
         <div className="stat-card">
           <h3>Total Revenue</h3>
-          <p>$150,000</p>
+          <p>$15000</p>
         </div>
       </div>
 

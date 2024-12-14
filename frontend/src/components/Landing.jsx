@@ -12,43 +12,46 @@ import TripSummaryCard from "./TripSummaryCard";
 const HomePage = () => {
   const mockTrips = [
     {
-      id: 1,
-      name: "Bahamas Cruise",
-      startPort: "Miami",
-      endPort: "Bahamas",
-      startMonth: "December",
-      startDate: "12/01/2021",
-      endDate: "12/05/2021",
-      description: "some text",
-      duration: 4,
-      price: 979,
-    //   imageUrl: landing1,
-    },
-    {
-      id: 2,
-      name: "Caribbean Cruise",
-      startPort: "Miami",
-      endPort: "Jamaica",
-      startMonth: "January",
-      startDate: "12/01/2021",
-      endDate: "12/05/2021",
-      description: "some text",
-      duration: 7,
-      price: 749
-    //   imageUrl: landing2,
-    },
-    {
-      id: 3,
-      name: "Alaska Cruise",
-      startPort: "Seattle",
-      endPort: "Alaska",
-      startMonth: "June",
-      startDate: "12/01/2021",
-      endDate: "12/05/2021",
-      description: "some text",
-      duration: 10,
-      price: 1099
-    //   imageUrl: landing3,
+      trip: {
+        tripid: 1,
+        tripname: "Bahamas Cruise",
+        startPort: "Miami",
+        endPort: "Bahamas",
+        startMonth: "December",
+        startdate: "12/01/2021",
+        enddate: "12/05/2021",
+        description: "some text",
+        duration: 4,
+        tripcostperperson: 979,
+      
+      },
+      trip: {
+        tripid: 2,
+        tripname: "Caribbean Cruise",
+        startPort: "Miami",
+        endPort: "Jamaica",
+        startMonth: "January",
+        startdate: "12/01/2021",
+        enddate: "12/05/2021",
+        description: "some text",
+        duration: 4,
+        tripcostperperson: 979,
+      
+      },
+      trip: {
+        tripid: 3,
+        tripname: "Alaska Cruise",
+        startPort: "Miami",
+        endPort: "Bahamas",
+        startMonth: "December",
+        startdate: "12/01/2021",
+        enddate: "12/05/2021",
+        description: "some text",
+        duration: 4,
+        tripcostperperson: 979,
+      
+      }
+      //   imageUrl: landing1,
     },
   ];
 

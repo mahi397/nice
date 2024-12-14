@@ -9,7 +9,7 @@ import Dashboard from "./components/user/Dashboard";
 
 import AdminLogin from "./components/admin/AdminLogin";
 import AdminDashboard from "./components/admin/AdminDashboard";
-import ProtectedRoute from "./components/admin/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 import CruiseDetails from "./components/CruiseDetails/CruiseDetails";
 import Booking from "./components/Booking/Booking";
 import Booking2 from "./components/Booking/Booking2";
@@ -17,6 +17,10 @@ import Booking2 from "./components/Booking/Booking2";
 import AddPassengers from "./components/Booking/AddPassengers";
 import ReviewBooking from "./components/Booking/ReviewBooking";
 import Checkout from './components/Booking/Checkout';
+import BookingSummary from "./components/Booking/BookingSummary";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
+
 
 function App() {
   return (
@@ -45,10 +49,14 @@ function App() {
             <Route path="/cruisedetails/:tripid" element={<CruiseDetails/>} />
 
             {/* <Route path="/booking" element={<Booking />} /> */}
-            <Route path="/booking" element={<Booking2 />} />
+            <Route path="/booking" element={<ProtectedRoute element={Booking2} />} />
             <Route path="/addpassengers" element={<AddPassengers />} />
             <Route path="/reviewbooking" element={<ReviewBooking />} />
             <Route path="/payment-page" element={<Checkout />}></Route>
+            <Route path="/bookingsummary" element={<BookingSummary />}></Route>
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset/:uidb64/:token" element={<ResetPassword />} />
+          
           </Routes>
         </Router>
       </div>

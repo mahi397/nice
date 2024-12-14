@@ -98,7 +98,8 @@ button {
     rgba(0, 212, 255, 1) 100%
   );  */
   background-image: url('./assets/cover-copy.png');
-  background-size: cover;
+  /* background-size: cover; */
+  background-size: 100% 100%;
   color: white;
   overflow: auto;
   margin: auto;

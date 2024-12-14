@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import RoomCategorySection2 from "./RoomCategorySection2";
 import { getRoomReserveURL } from "./booking_api";
+import axios from "axios";
 
 const RoomCategoryParent = ({ rooms }) => {
   const [selectedCategories, setSelectedCategories] = useState({});
@@ -13,58 +14,79 @@ const RoomCategoryParent = ({ rooms }) => {
   };
 
   const handleConfirm = async () => {
-    const token = localStorage.getItem('token'); 
-    const storedBookingData = sessionStorage.getItem('bookingData');
+    const token = localStorage.getItem("token");
+    const storedBookingData = sessionStorage.getItem("bookingData");
     if (!storedBookingData) {
-      console.error('No booking data available in session');
+      console.error("No booking data available in session");
       return;
     }
 
     const bookingData = JSON.parse(storedBookingData);
     const tripid = bookingData.trip_details.tripid;
-    const url = getRoomReserveURL(tripid); 
+    const url = getRoomReserveURL(tripid);
 
     // Count the occurrences of each category
-    const categoryCounts = Object.values(selectedCategories).reduce((acc, category) => {
+    const categoryCounts = Object.values(selectedCategories).reduce(
+      (acc, category) => {
         acc[category] = (acc[category] || 0) + 1;
         return acc;
-      }, {});
+      },
+      {}
+    );
 
     // Construct the roomSelections array
-    const roomSelections = Object.entries(categoryCounts).map(([category, count]) => ({
+    const roomSelections = Object.entries(categoryCounts).map(
+      ([category, count]) => ({
         room_type: category,
         number_of_rooms: count,
-      }));
+      })
+    );
 
     const data = {
       room_selections: roomSelections,
     };
 
+    const dataToPatch = {
+      room_selections: [
+        {
+          room_type: "Inside Stateroom",
+          number_of_rooms: 1,
+        },
+        {
+          room_type: "Club Balcony Suite",
+          number_of_rooms: 1,
+        }
+      ],
+    };
+
     try {
-      const response = await axios.patch(url, data, {
+      const response = await axios.patch(url, dataToPatch, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      console.log('Room categories patch sent successfully:', response.data);
+      console.log("Room categories patch sent successfully:", response.data);
     } catch (error) {
-      console.error('Error updating rooms:', error);
+      console.error("Error updating rooms:", error);
     }
   };
 
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center"}}>
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+    >
       <div style={styles.container}>
         {rooms.map((room) => (
-          <RoomCategorySection2 key={room.id} room={room} onCategorySelect={handleCategorySelect} />
+          <RoomCategorySection2
+            key={room.id}
+            room={room}
+            onCategorySelect={handleCategorySelect}
+          />
         ))}
       </div>
       <div style={styles.buttonContainer}>
-        <button onClick={handleConfirm}>
-          CONFIRM
-        </button>
+        <button onClick={handleConfirm}>CONFIRM</button>
       </div>
     </div>
   );
@@ -84,4 +106,5 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     marginTop: "20px",
-}};
+  },
+};

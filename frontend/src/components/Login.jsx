@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate(); // Using useNavigate instead of useHistory
+  // const location = useLocation();
+  // const from = location.state?.from?.pathname || '/';
+
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +25,9 @@ const Login = () => {
         localStorage.setItem("token", response.data.access); // Save token in local storage
         // console.log("Login Response: ", response.data);
         // console.log("Token set after login: ", response.data.access);
-        navigate("/"); // Redirect to home page after login
+        // Redirect to the original destination or home page
+        // navigate(from, { replace: true });
+        navigate("/");
       }
     } catch (err) {
       setError("Invalid username or password");
@@ -59,7 +64,7 @@ const Login = () => {
           </div>
           <div className="register-link">
             <p>
-              <Link to="/nice/reset">Forgot Password?</Link>
+              <Link to="/forgot-password">Forgot Password?</Link>
             </p>
           </div>
         </form>

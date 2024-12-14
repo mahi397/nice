@@ -18,12 +18,12 @@ const Sidebar = ({ onSelect }) => {
       >
         Overview
       </div>
-      <div
+      {/* <div
         className={`sidebar-item ${selected === "users" ? "active" : ""}`}
         onClick={() => handleClick("users")}
       >
         Manage Users
-      </div>
+      </div> */}
       <div
         className={`sidebar-item ${selected === "trips" ? "active" : ""}`}
         onClick={() => handleClick("trips")}

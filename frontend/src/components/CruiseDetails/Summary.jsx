@@ -27,8 +27,9 @@ const WideCard = ({ cruise }) => {
   console.log("CRUISE:", cruise);
   // const leftHeading = "8-Day The Bahamas from Manhattan, New York City, NY".toUpperCase();
   const leftHeading = cruise.tripname.toUpperCase();
-  const leftParagraph1 =
-    "Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City";
+  const port_stops = cruise.port_times.map(stop => stop.port_city).join(' > ');
+  // const leftParagraph1 = "Start: Manhattan, New York City  >  Nassau  >  Half Moon Cay  > End: Manhattan, New York City";
+  const leftParagraph1 = `${port_stops}`;
   // const leftParagraph2 = "Wed Jul 1, 2026 - Thu Jul 9, 2026";
   const formattedStartDate = moment(cruise.startdate).format('ddd MMM D, YYYY');
   const formattedEndDate = moment(cruise.enddate).format('ddd MMM D, YYYY');

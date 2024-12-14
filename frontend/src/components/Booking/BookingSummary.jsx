@@ -1,70 +1,90 @@
 import React from 'react';
 import './booking.css'; // Assuming you have a CSS file for styling
+import Header from '../Header';
 
 const BookingSummary = ({ bookingDetails }) => {
-  const {
-    referenceNumber,
-    passengerName,
-    tripName,
-    startDate,
-    endDate,
-    totalGuests,
-    stateroomType,
-    totalPrice,
-    paymentMethod,
-    packagesIncluded,
-  } = bookingDetails;
+  // const {
+  //   referenceNumber,
+  //   passengerName,
+  //   tripName,
+  //   startDate,
+  //   endDate,
+  //   totalGuests,
+  //   stateroomType,
+  //   totalPrice,
+  //   paymentMethod,
+  //   packagesIncluded,
+  // } = bookingDetails;
+
+const mockData = {
+  referenceNumber: 'OEUR0976290',
+  passengerName: 'John Doe',
+  tripName: 'Dream Island Adventure',
+  startDate: '2025-01-03',
+  endDate: '2025-01-07',
+  totalGuests: 2,
+  stateroomType: ['Inside Stateroom', 'Studio Stateroom'],
+  totalPrice: 2616.99,
+  paymentMethod: 'Credit Card',
+  packagesIncluded: ['Water and Non-Alcoholic', 'Unlimited Internet', 'Specialty Dining', 'Unlimited Bar', 'Internet 200 minutes, 100 GB'],
+};
+
 
   return (
-    <div className="booking-summary-container">
+    <>
+    <Header />
+    <div className="booking-confirmation">
       <header className="booking-summary-header">
         <h1>Thank You for Your Booking!</h1>
-        <p>Your cruise adventure awaits!</p>
+        <p style={{fontSize: '20px', margin: '5px'}}>Your cruise adventure awaits!</p>
       </header>
-
-      <section className="booking-reference-section">
+<hr />
+      <div className="booking-reference-section">
         <h2>Booking Reference</h2>
-        <p className="reference-number">{referenceNumber}</p>
-      </section>
-
-      <section className="booking-details-section">
+        <p className="reference-number">Your booking reference number is <strong>{mockData.referenceNumber}.</strong></p>
+      </div>
+<hr />
+      <div className="booking-details-section">
         <h2>Booking Details</h2>
         <ul>
-          <li><strong>Passenger Name:</strong> {passengerName}</li>
-          <li><strong>Trip Name:</strong> {tripName}</li>
-          <li><strong>Start Date:</strong> {startDate}</li>
-          <li><strong>End Date:</strong> {endDate}</li>
-          <li><strong>Total Guests:</strong> {totalGuests}</li>
-          <li><strong>Stateroom Type:</strong> {stateroomType}</li>
+          <li><strong>Passenger Name:</strong> {mockData.passengerName}</li>
+          <li><strong>Trip Name:</strong> {mockData.tripName}</li>
+          <li><strong>Start Date:</strong> {mockData.startDate}</li>
+          <li><strong>End Date:</strong> {mockData.endDate}</li>
+          <li><strong>Total Guests:</strong> {mockData.totalGuests}</li>
+          {/* <li><strong>Stateroom Type:</strong> {mockData.stateroomType.map(room => <span>{room} </span>)}</li> */}
         </ul>
-      </section>
-
-      <section className="payment-summary-section">
+      </div>
+<hr />
+      <div className="payment-summary-section">
         <h2>Payment Summary</h2>
         <ul>
-          <li><strong>Total Price:</strong> ${totalPrice}</li>
-          <li><strong>Payment Method:</strong> {paymentMethod}</li>
+          <li><strong>Total Price:</strong> ${mockData.totalPrice}</li>
+          <li><strong>Payment Method:</strong> {mockData.paymentMethod}</li>
         </ul>
-      </section>
-
-      <section className="packages-included-section">
+      </div>
+<hr />
+      <div className="packages-included-section">
         <h2>Packages Included</h2>
-        {packagesIncluded.length > 0 ? (
+        {mockData.packagesIncluded.length > 0 ? (
           <ul>
-            {packagesIncluded.map((pkg, index) => (
+            {mockData.packagesIncluded.map((pkg, index) => (
               <li key={index}>{pkg}</li>
             ))}
           </ul>
         ) : (
           <p>No additional packages included.</p>
         )}
-      </section>
-
+      </div>
+<br />
+<hr/>
       <footer className="booking-summary-footer">
         <p>If you have any questions, feel free to contact our support team.</p>
         <button className="btn btn-primary" onClick={() => window.print()}>Print This Page</button>
       </footer>
     </div>
+    </>
+
   );
 };
 

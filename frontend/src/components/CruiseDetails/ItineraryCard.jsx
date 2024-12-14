@@ -1,16 +1,62 @@
 import React from "react";
 import manhImg from "../../assets/manhattan.avif";
 import bahamas from '../../assets/bahamas.webp';
+import la from '../../assets/la.webp';
+import dubai from '../../assets/dubai.jpg';
+import aus from '../../assets/aus.avif';
 
-const ItineraryCard = () => {
+const ItineraryCard = ({cruise}) => {
   const mockText1 = (
     <>
-      <strong>Day 1: Manhattan, New York City</strong>
+      <strong>Day 1: Los Angeles, California</strong>
       <br />
-      <strong>Departs at 4:00 PM</strong>
+      <strong>Departs at 12:00 PM</strong>
       <br />
       <br />
-      Start your Carnival cruise from the city that defined 'cosmopolitan': New
+      Begin your adventure in the bustling Port of Los Angeles, the largest port in the United States. 
+      Nestled in the heart of Southern California, this vibrant city offers a unique blend of sun, sea, and urban excitement. 
+      Explore the iconic landmarks such as the Hollywood Walk of Fame, Griffith Observatory, and the Getty Center. 
+      Stroll along the famous Santa Monica Pier or relax on the sandy beaches of Malibu. 
+      Los Angeles is a melting pot of cultures, offering a diverse culinary scene, world-class shopping, and endless entertainment options. 
+    </>
+  );
+
+  const mockText2 = (
+    <>
+      <strong>Day 2: Adelaide</strong>
+      <br />
+      <strong>9:00 AM - 5:30 PM</strong>
+      <br />
+      <br />
+      Discover the charm of Adelaide, the coastal capital of South Australia. Known for its vibrant arts scene, world-class wineries, and stunning beaches, Adelaide offers a perfect blend of culture and relaxation. 
+      Visit the Adelaide Central Market, one of the largest fresh produce markets in the Southern Hemisphere, and indulge in the local flavors. 
+      Whether you're a foodie, a nature lover, or a culture enthusiast, Adelaide has something for everyone.
+    </>
+  );
+
+  const mockText3 = (
+    <>
+      <strong>Day 3: Dubai</strong>
+      <br />
+      <strong>12:00 AM - 2:00 PM</strong>
+      <br />
+      <br />
+      Experience the opulence and grandeur of Dubai, a city that epitomizes luxury and innovation. 
+      Known for its futuristic architecture, world-class shopping, and vibrant nightlife, Dubai offers an unparalleled travel experience. 
+      Visit the iconic Burj Khalifa, the tallest building in the world, and enjoy breathtaking views from its observation deck. 
+      Relax on the pristine beaches of Jumeirah or embark on a desert safari for an adventure of a lifetime. 
+      Dubai is a city of contrasts, where tradition meets modernity, offering something for every traveler.
+    </>
+  );
+
+  const mockText4 = (
+    <>
+      <strong>Day 4: New York</strong>
+      <br />
+      <strong>7:00 AM - 7:00 PM</strong>
+      <br />
+      <br />
+      End your cruise at the city that defined 'cosmopolitan': New
       York City. This urban island overflows with art and architecture, lively
       ethnic neighborhoods, designer shops... and the best restaurants in the
       world, from the ultra-high-end to the comfy neighborhood hole-in-the-wall.
@@ -21,23 +67,12 @@ const ItineraryCard = () => {
     </>
   );
 
-  const mockText2 = (
-    <>
-      <strong>Day 2: Nassau</strong>
-      <br />
-      <strong>8:00 AM - 4:00 PM</strong>
-      <br />
-      <br />
-      Sightseeing, swimming and soaking up the island flavor — it's all yours for the taking on a cruise to Nassau, Bahamas. Boasting balmy breezes and jumping to a bouncy calypso beat, Nassau promises sizzling fun in the sun. The historic and cultural heart of The Bahamas is one of the world’s most popular cruise destinations — one million travelers board cruises to Nassau every year. Throw in a chance to swim with dolphins, or do a little slipping and sliding at a water park, and it's clear what makes Nassau a top spot for cruisers of all ages. 
-    </>
-  );
-
 
   return (
     <>
       <div style={styles.card}>
         <img
-          src={manhImg} // Placeholder image URL
+          src={la} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
@@ -47,7 +82,7 @@ const ItineraryCard = () => {
       </div>
       <div style={styles.card}>
         <img
-          src={bahamas}
+          src={aus}
           alt="Card Image"
           style={styles.image}
         />
@@ -57,15 +92,24 @@ const ItineraryCard = () => {
       </div>
       <div style={styles.card}>
         <img
+          src={dubai} // Placeholder image URL
+          alt="Card Image"
+          style={styles.image}
+        />
+        <div style={styles.textContent}>
+          <p>{mockText3}</p>
+        </div>
+      </div>
+      <div style={styles.card}>
+        <img
           src={manhImg} // Placeholder image URL
           alt="Card Image"
           style={styles.image}
         />
         <div style={styles.textContent}>
-          <p>{mockText1}</p>
+          <p>{mockText4}</p>
         </div>
-      </div>
-      
+      </div>      
     </>
   );
 };

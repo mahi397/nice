@@ -64,7 +64,7 @@ const EditableTable = ({ data, entity }) => {
   return (
     <div>
       {/* {entity !== 'users' && <button onClick={handleAdd}>Add {generateButtonText(entity)}</button>}  */}
-      <div className="ag-theme-alpine" style={{ width: "100%", height: "500px" }}>
+      <div className="ag-theme-alpine" style={{ width: "100%", height: "100%", marginTop: '20px' }}>
         <AgGridReact
           gridOptions={gridOptions}
           columnDefs={columnDefs}
@@ -73,7 +73,7 @@ const EditableTable = ({ data, entity }) => {
           onFirstDataRendered={onFirstDataRendered}
         />
       </div>
-      <button onClick={handleSave}>Save Changes</button>
+      {/* <button onClick={handleSave}>Save Changes</button> */}
     </div>
   );
 };
